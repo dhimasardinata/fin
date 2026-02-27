@@ -10,6 +10,7 @@
 - discussion: TBD
 - implementation:
   - compiler/finc/stage0/emit_elf_exit0.ps1
+  - compiler/finc/stage0/build_stage0.ps1
   - tests/bootstrap/verify_elf_exit0.ps1
   - .github/workflows/ci.yml
 - acceptance:
@@ -29,7 +30,7 @@ Current implementation provides a deterministic direct-ELF writer for Linux x86_
 
 1. Emit a full ELF64 image directly into a byte buffer.
 2. Include one PT_LOAD program header with RX permissions.
-3. Embed a minimal syscall payload (`exit(0)`).
+3. Embed a minimal syscall payload (`exit(<u8>)`).
 4. Write final binary as a runnable artifact (`artifacts/fin-elf-exit0` by default).
 
 The verifier asserts:
@@ -57,5 +58,6 @@ CI now runs:
 
 1. `compiler/finc/stage0/emit_elf_exit0.ps1`
 2. `tests/bootstrap/verify_elf_exit0.ps1`
+3. `cmd/fin/fin.ps1 build --src tests/conformance/fixtures/main_exit7.fn --out artifacts/fin-build-exit7`
 
 These tests validate direct-image emission without assembler/linker usage.

@@ -12,6 +12,7 @@
   - cmd/fin/fin.ps1
   - fin.ps1
   - cmd/fin/README.md
+  - compiler/finc/stage0/build_stage0.ps1
 - acceptance:
   - CLI behavior tests pass for all mandatory commands.
 
@@ -31,6 +32,7 @@ Current commands:
 
 1. `doctor`: executes policy and seed checks.
 2. `emit-elf-exit0`: runs the FIP-0010 stage0 emitter and verifier.
+3. `build`: parses stage0 `.fn` subset and emits a verified ELF artifact.
 
 This preserves forward compatibility with the planned unified CLI contract while enabling immediate policy enforcement.
 
@@ -52,5 +54,6 @@ Current checks:
 
 1. `./fin.ps1 doctor` succeeds on compliant repos.
 2. `./fin.ps1 emit-elf-exit0` produces and verifies a valid ELF sample.
+3. `./fin.ps1 build --src tests/conformance/fixtures/main_exit7.fn --out artifacts/fin-build-exit7` succeeds.
 
-Remaining command set (`init/build/run/test/fmt/doc/pkg`) remains scheduled.
+Remaining command set (`init/run/test/fmt/doc/pkg`) remains scheduled.

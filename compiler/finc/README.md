@@ -15,6 +15,8 @@
 
 Implemented starter:
 
+- `stage0/parse_main_exit.ps1` parses the first `.fn` subset (`fn main() { exit(<u8>) }`).
+- `stage0/build_stage0.ps1` compiles source subset into an ELF executable.
 - `stage0/emit_elf_exit0.ps1` writes a deterministic Linux x86_64 ELF executable directly.
 - `tests/bootstrap/verify_elf_exit0.ps1` validates ELF header, program header, entry point, and payload bytes.
 

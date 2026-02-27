@@ -19,8 +19,15 @@ This repository implements the foundation phase:
 - Bootstrap trust model is defined (`seed/`).
 - CI policy gates for independent toolchain and FIP linkage are defined.
 - Stage0 direct ELF emitter starter is implemented (`compiler/finc/stage0/emit_elf_exit0.ps1`).
-- Bootstrap CLI shim with `doctor` is available (`./fin.ps1 doctor`).
+- Stage0 minimal parser/build path is implemented for `.fn` subset.
+- Bootstrap CLI shim with `doctor` and `build` is available (`./fin.ps1 doctor`, `./fin.ps1 build`).
 - Compiler/linker/object-format/assembler tracks are scaffolded.
+
+## Stage0 Quick Start
+
+1. Run policy checks: `./fin.ps1 doctor`
+2. Build default source: `./fin.ps1 build`
+3. Build a specific file: `./fin.ps1 build --src tests/conformance/fixtures/main_exit7.fn --out artifacts/fin-build-exit7`
 
 ## Repository Layout
 

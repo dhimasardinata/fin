@@ -1,5 +1,7 @@
 param(
-    [string]$Path = "artifacts/fin-elf-exit0"
+    [string]$Path = "artifacts/fin-elf-exit0",
+    [ValidateRange(0, 255)]
+    [int]$ExpectedExitCode = 0
 )
 
 Set-StrictMode -Version Latest
@@ -11,7 +13,7 @@ if (-not (Test-Path $Path)) {
 }
 
 [byte[]]$bytes = [System.IO.File]::ReadAllBytes((Resolve-Path $Path))
-if ($bytes.Length -lt 129) {
+if ($bytes.Length -lt 132) {
     Write-Error "ELF file too small: $($bytes.Length) bytes"
     exit 1
 }
@@ -60,7 +62,11 @@ if ($pMemsz -ne [UInt64]$bytes.Length) { Write-Error "Expected p_memsz=$($bytes.
 if ($pAlign -ne 0x1000) { Write-Error ("Expected p_align=0x1000, got 0x{0:X}" -f $pAlign); exit 1 }
 
 $codeOffset = 120
-[byte[]]$expectedCode = @(0xB8, 0x3C, 0x00, 0x00, 0x00, 0x31, 0xFF, 0x0F, 0x05)
+[byte[]]$expectedCode = @(
+    0xB8, 0x3C, 0x00, 0x00, 0x00,
+    0xBF, [byte]($ExpectedExitCode -band 0xFF), 0x00, 0x00, 0x00,
+    0x0F, 0x05
+)
 for ($i = 0; $i -lt $expectedCode.Length; $i++) {
     if ($bytes[$codeOffset + $i] -ne $expectedCode[$i]) {
         Write-Error ("Code byte mismatch at +{0}: expected 0x{1:X2}, got 0x{2:X2}" -f $i, $expectedCode[$i], $bytes[$codeOffset + $i])
@@ -76,4 +82,4 @@ if ($eEntry -ne $expectedEntry) {
 
 $hash = (Get-FileHash -Path $Path -Algorithm SHA256).Hash.ToLowerInvariant()
 Write-Host "ELF structure check passed."
-Write-Host ("size={0} sha256={1}" -f $bytes.Length, $hash)
+Write-Host ("size={0} exit_code={1} sha256={2}" -f $bytes.Length, $ExpectedExitCode, $hash)
