@@ -20,6 +20,7 @@ This repository implements the foundation phase:
 - CI policy gates for independent toolchain and FIP linkage are defined.
 - Reproducibility and toolchain-policy self-checks are integrated into stage0 test suite.
 - Stage0 direct ELF emitters are implemented (`emit_elf_exit0.ps1`, `emit_elf_write_exit.ps1`).
+- Stage0 direct PE emitter starter is implemented (`emit_pe_exit0.ps1`).
 - Stage0 minimal parser/build path is implemented for `.fn` subset.
 - Bootstrap CLI shim covers stage0 workflows (`init`, `doctor`, `build`, `run`, `fmt`, `doc`, `pkg add`, `pkg publish`, `test`).
 - Stage0 bootstrap closure proxy witness is implemented (`tests/bootstrap/verify_stage0_closure.ps1`).
@@ -38,7 +39,8 @@ This repository implements the foundation phase:
 9. Create publish artifact: `./fin.ps1 pkg publish --out-dir artifacts/publish`
 10. Run Linux syscall smoke (`write + exit`): `./tests/integration/verify_linux_write_exit.ps1`
 11. Generate closure witness: `./tests/bootstrap/verify_stage0_closure.ps1`
-12. Run full stage0 suite: `./fin.ps1 test`
+12. Verify PE structure sample: `./tests/integration/verify_windows_pe_exit.ps1`
+13. Run full stage0 suite: `./fin.ps1 test`
 
 ## Repository Layout
 

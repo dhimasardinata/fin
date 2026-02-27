@@ -10,7 +10,9 @@ $ErrorActionPreference = "Stop"
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 $fin = Join-Path $repoRoot "cmd/fin/fin.ps1"
 $emit = Join-Path $repoRoot "compiler/finc/stage0/emit_elf_exit0.ps1"
+$emitPe = Join-Path $repoRoot "compiler/finc/stage0/emit_pe_exit0.ps1"
 $verifyElf = Join-Path $repoRoot "tests/bootstrap/verify_elf_exit0.ps1"
+$verifyPe = Join-Path $repoRoot "tests/bootstrap/verify_pe_exit0.ps1"
 $verifyClosure = Join-Path $repoRoot "tests/bootstrap/verify_stage0_closure.ps1"
 $verifyGrammar = Join-Path $repoRoot "tests/conformance/verify_stage0_grammar.ps1"
 $verifyInit = Join-Path $repoRoot "tests/integration/verify_init.ps1"
@@ -19,6 +21,7 @@ $verifyDoc = Join-Path $repoRoot "tests/integration/verify_doc.ps1"
 $verifyPkg = Join-Path $repoRoot "tests/integration/verify_pkg.ps1"
 $verifyPkgPublish = Join-Path $repoRoot "tests/integration/verify_pkg_publish.ps1"
 $verifyLinuxWriteExit = Join-Path $repoRoot "tests/integration/verify_linux_write_exit.ps1"
+$verifyWindowsPeExit = Join-Path $repoRoot "tests/integration/verify_windows_pe_exit.ps1"
 $verifyRepro = Join-Path $repoRoot "tests/reproducibility/verify_stage0_reproducibility.ps1"
 $verifyPolicyGate = Join-Path $repoRoot "tests/reproducibility/verify_toolchain_policy_gate.ps1"
 
@@ -30,6 +33,8 @@ if (-not $SkipDoctor) {
 
 & $emit -OutFile (Join-Path $repoRoot "artifacts/fin-elf-exit0") -ExitCode 0
 & $verifyElf -Path (Join-Path $repoRoot "artifacts/fin-elf-exit0") -ExpectedExitCode 0
+& $emitPe -OutFile (Join-Path $repoRoot "artifacts/fin-pe-exit0.exe") -ExitCode 0
+& $verifyPe -Path (Join-Path $repoRoot "artifacts/fin-pe-exit0.exe") -ExpectedExitCode 0
 & $verifyClosure
 
 & $verifyGrammar
@@ -39,6 +44,7 @@ if (-not $SkipDoctor) {
 & $verifyPkg
 & $verifyPkgPublish
 & $verifyLinuxWriteExit
+& $verifyWindowsPeExit
 & $verifyRepro
 & $verifyPolicyGate
 
