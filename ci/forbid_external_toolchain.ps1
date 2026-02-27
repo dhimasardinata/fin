@@ -3,23 +3,23 @@ param(
 )
 
 $disallowed = @(
-    "clang",
     "clang\+\+",
-    "gcc",
+    "clang",
     "g\+\+",
-    "\bcc\b",
-    "\bld\b",
+    "gcc",
+    "cc",
     "ld\.lld",
     "lld-link",
     "link\.exe",
-    "\bas\b",
+    "ld",
+    "as",
     "nasm",
     "yasm",
-    "\bml\b",
-    "ml64"
+    "ml64",
+    "ml"
 )
 
-$regex = "(?i)\\b(" + (($disallowed -join "|") -replace "\\b", "") + ")\\b"
+$regex = "(?i)\b(" + ($disallowed -join "|") + ")\b"
 $workflowPath = Join-Path $Root ".github/workflows"
 
 if (-not (Test-Path $workflowPath)) {
@@ -28,7 +28,9 @@ if (-not (Test-Path $workflowPath)) {
 }
 
 $violations = @()
-$files = Get-ChildItem -Path $workflowPath -Recurse -File -Include *.yml,*.yaml
+$files = @(Get-ChildItem -Path $workflowPath -Recurse -File | Where-Object {
+    $_.Extension -eq ".yml" -or $_.Extension -eq ".yaml"
+})
 
 foreach ($file in $files) {
     $lines = Get-Content $file.FullName

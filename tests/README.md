@@ -10,3 +10,4 @@ Test families:
 Entry points:
 
 - `tests/run_stage0_suite.ps1`: aggregated stage0 `fin test` suite.
+- `tests/reproducibility/verify_stage0_reproducibility.ps1`: stage0 reproducibility hash gate.

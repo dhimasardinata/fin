@@ -2,13 +2,16 @@
 
 - id: FIP-0018
 - address: fin://fip/FIP-0018
-- status: Accepted
+- status: Implemented
 - authors: @fin-maintainers
 - created: 2026-02-27
 - requires: ["FIP-0003"]
 - target_release: M0
 - discussion: TBD
-- implementation: []
+- implementation:
+  - tests/reproducibility/verify_stage0_reproducibility.ps1
+  - tests/run_stage0_suite.ps1
+  - .github/workflows/ci.yml
 - acceptance:
   - CI reproducibility checks pass across repeated builds.
 
@@ -22,7 +25,14 @@ This proposal is part of the Fin independent-toolchain baseline and is required 
 
 ## Design
 
-Initial design details are tracked in the corresponding spec and architecture documents. Concrete implementation deltas must be appended to this section before status changes to InProgress.
+Current stage0 reproducibility controls:
+
+1. Deterministic direct ELF emitters (`emit_elf_exit0`, `emit_elf_write_exit`).
+2. Deterministic stage0 source build (`fin build` for fixed inputs).
+3. Deterministic package artifact generation (`fin pkg publish`) for fixed inputs.
+4. Hash-based verification across repeated invocations.
+
+Reproducibility scope is currently single-host CI with stable PowerShell/runtime context.
 
 ## Alternatives
 
@@ -38,4 +48,8 @@ Compatibility impact must be documented before Implemented status.
 
 ## Test Plan
 
-Acceptance criteria listed above are normative; CI coverage for this proposal must be linked in implementation once available.
+Current checks:
+
+1. `tests/reproducibility/verify_stage0_reproducibility.ps1` validates repeated-hash stability for emit/build/publish paths.
+2. `tests/run_stage0_suite.ps1` includes reproducibility checks as part of `fin test`.
+3. CI executes `cmd/fin/fin.ps1 test --no-doctor` on push/PR.

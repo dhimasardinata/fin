@@ -18,6 +18,8 @@ $verifyDoc = Join-Path $repoRoot "tests/integration/verify_doc.ps1"
 $verifyPkg = Join-Path $repoRoot "tests/integration/verify_pkg.ps1"
 $verifyPkgPublish = Join-Path $repoRoot "tests/integration/verify_pkg_publish.ps1"
 $verifyLinuxWriteExit = Join-Path $repoRoot "tests/integration/verify_linux_write_exit.ps1"
+$verifyRepro = Join-Path $repoRoot "tests/reproducibility/verify_stage0_reproducibility.ps1"
+$verifyPolicyGate = Join-Path $repoRoot "tests/reproducibility/verify_toolchain_policy_gate.ps1"
 
 Write-Host "fin test: stage0 suite starting"
 
@@ -35,6 +37,8 @@ if (-not $SkipDoctor) {
 & $verifyPkg
 & $verifyPkgPublish
 & $verifyLinuxWriteExit
+& $verifyRepro
+& $verifyPolicyGate
 
 & $fin build --src tests/conformance/fixtures/main_exit0.fn --out artifacts/test-exit0
 & $fin build --src tests/conformance/fixtures/main_exit7.fn --out artifacts/test-exit7
