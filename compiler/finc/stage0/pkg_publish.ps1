@@ -78,10 +78,24 @@ function Get-RelativePathNormalized {
         [string]$FullPath
     )
 
-    $baseDir = ([System.IO.Path]::GetFullPath($BasePath)).TrimEnd("\", "/") + [System.IO.Path]::DirectorySeparatorChar
-    $baseUri = [System.Uri]$baseDir
-    $fileUri = [System.Uri]([System.IO.Path]::GetFullPath($FullPath))
-    $relative = [System.Uri]::UnescapeDataString($baseUri.MakeRelativeUri($fileUri).ToString())
+    $baseDir = [System.IO.Path]::GetFullPath($BasePath)
+    $filePath = [System.IO.Path]::GetFullPath($FullPath)
+
+    Push-Location -Path $baseDir
+    try {
+        $relative = Resolve-Path -LiteralPath $filePath -Relative
+    }
+    finally {
+        Pop-Location
+    }
+
+    if ($relative.StartsWith(".\")) {
+        $relative = $relative.Substring(2)
+    }
+    elseif ($relative.StartsWith("./")) {
+        $relative = $relative.Substring(2)
+    }
+
     return $relative.Replace("\", "/")
 }
 
