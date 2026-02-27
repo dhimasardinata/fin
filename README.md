@@ -29,6 +29,7 @@ This repository implements the foundation phase:
 2. Build default source: `./fin.ps1 build`
 3. Build and run default source: `./fin.ps1 run`
 4. Build and run a specific file: `./fin.ps1 run --src tests/conformance/fixtures/main_exit7.fn --out artifacts/fin-build-exit7 --expect-exit 7`
+5. Run full stage0 suite: `./fin.ps1 test`
 
 ## Repository Layout
 

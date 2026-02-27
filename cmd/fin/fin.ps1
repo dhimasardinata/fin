@@ -119,6 +119,50 @@ function Invoke-Run {
     & (Join-Path $repoRoot "tests/integration/run_linux_elf.ps1") -Path $outFile -ExpectedExitCode $expectedExitCode
 }
 
+function Invoke-Test {
+    $quick = $false
+    $skipDoctor = $false
+    $skipRun = $false
+
+    for ($i = 0; $i -lt $CommandArgs.Count; $i++) {
+        if ([string]::IsNullOrWhiteSpace($CommandArgs[$i])) {
+            continue
+        }
+        switch ($CommandArgs[$i]) {
+            "--quick" { $quick = $true }
+            "--no-doctor" { $skipDoctor = $true }
+            "--no-run" { $skipRun = $true }
+            default { throw "Unknown test argument: $($CommandArgs[$i])" }
+        }
+    }
+
+    $suite = Join-Path $repoRoot "tests/run_stage0_suite.ps1"
+    if ($quick -and $skipDoctor -and $skipRun) {
+        & $suite -Quick -SkipDoctor -SkipRun
+    }
+    elseif ($quick -and $skipDoctor) {
+        & $suite -Quick -SkipDoctor
+    }
+    elseif ($quick -and $skipRun) {
+        & $suite -Quick -SkipRun
+    }
+    elseif ($skipDoctor -and $skipRun) {
+        & $suite -SkipDoctor -SkipRun
+    }
+    elseif ($quick) {
+        & $suite -Quick
+    }
+    elseif ($skipDoctor) {
+        & $suite -SkipDoctor
+    }
+    elseif ($skipRun) {
+        & $suite -SkipRun
+    }
+    else {
+        & $suite
+    }
+}
+
 function Show-Usage {
     @"
 fin bootstrap CLI (PowerShell shim)
@@ -128,6 +172,7 @@ Usage:
   ./cmd/fin/fin.ps1 emit-elf-exit0 [output-path]
   ./cmd/fin/fin.ps1 build [--src <file>] [--out <file>] [--no-verify]
   ./cmd/fin/fin.ps1 run [--src <file>] [--out <file>] [--no-build] [--expect-exit <0..255>] [--no-verify]
+  ./cmd/fin/fin.ps1 test [--quick] [--no-doctor] [--no-run]
 
 Planned unified commands (tracked in FIP-0015):
   fin init | build | run | test | fmt | doc | pkg add | pkg publish | doctor
@@ -139,6 +184,7 @@ switch ($Command) {
     "emit-elf-exit0" { Invoke-EmitElfExit0; break }
     "build" { Invoke-Build; break }
     "run" { Invoke-Run; break }
+    "test" { Invoke-Test; break }
     "" { Show-Usage; break }
     default {
         Write-Error "Unknown command: $Command"

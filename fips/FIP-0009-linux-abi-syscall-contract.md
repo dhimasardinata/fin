@@ -12,6 +12,7 @@
   - compiler/finc/stage0/emit_elf_exit0.ps1
   - tests/bootstrap/verify_elf_exit0.ps1
   - tests/integration/run_linux_elf.ps1
+  - tests/run_stage0_suite.ps1
 - acceptance:
   - Hello-world and syscall smoke tests run on Linux without libc.
 
