@@ -1,0 +1,42 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release-policy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify manifest policy
+        shell: pwsh
+        run: ./ci/verify_manifest.ps1
+
+      - name: Verify seed metadata is set
+        shell: pwsh
+        run: ./ci/verify_seed_hash.ps1 -RequireSet
+
+      - name: Enforce no external toolchain references
+        shell: pwsh
+        run: ./ci/forbid_external_toolchain.ps1
+
+      - name: Build release notes artifact index
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path artifacts -Force | Out-Null
+          @"
+          tag=${{ github.ref_name }}
+          seed_manifest=seed/manifest.toml
+          seed_hash_file=seed/SHA256SUMS
+          reproducibility=required
+          "@ | Set-Content artifacts/release-index.txt
+
+      - name: Upload release metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-metadata
+          path: artifacts/release-index.txt

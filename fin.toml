@@ -1,0 +1,13 @@
+[workspace]
+name = "fin"
+version = "0.1.0-dev"
+independent = true
+seed_hash = "UNSET"
+
+[targets]
+primary = "x86_64-linux-elf"
+secondary = "x86_64-windows-pe"
+
+[policy]
+external_toolchain_forbidden = true
+reproducible_build_required = true

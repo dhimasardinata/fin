@@ -1,0 +1,25 @@
+# Ignore local and generated artifacts
+
+*.log
+*.tmp
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+out/
+build/
+dist/
+artifacts/
+
+# Editor
+.vscode/
+.idea/
+
+# Local env
+.env
+.env.*
+
+# Seed local binary drops (if any)
+seed/local/

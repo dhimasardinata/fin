@@ -1,0 +1,3 @@
+# Fill once audited seed artifact is committed.
+# Format: <sha256>  <path>
+UNSET  seed/fin-seed.bin

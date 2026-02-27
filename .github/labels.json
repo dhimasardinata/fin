@@ -1,0 +1,14 @@
+[
+  { "name": "fip", "color": "0e8a16", "description": "proposal related change" },
+  { "name": "status/draft", "color": "cfd3d7", "description": "draft proposal" },
+  { "name": "status/review", "color": "fbca04", "description": "proposal under review" },
+  { "name": "status/accepted", "color": "0e8a16", "description": "proposal accepted" },
+  { "name": "status/scheduled", "color": "1d76db", "description": "proposal scheduled" },
+  { "name": "status/inprogress", "color": "5319e7", "description": "implementation in progress" },
+  { "name": "status/implemented", "color": "0052cc", "description": "implemented but unreleased" },
+  { "name": "status/released", "color": "006b75", "description": "released" },
+  { "name": "status/deferred", "color": "d4c5f9", "description": "deferred" },
+  { "name": "status/rejected", "color": "b60205", "description": "rejected" },
+  { "name": "performance", "color": "e99695", "description": "performance work" },
+  { "name": "bug", "color": "d73a4a", "description": "bug report" }
+]

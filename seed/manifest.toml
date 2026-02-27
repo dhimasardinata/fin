@@ -1,0 +1,12 @@
+[id]
+name = "fin-seed"
+version = "0.0.1"
+
+[artifact]
+path = "seed/fin-seed.bin"
+sha256 = "UNSET"
+format = "native-binary"
+
+[policy]
+immutable_per_release = true
+review_required = true
