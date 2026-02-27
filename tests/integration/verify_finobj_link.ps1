@@ -15,21 +15,58 @@ if (Test-Path $tmpDir) {
 }
 New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
 
-$source = Join-Path $repoRoot "tests/conformance/fixtures/main_exit_var_assign.fn"
-$objLinux = Join-Path $tmpDir "main-linux.finobj"
-$objWindows = Join-Path $tmpDir "main-windows.finobj"
+$sourceMain = Join-Path $repoRoot "tests/conformance/fixtures/main_exit_var_assign.fn"
+$sourceUnit = Join-Path $repoRoot "tests/conformance/fixtures/main_exit0.fn"
+$objLinuxMain = Join-Path $tmpDir "main-linux.finobj"
+$objLinuxUnit = Join-Path $tmpDir "unit-linux.finobj"
+$objLinuxMain2 = Join-Path $tmpDir "main2-linux.finobj"
+$objWindowsMain = Join-Path $tmpDir "main-windows.finobj"
+$objWindowsUnit = Join-Path $tmpDir "unit-windows.finobj"
 $outLinux = Join-Path $tmpDir "main-linked"
 $outWindows = Join-Path $tmpDir "main-linked.exe"
+$outBadNoMain = Join-Path $tmpDir "bad-no-main"
+$outBadDuplicateMain = Join-Path $tmpDir "bad-duplicate-main"
 
-& $writer -SourcePath $source -OutFile $objLinux -Target x86_64-linux-elf
-& $writer -SourcePath $source -OutFile $objWindows -Target x86_64-windows-pe
+function Assert-LinkFails {
+    param(
+        [scriptblock]$Action,
+        [string]$Label
+    )
 
-& $linker -ObjectPath $objLinux -OutFile $outLinux -Target x86_64-linux-elf -Verify
+    $failed = $false
+    try {
+        & $Action
+    }
+    catch {
+        $failed = $true
+    }
+
+    if (-not $failed) {
+        Write-Error ("Expected linker failure: {0}" -f $Label)
+        exit 1
+    }
+}
+
+& $writer -SourcePath $sourceMain -OutFile $objLinuxMain -Target x86_64-linux-elf -EntrySymbol main
+& $writer -SourcePath $sourceUnit -OutFile $objLinuxUnit -Target x86_64-linux-elf -EntrySymbol unit
+& $writer -SourcePath $sourceUnit -OutFile $objLinuxMain2 -Target x86_64-linux-elf -EntrySymbol main
+& $writer -SourcePath $sourceMain -OutFile $objWindowsMain -Target x86_64-windows-pe -EntrySymbol main
+& $writer -SourcePath $sourceUnit -OutFile $objWindowsUnit -Target x86_64-windows-pe -EntrySymbol unit
+
+& $linker -ObjectPath @($objLinuxMain, $objLinuxUnit) -OutFile $outLinux -Target x86_64-linux-elf -Verify
 & $verifyElf -Path $outLinux -ExpectedExitCode 8
 & $runElf -Path $outLinux -ExpectedExitCode 8
 
-& $linker -ObjectPath $objWindows -OutFile $outWindows -Target x86_64-windows-pe -Verify
+& $linker -ObjectPath @($objWindowsMain, $objWindowsUnit) -OutFile $outWindows -Target x86_64-windows-pe -Verify
 & $verifyPe -Path $outWindows -ExpectedExitCode 8
 & $runPe -Path $outWindows -ExpectedExitCode 8
+
+Assert-LinkFails -Action {
+    & $linker -ObjectPath @($objLinuxUnit) -OutFile $outBadNoMain -Target x86_64-linux-elf -Verify | Out-Null
+} -Label "no main entry object"
+
+Assert-LinkFails -Action {
+    & $linker -ObjectPath @($objLinuxMain, $objLinuxMain2) -OutFile $outBadDuplicateMain -Target x86_64-linux-elf -Verify | Out-Null
+} -Label "duplicate main entry objects"
 
 Write-Host "finobj link integration check passed."

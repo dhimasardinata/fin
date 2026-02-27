@@ -1,6 +1,7 @@
 param(
     [string]$ObjectPath = "artifacts/main.finobj",
-    [string]$ExpectedTarget = ""
+    [string]$ExpectedTarget = "",
+    [switch]$AsRecord
 )
 
 Set-StrictMode -Version Latest
@@ -56,8 +57,9 @@ if ($map["finobj_format"] -ne "finobj-stage0") {
 if ($map["finobj_version"] -ne "1") {
     throw "Unsupported finobj version: $($map["finobj_version"])"
 }
-if ($map["entry_symbol"] -ne "main") {
-    throw "Unsupported entry_symbol: $($map["entry_symbol"])"
+$entrySymbol = $map["entry_symbol"]
+if ($entrySymbol -ne "main" -and $entrySymbol -ne "unit") {
+    throw "Unsupported entry_symbol: $entrySymbol"
 }
 Assert-SupportedTarget -Target $map["target"]
 if (-not [string]::IsNullOrWhiteSpace($ExpectedTarget)) {
@@ -99,5 +101,17 @@ if ($exitCode -lt 0 -or $exitCode -gt 255) {
 
 Write-Host ("finobj_read={0}" -f $objFull)
 Write-Host ("target={0}" -f $map["target"])
-Write-Host ("entry_symbol={0}" -f $map["entry_symbol"])
+Write-Host ("entry_symbol={0}" -f $entrySymbol)
+if ($AsRecord) {
+    Write-Output ([pscustomobject]@{
+            ObjectPath = $objFull
+            Target = $map["target"]
+            EntrySymbol = $entrySymbol
+            ExitCode = $exitCode
+            SourcePath = $sourcePath
+            SourceSha256 = $sourceHash
+        })
+    return
+}
+
 Write-Output $exitCode

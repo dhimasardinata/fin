@@ -31,19 +31,20 @@ Current stage0 finobj format is deterministic key-value text with required field
 1. `finobj_format=finobj-stage0`
 2. `finobj_version=1`
 3. `target=<x86_64-linux-elf|x86_64-windows-pe>`
-4. `entry_symbol=main`
+4. `entry_symbol=<main|unit>`
 5. `exit_code=<0..255>`
 6. `source_path=<repo-relative path>`
 7. `source_sha256=<normalized source hash>`
 
-Stage0 scope is single-unit object container; full relocations/symbol tables remain deferred.
+Stage0 scope is still minimal; `entry_symbol=unit` enables linker multi-object checkpoint while full relocations/symbol tables remain deferred.
 
 Reader validation requirements in stage0:
 
 1. Reject duplicate keys.
 2. Require `target` to be one of: `x86_64-linux-elf`, `x86_64-windows-pe`.
-3. Require repository-relative `source_path` (no rooted path or `..` traversal).
-4. Require `source_sha256` to be a 64-hex digest.
+3. Require `entry_symbol` to be one of: `main`, `unit`.
+4. Require repository-relative `source_path` (no rooted path or `..` traversal).
+5. Require `source_sha256` to be a 64-hex digest.
 
 ## Alternatives
 
@@ -61,5 +62,5 @@ Compatibility impact must be documented before Implemented status.
 
 Current checks:
 
-1. `tests/conformance/verify_finobj_roundtrip.ps1` validates deterministic writer output hash, reader decode for Linux+Windows targets, and malformed-object rejection (duplicate key, bad target, invalid source metadata).
+1. `tests/conformance/verify_finobj_roundtrip.ps1` validates deterministic writer output hash, reader decode for Linux+Windows targets and `main/unit` entry symbols, and malformed-object rejection (duplicate key, bad target/entry symbol, invalid source metadata).
 2. `tests/run_stage0_suite.ps1` includes finobj conformance checks in `fin test`.
