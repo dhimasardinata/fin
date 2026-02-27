@@ -10,6 +10,9 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\\..")
+if ($null -eq $CommandArgs) {
+    $CommandArgs = @()
+}
 
 function Invoke-Doctor {
     Write-Host "fin doctor: checking repository policy and bootstrap metadata"
