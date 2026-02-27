@@ -29,10 +29,11 @@ Current stage0 reproducibility controls:
 
 1. Deterministic direct ELF emitters (`emit_elf_exit0`, `emit_elf_write_exit`).
 2. Deterministic stage0 source build (`fin build` for fixed inputs).
-3. Deterministic package artifact generation (`fin pkg publish`) for fixed inputs.
-4. Deterministic stage0 `finobj` writing (`write_finobj_exit`) for fixed inputs.
-5. Deterministic stage0 `finld` linking (`link_finobj_to_elf`) for fixed inputs.
-6. Hash-based verification across repeated invocations.
+3. Deterministic stage0 source build through `finobj+finld` (`fin build --pipeline finobj`) for fixed inputs.
+4. Deterministic package artifact generation (`fin pkg publish`) for fixed inputs.
+5. Deterministic stage0 `finobj` writing (`write_finobj_exit`) for fixed inputs.
+6. Deterministic stage0 `finld` linking (`link_finobj_to_elf`) for fixed inputs.
+7. Hash-based verification across repeated invocations.
 
 Reproducibility scope is currently single-host CI with stable PowerShell/runtime context.
 
@@ -52,6 +53,6 @@ Compatibility impact must be documented before Implemented status.
 
 Current checks:
 
-1. `tests/reproducibility/verify_stage0_reproducibility.ps1` validates repeated-hash stability for emit/build/publish/finobj/finld paths.
+1. `tests/reproducibility/verify_stage0_reproducibility.ps1` validates repeated-hash stability for emit/build(build direct and `finobj` pipeline)/publish/finobj/finld paths.
 2. `tests/run_stage0_suite.ps1` includes reproducibility checks as part of `fin test`.
 3. CI executes `cmd/fin/fin.ps1 test --no-doctor` on push/PR.

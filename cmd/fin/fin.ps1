@@ -134,6 +134,7 @@ function Invoke-EmitElfExit0 {
 function Invoke-Build {
     $source = "src/main.fn"
     $outFile = "artifacts/main"
+    $pipeline = "direct"
     $verify = $true
 
     for ($i = 0; $i -lt $CommandArgs.Count; $i++) {
@@ -149,6 +150,13 @@ function Invoke-Build {
                 if ($i + 1 -ge $CommandArgs.Count) { throw "--out requires a value" }
                 $outFile = $CommandArgs[++$i]
             }
+            "--pipeline" {
+                if ($i + 1 -ge $CommandArgs.Count) { throw "--pipeline requires a value: direct|finobj" }
+                $pipeline = $CommandArgs[++$i]
+                if ($pipeline -ne "direct" -and $pipeline -ne "finobj") {
+                    throw "--pipeline must be one of: direct, finobj"
+                }
+            }
             "--no-verify" {
                 $verify = $false
             }
@@ -159,16 +167,17 @@ function Invoke-Build {
     }
 
     if ($verify) {
-        & (Join-Path $repoRoot "compiler/finc/stage0/build_stage0.ps1") -Source $source -OutFile $outFile -Verify
+        & (Join-Path $repoRoot "compiler/finc/stage0/build_stage0.ps1") -Source $source -OutFile $outFile -Pipeline $pipeline -Verify
     }
     else {
-        & (Join-Path $repoRoot "compiler/finc/stage0/build_stage0.ps1") -Source $source -OutFile $outFile
+        & (Join-Path $repoRoot "compiler/finc/stage0/build_stage0.ps1") -Source $source -OutFile $outFile -Pipeline $pipeline
     }
 }
 
 function Invoke-Run {
     $source = "src/main.fn"
     $outFile = "artifacts/main"
+    $pipeline = "direct"
     $verify = $true
     $build = $true
     $expectProvided = $false
@@ -186,6 +195,13 @@ function Invoke-Run {
             "--out" {
                 if ($i + 1 -ge $CommandArgs.Count) { throw "--out requires a value" }
                 $outFile = $CommandArgs[++$i]
+            }
+            "--pipeline" {
+                if ($i + 1 -ge $CommandArgs.Count) { throw "--pipeline requires a value: direct|finobj" }
+                $pipeline = $CommandArgs[++$i]
+                if ($pipeline -ne "direct" -and $pipeline -ne "finobj") {
+                    throw "--pipeline must be one of: direct, finobj"
+                }
             }
             "--no-verify" {
                 $verify = $false
@@ -208,10 +224,10 @@ function Invoke-Run {
 
     if ($build) {
         if ($verify) {
-            & (Join-Path $repoRoot "compiler/finc/stage0/build_stage0.ps1") -Source $source -OutFile $outFile -Verify
+            & (Join-Path $repoRoot "compiler/finc/stage0/build_stage0.ps1") -Source $source -OutFile $outFile -Pipeline $pipeline -Verify
         }
         else {
-            & (Join-Path $repoRoot "compiler/finc/stage0/build_stage0.ps1") -Source $source -OutFile $outFile
+            & (Join-Path $repoRoot "compiler/finc/stage0/build_stage0.ps1") -Source $source -OutFile $outFile -Pipeline $pipeline
         }
     }
 
@@ -433,8 +449,8 @@ Usage:
   ./cmd/fin/fin.ps1 init [--name <project>] [--dir <path>] [--force]
   ./cmd/fin/fin.ps1 doctor
   ./cmd/fin/fin.ps1 emit-elf-exit0 [output-path]
-  ./cmd/fin/fin.ps1 build [--src <file>] [--out <file>] [--no-verify]
-  ./cmd/fin/fin.ps1 run [--src <file>] [--out <file>] [--no-build] [--expect-exit <0..255>] [--no-verify]
+  ./cmd/fin/fin.ps1 build [--src <file>] [--out <file>] [--pipeline <direct|finobj>] [--no-verify]
+  ./cmd/fin/fin.ps1 run [--src <file>] [--out <file>] [--pipeline <direct|finobj>] [--no-build] [--expect-exit <0..255>] [--no-verify]
   ./cmd/fin/fin.ps1 fmt [--src <file>] [--check | --stdout]
   ./cmd/fin/fin.ps1 doc [--src <file>] [--out <file> | --stdout]
   ./cmd/fin/fin.ps1 pkg add <name[@version]> [--version <ver>] [--manifest <path>]

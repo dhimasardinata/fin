@@ -24,6 +24,7 @@ $verifyPkgPublish = Join-Path $repoRoot "tests/integration/verify_pkg_publish.ps
 $verifyLinuxWriteExit = Join-Path $repoRoot "tests/integration/verify_linux_write_exit.ps1"
 $verifyWindowsPeExit = Join-Path $repoRoot "tests/integration/verify_windows_pe_exit.ps1"
 $verifyFinobjLink = Join-Path $repoRoot "tests/integration/verify_finobj_link.ps1"
+$verifyBuildPipelineFinobj = Join-Path $repoRoot "tests/integration/verify_build_pipeline_finobj.ps1"
 $verifyRepro = Join-Path $repoRoot "tests/reproducibility/verify_stage0_reproducibility.ps1"
 $verifyPolicyGate = Join-Path $repoRoot "tests/reproducibility/verify_toolchain_policy_gate.ps1"
 
@@ -49,6 +50,7 @@ if (-not $SkipDoctor) {
 & $verifyLinuxWriteExit
 & $verifyWindowsPeExit
 & $verifyFinobjLink
+& $verifyBuildPipelineFinobj
 & $verifyRepro
 & $verifyPolicyGate
 
