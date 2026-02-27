@@ -10,11 +10,13 @@
 - discussion: TBD
 - implementation:
   - compiler/finc/stage0/pkg_add.ps1
+  - compiler/finc/stage0/pkg_publish.ps1
   - cmd/fin/fin.ps1
   - tests/integration/verify_pkg.ps1
+  - tests/integration/verify_pkg_publish.ps1
   - tests/run_stage0_suite.ps1
 - acceptance:
-  - Deterministic resolution and lockfile update tests pass.
+  - Deterministic manifest and package artifact tests pass.
 
 ## Summary
 
@@ -34,6 +36,8 @@ Current stage0 package behavior:
 4. `[dependencies]` section is created when missing.
 5. Dependency entries are rewritten in sorted-key order for deterministic diffs.
 6. Re-adding an existing package updates its version.
+7. `fin pkg publish` emits deterministic `.fnpkg` artifact from `fin.toml`, `fin.lock` (if present), and `src/**/*.fn`.
+8. `fin pkg publish --dry-run` reports metadata/hash without writing artifact.
 
 ## Alternatives
 
@@ -52,4 +56,5 @@ Compatibility impact must be documented before Implemented status.
 Current checks:
 
 1. `tests/integration/verify_pkg.ps1` validates create/add/update/failure paths.
-2. `tests/run_stage0_suite.ps1` executes package checks as part of `fin test`.
+2. `tests/integration/verify_pkg_publish.ps1` validates publish output, determinism, and dry-run behavior.
+3. `tests/run_stage0_suite.ps1` executes package checks as part of `fin test`.

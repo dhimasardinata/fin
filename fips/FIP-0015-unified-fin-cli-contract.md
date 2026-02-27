@@ -2,7 +2,7 @@
 
 - id: FIP-0015
 - address: fin://fip/FIP-0015
-- status: InProgress
+- status: Implemented
 - authors: @fin-maintainers
 - created: 2026-02-27
 - requires: ["FIP-0002"]
@@ -16,12 +16,14 @@
   - compiler/finc/stage0/format_main_exit.ps1
   - compiler/finc/stage0/doc_main_exit.ps1
   - compiler/finc/stage0/pkg_add.ps1
+  - compiler/finc/stage0/pkg_publish.ps1
   - tests/integration/run_linux_elf.ps1
   - tests/run_stage0_suite.ps1
   - tests/integration/verify_init.ps1
   - tests/integration/verify_fmt.ps1
   - tests/integration/verify_doc.ps1
   - tests/integration/verify_pkg.ps1
+  - tests/integration/verify_pkg_publish.ps1
 - acceptance:
   - CLI behavior tests pass for all mandatory commands.
 
@@ -47,7 +49,8 @@ Current commands:
 6. `fmt`: formats stage0 `.fn` subset into canonical style.
 7. `doc`: generates stage0 documentation from `.fn` subset.
 8. `pkg add`: inserts/updates dependency entries in `fin.toml`.
-9. `test`: executes aggregated stage0 test suite.
+9. `pkg publish`: emits deterministic stage0 package artifact (`.fnpkg`).
+10. `test`: executes aggregated stage0 test suite.
 
 This preserves forward compatibility with the planned unified CLI contract while enabling immediate policy enforcement.
 
@@ -78,6 +81,5 @@ Current checks:
 9. `./fin.ps1 doc --src <file> --out <file>` generates doc output with expected summary and exit code.
 10. `./fin.ps1 doc --src <file> --stdout` prints generated document.
 11. `./fin.ps1 pkg add <name[@version]>` updates manifest dependencies deterministically.
-12. `./fin.ps1 test` executes stage0 suite end-to-end.
-
-Remaining command set (`pkg publish`) remains scheduled.
+12. `./fin.ps1 pkg publish --manifest fin.toml --src src --out-dir artifacts/publish` emits deterministic stage0 package artifact.
+13. `./fin.ps1 test` executes stage0 suite end-to-end.
