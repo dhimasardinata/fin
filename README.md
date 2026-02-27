@@ -34,17 +34,19 @@ This repository implements the foundation phase:
 2. Run policy checks: `./fin.ps1 doctor`
 3. Build default source: `./fin.ps1 build`
 4. Build and run default source: `./fin.ps1 run`
-5. Build through finobj+finld stage0 path: `./fin.ps1 build --pipeline finobj`
-6. Build and run a specific file: `./fin.ps1 run --src tests/conformance/fixtures/main_exit7.fn --out artifacts/fin-build-exit7 --expect-exit 7`
-7. Format source subset: `./fin.ps1 fmt --src src/main.fn`
-8. Generate source docs: `./fin.ps1 doc --src src/main.fn --out docs/main.md`
-9. Add dependency and sync lockfile: `./fin.ps1 pkg add serde --version 1.2.3`
-10. Create publish artifact: `./fin.ps1 pkg publish --out-dir artifacts/publish`
-11. Run Linux syscall smoke (`write + exit`): `./tests/integration/verify_linux_write_exit.ps1`
-12. Generate closure witness: `./tests/bootstrap/verify_stage0_closure.ps1`
-13. Verify PE structure sample: `./tests/integration/verify_windows_pe_exit.ps1`
-14. Verify finobj link sample: `./tests/integration/verify_finobj_link.ps1`
-15. Run full stage0 suite: `./fin.ps1 test`
+5. Build Windows PE target from `.fn`: `./fin.ps1 build --target x86_64-windows-pe --out artifacts/main.exe`
+6. Build and run Windows PE target (runtime auto-skips on non-Windows): `./fin.ps1 run --target x86_64-windows-pe --out artifacts/main.exe`
+7. Build through finobj+finld stage0 path: `./fin.ps1 build --pipeline finobj`
+8. Build and run a specific file: `./fin.ps1 run --src tests/conformance/fixtures/main_exit7.fn --out artifacts/fin-build-exit7 --expect-exit 7`
+9. Format source subset: `./fin.ps1 fmt --src src/main.fn`
+10. Generate source docs: `./fin.ps1 doc --src src/main.fn --out docs/main.md`
+11. Add dependency and sync lockfile: `./fin.ps1 pkg add serde --version 1.2.3`
+12. Create publish artifact: `./fin.ps1 pkg publish --out-dir artifacts/publish`
+13. Run Linux syscall smoke (`write + exit`): `./tests/integration/verify_linux_write_exit.ps1`
+14. Generate closure witness: `./tests/bootstrap/verify_stage0_closure.ps1`
+15. Verify PE structure sample: `./tests/integration/verify_windows_pe_exit.ps1`
+16. Verify finobj link sample: `./tests/integration/verify_finobj_link.ps1`
+17. Run full stage0 suite: `./fin.ps1 test`
 
 ## Repository Layout
 

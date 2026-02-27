@@ -134,6 +134,8 @@ function Invoke-EmitElfExit0 {
 function Invoke-Build {
     $source = "src/main.fn"
     $outFile = "artifacts/main"
+    $outProvided = $false
+    $target = "x86_64-linux-elf"
     $pipeline = "direct"
     $verify = $true
 
@@ -149,6 +151,14 @@ function Invoke-Build {
             "--out" {
                 if ($i + 1 -ge $CommandArgs.Count) { throw "--out requires a value" }
                 $outFile = $CommandArgs[++$i]
+                $outProvided = $true
+            }
+            "--target" {
+                if ($i + 1 -ge $CommandArgs.Count) { throw "--target requires a value: x86_64-linux-elf|x86_64-windows-pe" }
+                $target = $CommandArgs[++$i]
+                if ($target -ne "x86_64-linux-elf" -and $target -ne "x86_64-windows-pe") {
+                    throw "--target must be one of: x86_64-linux-elf, x86_64-windows-pe"
+                }
             }
             "--pipeline" {
                 if ($i + 1 -ge $CommandArgs.Count) { throw "--pipeline requires a value: direct|finobj" }
@@ -166,17 +176,23 @@ function Invoke-Build {
         }
     }
 
+    if (-not $outProvided -and $target -eq "x86_64-windows-pe") {
+        $outFile = "artifacts/main.exe"
+    }
+
     if ($verify) {
-        & (Join-Path $repoRoot "compiler/finc/stage0/build_stage0.ps1") -Source $source -OutFile $outFile -Pipeline $pipeline -Verify
+        & (Join-Path $repoRoot "compiler/finc/stage0/build_stage0.ps1") -Source $source -OutFile $outFile -Target $target -Pipeline $pipeline -Verify
     }
     else {
-        & (Join-Path $repoRoot "compiler/finc/stage0/build_stage0.ps1") -Source $source -OutFile $outFile -Pipeline $pipeline
+        & (Join-Path $repoRoot "compiler/finc/stage0/build_stage0.ps1") -Source $source -OutFile $outFile -Target $target -Pipeline $pipeline
     }
 }
 
 function Invoke-Run {
     $source = "src/main.fn"
     $outFile = "artifacts/main"
+    $outProvided = $false
+    $target = "x86_64-linux-elf"
     $pipeline = "direct"
     $verify = $true
     $build = $true
@@ -195,6 +211,14 @@ function Invoke-Run {
             "--out" {
                 if ($i + 1 -ge $CommandArgs.Count) { throw "--out requires a value" }
                 $outFile = $CommandArgs[++$i]
+                $outProvided = $true
+            }
+            "--target" {
+                if ($i + 1 -ge $CommandArgs.Count) { throw "--target requires a value: x86_64-linux-elf|x86_64-windows-pe" }
+                $target = $CommandArgs[++$i]
+                if ($target -ne "x86_64-linux-elf" -and $target -ne "x86_64-windows-pe") {
+                    throw "--target must be one of: x86_64-linux-elf, x86_64-windows-pe"
+                }
             }
             "--pipeline" {
                 if ($i + 1 -ge $CommandArgs.Count) { throw "--pipeline requires a value: direct|finobj" }
@@ -222,12 +246,16 @@ function Invoke-Run {
         }
     }
 
+    if (-not $outProvided -and $target -eq "x86_64-windows-pe") {
+        $outFile = "artifacts/main.exe"
+    }
+
     if ($build) {
         if ($verify) {
-            & (Join-Path $repoRoot "compiler/finc/stage0/build_stage0.ps1") -Source $source -OutFile $outFile -Pipeline $pipeline -Verify
+            & (Join-Path $repoRoot "compiler/finc/stage0/build_stage0.ps1") -Source $source -OutFile $outFile -Target $target -Pipeline $pipeline -Verify
         }
         else {
-            & (Join-Path $repoRoot "compiler/finc/stage0/build_stage0.ps1") -Source $source -OutFile $outFile -Pipeline $pipeline
+            & (Join-Path $repoRoot "compiler/finc/stage0/build_stage0.ps1") -Source $source -OutFile $outFile -Target $target -Pipeline $pipeline
         }
     }
 
@@ -235,7 +263,15 @@ function Invoke-Run {
         $expectedExitCode = [int](& (Join-Path $repoRoot "compiler/finc/stage0/parse_main_exit.ps1") -SourcePath (Join-Path $repoRoot $source))
     }
 
-    & (Join-Path $repoRoot "tests/integration/run_linux_elf.ps1") -Path $outFile -ExpectedExitCode $expectedExitCode
+    if ($target -eq "x86_64-linux-elf") {
+        & (Join-Path $repoRoot "tests/integration/run_linux_elf.ps1") -Path $outFile -ExpectedExitCode $expectedExitCode
+    }
+    elseif ($target -eq "x86_64-windows-pe") {
+        & (Join-Path $repoRoot "tests/integration/run_windows_pe.ps1") -Path $outFile -ExpectedExitCode $expectedExitCode
+    }
+    else {
+        throw "Unsupported target: $target"
+    }
 }
 
 function Invoke-Fmt {
@@ -449,8 +485,8 @@ Usage:
   ./cmd/fin/fin.ps1 init [--name <project>] [--dir <path>] [--force]
   ./cmd/fin/fin.ps1 doctor
   ./cmd/fin/fin.ps1 emit-elf-exit0 [output-path]
-  ./cmd/fin/fin.ps1 build [--src <file>] [--out <file>] [--pipeline <direct|finobj>] [--no-verify]
-  ./cmd/fin/fin.ps1 run [--src <file>] [--out <file>] [--pipeline <direct|finobj>] [--no-build] [--expect-exit <0..255>] [--no-verify]
+  ./cmd/fin/fin.ps1 build [--src <file>] [--out <file>] [--target <x86_64-linux-elf|x86_64-windows-pe>] [--pipeline <direct|finobj>] [--no-verify]
+  ./cmd/fin/fin.ps1 run [--src <file>] [--out <file>] [--target <x86_64-linux-elf|x86_64-windows-pe>] [--pipeline <direct|finobj>] [--no-build] [--expect-exit <0..255>] [--no-verify]
   ./cmd/fin/fin.ps1 fmt [--src <file>] [--check | --stdout]
   ./cmd/fin/fin.ps1 doc [--src <file>] [--out <file> | --stdout]
   ./cmd/fin/fin.ps1 pkg add <name[@version]> [--version <ver>] [--manifest <path>]
