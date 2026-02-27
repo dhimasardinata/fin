@@ -2,7 +2,7 @@
 
 - id: FIP-0005
 - address: fin://fip/FIP-0005
-- status: InProgress
+- status: Implemented
 - authors: @fin-maintainers
 - created: 2026-02-27
 - requires: ["FIP-0004"]
@@ -26,13 +26,26 @@ This proposal is part of the Fin independent-toolchain baseline and is required 
 
 Current stage0 subset grammar:
 
-`fn main() { exit(<u8>) }`
+`fn main() { <stmt>* }`
+
+`<stmt>` (stage0):
+
+1. `let <ident> = <expr>`
+2. `var <ident> = <expr>`
+3. `<ident> = <expr>` (only for `var`)
+4. `exit(<expr>)` (terminal statement)
+
+`<expr>` (stage0):
+
+1. `<u8-literal>` (`0..255`)
+2. `<ident>`
 
 Accepted stage0 tolerances:
 
 1. Arbitrary whitespace/newlines.
-2. Optional semicolon after `exit(...)`.
-3. Exit code range constrained to `0..255`.
+2. Optional semicolon statement separators.
+3. Line comments using `#` and `//`.
+4. Entry point restricted to `fn main()`.
 
 This subset is intentionally minimal and acts as the first executable parser checkpoint.
 
@@ -52,5 +65,6 @@ Compatibility impact must be documented before Implemented status.
 
 Current checks:
 
-1. `tests/conformance/verify_stage0_grammar.ps1` validates valid and invalid fixtures.
-2. Parser must reject non-`main` entrypoint patterns for stage0 subset.
+1. `tests/conformance/verify_stage0_grammar.ps1` validates valid and invalid fixtures for literals, bindings, mutation, and comments.
+2. Parser rejects non-`main` entrypoint patterns for stage0 subset.
+3. Parser rejects undefined identifiers and assignment to immutable `let` bindings.

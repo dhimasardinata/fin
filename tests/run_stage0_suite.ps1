@@ -36,11 +36,13 @@ if (-not $SkipDoctor) {
 
 & $fin build --src tests/conformance/fixtures/main_exit0.fn --out artifacts/test-exit0
 & $fin build --src tests/conformance/fixtures/main_exit7.fn --out artifacts/test-exit7
+& $fin build --src tests/conformance/fixtures/main_exit_var_assign.fn --out artifacts/test-exit8
 
 if (-not $SkipRun) {
     & $fin run --no-build --out artifacts/test-exit0 --expect-exit 0
     if (-not $Quick) {
         & $fin run --no-build --out artifacts/test-exit7 --expect-exit 7
+        & $fin run --no-build --out artifacts/test-exit8 --expect-exit 8
     }
 }
 

@@ -6,7 +6,7 @@
 | FIP-0002 | Governance and FIP Process | Accepted | `fin://fip/FIP-0002` |
 | FIP-0003 | Bootstrap Trust Model (Seed Binary) | Accepted | `fin://fip/FIP-0003` |
 | FIP-0004 | Source and Module Model for .fn | Accepted | `fin://fip/FIP-0004` |
-| FIP-0005 | Core Grammar v0 | InProgress | `fin://fip/FIP-0005` |
+| FIP-0005 | Core Grammar v0 | Implemented | `fin://fip/FIP-0005` |
 | FIP-0006 | Type Inference Model | Scheduled | `fin://fip/FIP-0006` |
 | FIP-0007 | Ownership and Borrowing (Inference-First) | Scheduled | `fin://fip/FIP-0007` |
 | FIP-0008 | Error Model (Result + try) | Scheduled | `fin://fip/FIP-0008` |

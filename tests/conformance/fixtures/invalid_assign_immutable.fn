@@ -1,0 +1,5 @@
+fn main() {
+  let code = 7
+  code = 8
+  exit(code)
+}
