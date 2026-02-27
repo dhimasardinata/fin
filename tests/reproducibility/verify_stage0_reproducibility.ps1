@@ -29,6 +29,19 @@ function Assert-SameHash {
     }
 }
 
+function Assert-SameValue {
+    param(
+        [string]$ValueA,
+        [string]$ValueB,
+        [string]$Label
+    )
+
+    if ($ValueA -ne $ValueB) {
+        Write-Error ("Reproducibility failure ({0}): value mismatch {1} vs {2}" -f $Label, $ValueA, $ValueB)
+        exit 1
+    }
+}
+
 # 1) Exit-only emitter determinism.
 $exitA = Join-Path $tmpDir "elf-exit-a"
 $exitB = Join-Path $tmpDir "elf-exit-b"
@@ -99,21 +112,36 @@ Assert-SameHash -PathA $finobjA -PathB $finobjB -Label "write_finobj_exit"
 # 9) finld linker determinism on fixed Linux finobj input.
 $linkedA = Join-Path $tmpDir "linked-a"
 $linkedB = Join-Path $tmpDir "linked-b"
+$linkedReordered = Join-Path $tmpDir "linked-reordered"
 $finobjUnitLinux = Join-Path $tmpDir "main-unit-linux.finobj"
-& $writeFinobj -SourcePath "tests/conformance/fixtures/main_exit0.fn" -OutFile $finobjUnitLinux -Target x86_64-linux-elf -EntrySymbol unit
-& $linkFinobj -ObjectPath @($finobjA, $finobjUnitLinux) -OutFile $linkedA -Target x86_64-linux-elf
-& $linkFinobj -ObjectPath @($finobjA, $finobjUnitLinux) -OutFile $linkedB -Target x86_64-linux-elf
+& $writeFinobj -SourcePath $finobjSrc -OutFile $finobjA -Target x86_64-linux-elf -Requires helper -Relocs helper@16
+& $writeFinobj -SourcePath "tests/conformance/fixtures/main_exit0.fn" -OutFile $finobjUnitLinux -Target x86_64-linux-elf -EntrySymbol unit -Provides helper
+$linkedRecordA = & $linkFinobj -ObjectPath @($finobjA, $finobjUnitLinux) -OutFile $linkedA -Target x86_64-linux-elf -AsRecord
+$linkedRecordB = & $linkFinobj -ObjectPath @($finobjA, $finobjUnitLinux) -OutFile $linkedB -Target x86_64-linux-elf -AsRecord
 Assert-SameHash -PathA $linkedA -PathB $linkedB -Label "link_finobj_to_elf"
+Assert-SameValue -ValueA $linkedRecordA.LinkedObjectSetSha256 -ValueB $linkedRecordB.LinkedObjectSetSha256 -Label "link_finobj_to_elf object-set witness"
+Assert-SameValue -ValueA $linkedRecordA.LinkedRelocationResolutionSha256 -ValueB $linkedRecordB.LinkedRelocationResolutionSha256 -Label "link_finobj_to_elf relocation-resolution witness"
+$linkedRecordReordered = & $linkFinobj -ObjectPath @($finobjUnitLinux, $finobjA) -OutFile $linkedReordered -Target x86_64-linux-elf -AsRecord
+Assert-SameHash -PathA $linkedA -PathB $linkedReordered -Label "link_finobj_to_elf order-independent"
+Assert-SameValue -ValueA $linkedRecordA.LinkedObjectSetSha256 -ValueB $linkedRecordReordered.LinkedObjectSetSha256 -Label "link_finobj_to_elf object-set witness order-independent"
+Assert-SameValue -ValueA $linkedRecordA.LinkedRelocationResolutionSha256 -ValueB $linkedRecordReordered.LinkedRelocationResolutionSha256 -Label "link_finobj_to_elf relocation-resolution witness order-independent"
 
 # 10) finld linker determinism on fixed Windows finobj input.
 $finobjWinA = Join-Path $tmpDir "main-win-a.finobj"
 $finobjWinUnit = Join-Path $tmpDir "main-win-unit.finobj"
 $linkedWinA = Join-Path $tmpDir "linked-win-a.exe"
 $linkedWinB = Join-Path $tmpDir "linked-win-b.exe"
-& $writeFinobj -SourcePath $finobjSrc -OutFile $finobjWinA -Target x86_64-windows-pe
-& $writeFinobj -SourcePath "tests/conformance/fixtures/main_exit0.fn" -OutFile $finobjWinUnit -Target x86_64-windows-pe -EntrySymbol unit
-& $linkFinobj -ObjectPath @($finobjWinA, $finobjWinUnit) -OutFile $linkedWinA -Target x86_64-windows-pe
-& $linkFinobj -ObjectPath @($finobjWinA, $finobjWinUnit) -OutFile $linkedWinB -Target x86_64-windows-pe
+$linkedWinReordered = Join-Path $tmpDir "linked-win-reordered.exe"
+& $writeFinobj -SourcePath $finobjSrc -OutFile $finobjWinA -Target x86_64-windows-pe -Requires helper -Relocs helper@16
+& $writeFinobj -SourcePath "tests/conformance/fixtures/main_exit0.fn" -OutFile $finobjWinUnit -Target x86_64-windows-pe -EntrySymbol unit -Provides helper
+$linkedWinRecordA = & $linkFinobj -ObjectPath @($finobjWinA, $finobjWinUnit) -OutFile $linkedWinA -Target x86_64-windows-pe -AsRecord
+$linkedWinRecordB = & $linkFinobj -ObjectPath @($finobjWinA, $finobjWinUnit) -OutFile $linkedWinB -Target x86_64-windows-pe -AsRecord
 Assert-SameHash -PathA $linkedWinA -PathB $linkedWinB -Label "link_finobj_to_elf --target x86_64-windows-pe"
+Assert-SameValue -ValueA $linkedWinRecordA.LinkedObjectSetSha256 -ValueB $linkedWinRecordB.LinkedObjectSetSha256 -Label "link_finobj_to_elf --target x86_64-windows-pe object-set witness"
+Assert-SameValue -ValueA $linkedWinRecordA.LinkedRelocationResolutionSha256 -ValueB $linkedWinRecordB.LinkedRelocationResolutionSha256 -Label "link_finobj_to_elf --target x86_64-windows-pe relocation-resolution witness"
+$linkedWinRecordReordered = & $linkFinobj -ObjectPath @($finobjWinUnit, $finobjWinA) -OutFile $linkedWinReordered -Target x86_64-windows-pe -AsRecord
+Assert-SameHash -PathA $linkedWinA -PathB $linkedWinReordered -Label "link_finobj_to_elf --target x86_64-windows-pe order-independent"
+Assert-SameValue -ValueA $linkedWinRecordA.LinkedObjectSetSha256 -ValueB $linkedWinRecordReordered.LinkedObjectSetSha256 -Label "link_finobj_to_elf --target x86_64-windows-pe object-set witness order-independent"
+Assert-SameValue -ValueA $linkedWinRecordA.LinkedRelocationResolutionSha256 -ValueB $linkedWinRecordReordered.LinkedRelocationResolutionSha256 -Label "link_finobj_to_elf --target x86_64-windows-pe relocation-resolution witness order-independent"
 
 Write-Host "stage0 reproducibility check passed."
