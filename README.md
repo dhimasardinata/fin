@@ -22,6 +22,7 @@ This repository implements the foundation phase:
 - Stage0 direct ELF emitters are implemented (`emit_elf_exit0.ps1`, `emit_elf_write_exit.ps1`).
 - Stage0 minimal parser/build path is implemented for `.fn` subset.
 - Bootstrap CLI shim covers stage0 workflows (`init`, `doctor`, `build`, `run`, `fmt`, `doc`, `pkg add`, `pkg publish`, `test`).
+- Stage0 bootstrap closure proxy witness is implemented (`tests/bootstrap/verify_stage0_closure.ps1`).
 - Compiler/linker/object-format/assembler tracks are scaffolded.
 
 ## Stage0 Quick Start
@@ -36,7 +37,8 @@ This repository implements the foundation phase:
 8. Add dependency and sync lockfile: `./fin.ps1 pkg add serde --version 1.2.3`
 9. Create publish artifact: `./fin.ps1 pkg publish --out-dir artifacts/publish`
 10. Run Linux syscall smoke (`write + exit`): `./tests/integration/verify_linux_write_exit.ps1`
-11. Run full stage0 suite: `./fin.ps1 test`
+11. Generate closure witness: `./tests/bootstrap/verify_stage0_closure.ps1`
+12. Run full stage0 suite: `./fin.ps1 test`
 
 ## Repository Layout
 

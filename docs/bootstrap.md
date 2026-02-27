@@ -12,6 +12,18 @@ Fin bootstrap uses an audited seed model.
 
 `fin-seed -> finc -> finc` must converge to identical hashes for deterministic closure.
 
+## Current Stage0 Proxy
+
+Until native self-hosting is available, stage0 closure evidence is produced by:
+
+- `tests/bootstrap/verify_stage0_closure.ps1`
+
+Proxy rule:
+
+1. Build the same source twice using current stage0 toolchain path.
+2. Require generation-1 and generation-2 output hashes to match.
+3. Emit witness metadata at `artifacts/closure/stage0-closure-witness.txt`.
+
 ## Constraints
 
 - Normal build path remains fully independent.

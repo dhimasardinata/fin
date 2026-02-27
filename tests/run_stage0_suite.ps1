@@ -11,6 +11,7 @@ $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 $fin = Join-Path $repoRoot "cmd/fin/fin.ps1"
 $emit = Join-Path $repoRoot "compiler/finc/stage0/emit_elf_exit0.ps1"
 $verifyElf = Join-Path $repoRoot "tests/bootstrap/verify_elf_exit0.ps1"
+$verifyClosure = Join-Path $repoRoot "tests/bootstrap/verify_stage0_closure.ps1"
 $verifyGrammar = Join-Path $repoRoot "tests/conformance/verify_stage0_grammar.ps1"
 $verifyInit = Join-Path $repoRoot "tests/integration/verify_init.ps1"
 $verifyFmt = Join-Path $repoRoot "tests/integration/verify_fmt.ps1"
@@ -29,6 +30,7 @@ if (-not $SkipDoctor) {
 
 & $emit -OutFile (Join-Path $repoRoot "artifacts/fin-elf-exit0") -ExitCode 0
 & $verifyElf -Path (Join-Path $repoRoot "artifacts/fin-elf-exit0") -ExpectedExitCode 0
+& $verifyClosure
 
 & $verifyGrammar
 & $verifyInit
