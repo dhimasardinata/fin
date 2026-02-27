@@ -15,6 +15,7 @@ $verifyGrammar = Join-Path $repoRoot "tests/conformance/verify_stage0_grammar.ps
 $verifyInit = Join-Path $repoRoot "tests/integration/verify_init.ps1"
 $verifyFmt = Join-Path $repoRoot "tests/integration/verify_fmt.ps1"
 $verifyDoc = Join-Path $repoRoot "tests/integration/verify_doc.ps1"
+$verifyPkg = Join-Path $repoRoot "tests/integration/verify_pkg.ps1"
 
 Write-Host "fin test: stage0 suite starting"
 
@@ -29,6 +30,7 @@ if (-not $SkipDoctor) {
 & $verifyInit
 & $verifyFmt
 & $verifyDoc
+& $verifyPkg
 
 & $fin build --src tests/conformance/fixtures/main_exit0.fn --out artifacts/test-exit0
 & $fin build --src tests/conformance/fixtures/main_exit7.fn --out artifacts/test-exit7

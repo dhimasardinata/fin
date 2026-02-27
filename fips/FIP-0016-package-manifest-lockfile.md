@@ -2,13 +2,17 @@
 
 - id: FIP-0016
 - address: fin://fip/FIP-0016
-- status: Draft
+- status: InProgress
 - authors: @fin-maintainers
 - created: 2026-02-27
 - requires: ["FIP-0015"]
 - target_release: M6
 - discussion: TBD
-- implementation: []
+- implementation:
+  - compiler/finc/stage0/pkg_add.ps1
+  - cmd/fin/fin.ps1
+  - tests/integration/verify_pkg.ps1
+  - tests/run_stage0_suite.ps1
 - acceptance:
   - Deterministic resolution and lockfile update tests pass.
 
@@ -22,7 +26,14 @@ This proposal is part of the Fin independent-toolchain baseline and is required 
 
 ## Design
 
-Initial design details are tracked in the corresponding spec and architecture documents. Concrete implementation deltas must be appended to this section before status changes to InProgress.
+Current stage0 package behavior:
+
+1. `fin pkg add <name[@version]>` mutates manifest dependencies.
+2. `--version` overrides inline `@version`.
+3. `--manifest` selects non-default manifest path.
+4. `[dependencies]` section is created when missing.
+5. Dependency entries are rewritten in sorted-key order for deterministic diffs.
+6. Re-adding an existing package updates its version.
 
 ## Alternatives
 
@@ -38,4 +49,7 @@ Compatibility impact must be documented before Implemented status.
 
 ## Test Plan
 
-Acceptance criteria listed above are normative; CI coverage for this proposal must be linked in implementation once available.
+Current checks:
+
+1. `tests/integration/verify_pkg.ps1` validates create/add/update/failure paths.
+2. `tests/run_stage0_suite.ps1` executes package checks as part of `fin test`.
