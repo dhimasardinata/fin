@@ -14,10 +14,12 @@
   - cmd/fin/README.md
   - compiler/finc/stage0/build_stage0.ps1
   - compiler/finc/stage0/format_main_exit.ps1
+  - compiler/finc/stage0/doc_main_exit.ps1
   - tests/integration/run_linux_elf.ps1
   - tests/run_stage0_suite.ps1
   - tests/integration/verify_init.ps1
   - tests/integration/verify_fmt.ps1
+  - tests/integration/verify_doc.ps1
 - acceptance:
   - CLI behavior tests pass for all mandatory commands.
 
@@ -41,7 +43,8 @@ Current commands:
 4. `build`: parses stage0 `.fn` subset and emits a verified ELF artifact.
 5. `run`: builds (optional) and executes Linux ELF artifact with expected exit-code assertion.
 6. `fmt`: formats stage0 `.fn` subset into canonical style.
-7. `test`: executes aggregated stage0 test suite.
+7. `doc`: generates stage0 documentation from `.fn` subset.
+8. `test`: executes aggregated stage0 test suite.
 
 This preserves forward compatibility with the planned unified CLI contract while enabling immediate policy enforcement.
 
@@ -69,6 +72,8 @@ Current checks:
 6. `./fin.ps1 run --no-build --out artifacts/fin-build-exit7 --expect-exit 7` executes fixture artifact.
 7. `./fin.ps1 fmt --src <file>` rewrites stage0 source to canonical form.
 8. `./fin.ps1 fmt --src <file> --check` fails on unformatted source and passes on formatted source.
-9. `./fin.ps1 test` executes stage0 suite end-to-end.
+9. `./fin.ps1 doc --src <file> --out <file>` generates doc output with expected summary and exit code.
+10. `./fin.ps1 doc --src <file> --stdout` prints generated document.
+11. `./fin.ps1 test` executes stage0 suite end-to-end.
 
-Remaining command set (`doc/pkg`) remains scheduled.
+Remaining command set (`pkg`) remains scheduled.

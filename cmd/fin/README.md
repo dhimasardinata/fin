@@ -10,6 +10,7 @@ Current bootstrap shim:
 - `./fin.ps1 build [--src <file>] [--out <file>] [--no-verify]`
 - `./fin.ps1 run [--src <file>] [--out <file>] [--no-build] [--expect-exit <0..255>] [--no-verify]`
 - `./fin.ps1 fmt [--src <file>] [--check | --stdout]`
+- `./fin.ps1 doc [--src <file>] [--out <file> | --stdout]`
 - `./fin.ps1 test [--quick] [--no-doctor] [--no-run]`
 
 Planned unified commands:
