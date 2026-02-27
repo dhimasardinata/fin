@@ -1,5 +1,6 @@
 param(
-    [string]$ObjectPath = "artifacts/main.finobj"
+    [string]$ObjectPath = "artifacts/main.finobj",
+    [string]$ExpectedTarget = ""
 )
 
 Set-StrictMode -Version Latest
@@ -8,6 +9,14 @@ $ErrorActionPreference = "Stop"
 $objFull = [System.IO.Path]::GetFullPath($ObjectPath)
 if (-not (Test-Path $objFull)) {
     throw "finobj file not found: $objFull"
+}
+
+function Assert-SupportedTarget {
+    param([string]$Target)
+
+    if ($Target -ne "x86_64-linux-elf" -and $Target -ne "x86_64-windows-pe") {
+        throw "Unsupported target: $Target"
+    }
 }
 
 $raw = Get-Content -Path $objFull -Raw
@@ -50,8 +59,12 @@ if ($map["finobj_version"] -ne "1") {
 if ($map["entry_symbol"] -ne "main") {
     throw "Unsupported entry_symbol: $($map["entry_symbol"])"
 }
-if ($map["target"] -ne "x86_64-linux-elf") {
-    throw "Unsupported target: $($map["target"])"
+Assert-SupportedTarget -Target $map["target"]
+if (-not [string]::IsNullOrWhiteSpace($ExpectedTarget)) {
+    Assert-SupportedTarget -Target $ExpectedTarget
+    if ($map["target"] -ne $ExpectedTarget) {
+        throw "finobj target mismatch: expected '$ExpectedTarget', got '$($map["target"])'"
+    }
 }
 
 $sourcePath = $map["source_path"]

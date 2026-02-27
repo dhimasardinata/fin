@@ -31,7 +31,7 @@ This proposal is part of the Fin independent-toolchain baseline and is required 
 Current stage0 linker path:
 
 1. Read stage0 finobj payload (`exit_code`) via finobj reader.
-2. Emit final Linux ELF through direct emitter path with decoded exit code.
+2. Emit final native image through direct emitter path with decoded exit code (`x86_64-linux-elf` or `x86_64-windows-pe`).
 3. Expose `fin build/run --pipeline finobj` to route stage0 compilation through finobj+finld.
 4. Optional structure verification after link.
 
@@ -53,6 +53,6 @@ Compatibility impact must be documented before Implemented status.
 
 Current checks:
 
-1. `tests/integration/verify_finobj_link.ps1` validates finobj -> ELF link path and runtime exit behavior.
-2. `tests/integration/verify_build_pipeline_finobj.ps1` validates `fin build/run --pipeline finobj` and output parity with direct pipeline.
+1. `tests/integration/verify_finobj_link.ps1` validates finobj -> native link path for Linux ELF and Windows PE runtime behavior.
+2. `tests/integration/verify_build_pipeline_finobj.ps1` validates Linux `fin build/run --pipeline finobj` and output parity with direct pipeline.
 3. `tests/run_stage0_suite.ps1` includes finld integration checks in `fin test`.

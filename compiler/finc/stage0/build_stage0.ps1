@@ -27,50 +27,47 @@ if (-not [string]::IsNullOrWhiteSpace($outDir) -and -not (Test-Path $outDir)) {
 }
 
 [int]$exitCode = 0
-if ($Target -eq "x86_64-linux-elf") {
-    if ($Pipeline -eq "direct") {
-        $exitCode = & (Join-Path $scriptDir "parse_main_exit.ps1") -SourcePath $sourcePath
-        & (Join-Path $scriptDir "emit_elf_exit0.ps1") -OutFile $outPath -ExitCode $exitCode
+if ($Pipeline -eq "direct") {
+    $exitCode = & (Join-Path $scriptDir "parse_main_exit.ps1") -SourcePath $sourcePath
 
+    if ($Target -eq "x86_64-linux-elf") {
+        & (Join-Path $scriptDir "emit_elf_exit0.ps1") -OutFile $outPath -ExitCode $exitCode
         if ($Verify) {
             & (Join-Path $repoRoot "tests/bootstrap/verify_elf_exit0.ps1") -Path $outPath -ExpectedExitCode $exitCode
         }
     }
-    else {
-        $writeFinobj = Join-Path $repoRoot "compiler/finobj/stage0/write_finobj_exit.ps1"
-        $readFinobj = Join-Path $repoRoot "compiler/finobj/stage0/read_finobj_exit.ps1"
-        $linkFinobj = Join-Path $repoRoot "compiler/finld/stage0/link_finobj_to_elf.ps1"
-        $tmpDir = Join-Path $repoRoot "artifacts/tmp/build-stage0"
-        if (-not (Test-Path $tmpDir)) {
-            New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
-        }
-
-        $outName = [System.IO.Path]::GetFileName($outPath)
-        if ([string]::IsNullOrWhiteSpace($outName)) {
-            throw "Unable to derive output file name from: $outPath"
-        }
-        $objPath = Join-Path $tmpDir ("{0}.finobj" -f $outName)
-
-        & $writeFinobj -SourcePath $sourcePath -OutFile $objPath
-        $exitCode = [int](& $readFinobj -ObjectPath $objPath)
+    elseif ($Target -eq "x86_64-windows-pe") {
+        & (Join-Path $scriptDir "emit_pe_exit0.ps1") -OutFile $outPath -ExitCode $exitCode
         if ($Verify) {
-            & $linkFinobj -ObjectPath $objPath -OutFile $outPath -Verify
+            & (Join-Path $repoRoot "tests/bootstrap/verify_pe_exit0.ps1") -Path $outPath -ExpectedExitCode $exitCode
         }
-        else {
-            & $linkFinobj -ObjectPath $objPath -OutFile $outPath
-        }
+    }
+    else {
+        throw "Unsupported target: $Target"
     }
 }
 else {
-    if ($Pipeline -ne "direct") {
-        throw "Unsupported pipeline '$Pipeline' for target '$Target'. Use --pipeline direct."
+    $writeFinobj = Join-Path $repoRoot "compiler/finobj/stage0/write_finobj_exit.ps1"
+    $readFinobj = Join-Path $repoRoot "compiler/finobj/stage0/read_finobj_exit.ps1"
+    $linkFinobj = Join-Path $repoRoot "compiler/finld/stage0/link_finobj_to_elf.ps1"
+    $tmpDir = Join-Path $repoRoot "artifacts/tmp/build-stage0"
+    if (-not (Test-Path $tmpDir)) {
+        New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
     }
 
-    $exitCode = & (Join-Path $scriptDir "parse_main_exit.ps1") -SourcePath $sourcePath
-    & (Join-Path $scriptDir "emit_pe_exit0.ps1") -OutFile $outPath -ExitCode $exitCode
+    $outName = [System.IO.Path]::GetFileName($outPath)
+    if ([string]::IsNullOrWhiteSpace($outName)) {
+        throw "Unable to derive output file name from: $outPath"
+    }
+    $objPath = Join-Path $tmpDir ("{0}.finobj" -f $outName)
 
+    & $writeFinobj -SourcePath $sourcePath -OutFile $objPath -Target $Target
+    $exitCode = [int](& $readFinobj -ObjectPath $objPath -ExpectedTarget $Target)
     if ($Verify) {
-        & (Join-Path $repoRoot "tests/bootstrap/verify_pe_exit0.ps1") -Path $outPath -ExpectedExitCode $exitCode
+        & $linkFinobj -ObjectPath $objPath -OutFile $outPath -Target $Target -Verify
+    }
+    else {
+        & $linkFinobj -ObjectPath $objPath -OutFile $outPath -Target $Target
     }
 }
 
