@@ -7,6 +7,12 @@
 3. Reproducibility evidence gate.
 4. Seed hash verification gate.
 
+Current script gates:
+
+- `ci/forbid_external_toolchain.ps1`
+- `tests/reproducibility/verify_toolchain_policy_gate.ps1`
+- `tests/reproducibility/verify_stage0_reproducibility.ps1`
+
 ## Test Families
 
 - Conformance tests.

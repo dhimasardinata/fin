@@ -7,3 +7,5 @@ Normal build and test jobs must not call:
 - `as`, `nasm`, `yasm`, `ml`, `ml64`
 
 The prohibition is enforced by `ci/forbid_external_toolchain.ps1`.
+
+Validation coverage is provided by `tests/reproducibility/verify_toolchain_policy_gate.ps1`.

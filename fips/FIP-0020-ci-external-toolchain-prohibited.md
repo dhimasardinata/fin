@@ -2,13 +2,17 @@
 
 - id: FIP-0020
 - address: fin://fip/FIP-0020
-- status: Scheduled
+- status: Implemented
 - authors: @fin-maintainers
 - created: 2026-02-27
 - requires: ["FIP-0002", "FIP-0018"]
 - target_release: M0
 - discussion: TBD
-- implementation: []
+- implementation:
+  - ci/forbid_external_toolchain.ps1
+  - tests/reproducibility/verify_toolchain_policy_gate.ps1
+  - tests/run_stage0_suite.ps1
+  - .github/workflows/ci.yml
 - acceptance:
   - CI job fails on disallowed command invocation patterns.
 
@@ -22,7 +26,13 @@ This proposal is part of the Fin independent-toolchain baseline and is required 
 
 ## Design
 
-Initial design details are tracked in the corresponding spec and architecture documents. Concrete implementation deltas must be appended to this section before status changes to InProgress.
+Current CI policy gate:
+
+1. Workflow files are scanned for disallowed external toolchain command patterns.
+2. Matches fail the check unless explicitly allow-tagged (`fin-ci-allow-external`).
+3. Gate runs in CI and in local `fin doctor`/policy scripts.
+
+Disallowed classes include compiler, linker, and assembler commands (`gcc/clang/ld/as/nasm/...`).
 
 ## Alternatives
 
@@ -38,4 +48,8 @@ Compatibility impact must be documented before Implemented status.
 
 ## Test Plan
 
-Acceptance criteria listed above are normative; CI coverage for this proposal must be linked in implementation once available.
+Current checks:
+
+1. CI step runs `./ci/forbid_external_toolchain.ps1`.
+2. `tests/reproducibility/verify_toolchain_policy_gate.ps1` validates fail/pass behavior on synthetic workflow content.
+3. `tests/run_stage0_suite.ps1` includes gate self-check.
