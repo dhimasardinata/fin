@@ -42,6 +42,7 @@ Current stage0 PE path:
 4. Validates structure via deterministic header/section/payload checks.
 5. Supports `fin build/run --target x86_64-windows-pe` in stage0 CLI.
 6. Restricts Windows target to direct pipeline in stage0 (`--pipeline finobj` is rejected).
+7. If `--target` is omitted, `fin build/run` may resolve target from `fin.toml` `[targets].primary` (`--manifest <path>` supported).
 
 Runtime execution check:
 

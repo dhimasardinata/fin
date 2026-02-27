@@ -9,6 +9,7 @@ Integration checks:
 - `verify_linux_write_exit.ps1`: validates Linux `sys_write + sys_exit` emitted ELF behavior and stdout.
 - `verify_windows_pe_exit.ps1`: validates Windows PE emit/verify flow and runtime exit code on Windows hosts.
 - `verify_build_target_windows.ps1`: validates `fin build/run --target x86_64-windows-pe` flow and pipeline constraints.
+- `verify_manifest_target_resolution.ps1`: validates `fin build/run` target selection from `fin.toml` (`[targets].primary`) and explicit target override.
 - `verify_finobj_link.ps1`: validates stage0 finobj-to-ELF link path and runtime behavior.
 - `verify_build_pipeline_finobj.ps1`: validates `fin build/run --pipeline finobj` path and parity with direct pipeline output.
 
