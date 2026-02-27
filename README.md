@@ -23,7 +23,7 @@ This repository implements the foundation phase:
 - Stage0 direct PE emitter starter is implemented (`emit_pe_exit0.ps1`).
 - Stage0 minimal parser/build path is implemented for `.fn` subset.
 - Bootstrap CLI shim covers stage0 workflows (`init`, `doctor`, `build`, `run`, `fmt`, `doc`, `pkg add`, `pkg publish`, `test`).
-- Stage0 bootstrap closure proxy witness is implemented (`tests/bootstrap/verify_stage0_closure.ps1`).
+- Stage0 bootstrap closure proxy witness is implemented with baseline verification (`tests/bootstrap/verify_stage0_closure.ps1`, `seed/stage0-closure-baseline.txt`).
 - Compiler/linker/object-format/assembler tracks are scaffolded.
 
 ## Stage0 Quick Start
