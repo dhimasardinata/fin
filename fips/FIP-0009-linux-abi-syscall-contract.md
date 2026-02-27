@@ -11,6 +11,7 @@
 - implementation:
   - compiler/finc/stage0/emit_elf_exit0.ps1
   - tests/bootstrap/verify_elf_exit0.ps1
+  - tests/integration/run_linux_elf.ps1
 - acceptance:
   - Hello-world and syscall smoke tests run on Linux without libc.
 
@@ -54,3 +55,4 @@ Current checks:
 
 1. ELF verifier asserts expected syscall payload bytes.
 2. CLI build pipeline verifies emitted binary and expected encoded exit code.
+3. Runtime integration executes emitted ELF and validates process exit code.
