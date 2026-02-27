@@ -32,7 +32,7 @@ This repository implements the foundation phase:
 5. Build and run a specific file: `./fin.ps1 run --src tests/conformance/fixtures/main_exit7.fn --out artifacts/fin-build-exit7 --expect-exit 7`
 6. Format source subset: `./fin.ps1 fmt --src src/main.fn`
 7. Generate source docs: `./fin.ps1 doc --src src/main.fn --out docs/main.md`
-8. Add dependency to manifest: `./fin.ps1 pkg add serde --version 1.2.3`
+8. Add dependency and sync lockfile: `./fin.ps1 pkg add serde --version 1.2.3`
 9. Create publish artifact: `./fin.ps1 pkg publish --out-dir artifacts/publish`
 10. Run full stage0 suite: `./fin.ps1 test`
 

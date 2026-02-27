@@ -89,8 +89,7 @@ reproducible_build_required = true
 "@
 
     $finLock = @"
-# Lockfile is intentionally minimal at foundation stage.
-# It will become machine-managed once package resolver is implemented.
+# Lockfile is machine-managed by fin stage0 package commands.
 
 version = 1
 packages = []

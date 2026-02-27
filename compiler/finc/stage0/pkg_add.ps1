@@ -65,6 +65,39 @@ function Parse-Dependencies {
     return $map
 }
 
+function Write-Lockfile {
+    param(
+        [string]$LockPath,
+        [hashtable]$Dependencies,
+        [string]$Newline
+    )
+
+    $keys = @($Dependencies.Keys | Sort-Object)
+    $out = [System.Collections.Generic.List[string]]::new()
+    $out.Add("# Lockfile is machine-managed by fin stage0.")
+    $out.Add("version = 1")
+
+    if ($keys.Count -eq 0) {
+        $out.Add("packages = []")
+    }
+    else {
+        $out.Add("packages = [")
+        for ($i = 0; $i -lt $keys.Count; $i++) {
+            $k = $keys[$i]
+            $v = $Dependencies[$k]
+            $line = "  { name = `"$k`", version = `"$v`" }"
+            if ($i -lt ($keys.Count - 1)) {
+                $line += ","
+            }
+            $out.Add($line)
+        }
+        $out.Add("]")
+    }
+
+    $content = ($out.ToArray() -join $Newline) + $Newline
+    Set-Content -Path $LockPath -Value $content -NoNewline
+}
+
 $split = Split-PackageInput -RawName $Name -RawVersion $Version
 $depName = $split[0]
 $depVersion = $split[1]
@@ -144,6 +177,10 @@ if ($after.Count -gt 0) {
 $newContent = ($new.ToArray() -join $newline) + $newline
 Set-Content -Path $manifestFull -Value $newContent -NoNewline
 
+$lockPath = Join-Path (Split-Path -Path $manifestFull -Parent) "fin.lock"
+Write-Lockfile -LockPath $lockPath -Dependencies $deps -Newline $newline
+
 Write-Host ("dependency_added={0}" -f $depName)
 Write-Host ("dependency_version={0}" -f $depVersion)
 Write-Host ("manifest_updated={0}" -f $manifestFull)
+Write-Host ("lock_updated={0}" -f $lockPath)
