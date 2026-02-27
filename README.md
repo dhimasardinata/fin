@@ -31,7 +31,8 @@ This repository implements the foundation phase:
 4. Build and run default source: `./fin.ps1 run`
 5. Build and run a specific file: `./fin.ps1 run --src tests/conformance/fixtures/main_exit7.fn --out artifacts/fin-build-exit7 --expect-exit 7`
 6. Format source subset: `./fin.ps1 fmt --src src/main.fn`
-7. Run full stage0 suite: `./fin.ps1 test`
+7. Generate source docs: `./fin.ps1 doc --src src/main.fn --out docs/main.md`
+8. Run full stage0 suite: `./fin.ps1 test`
 
 ## Repository Layout
 

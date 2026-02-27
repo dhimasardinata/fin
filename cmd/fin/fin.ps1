@@ -258,6 +258,44 @@ function Invoke-Fmt {
     }
 }
 
+function Invoke-Doc {
+    $source = "src/main.fn"
+    $outFile = ""
+    $stdout = $false
+
+    for ($i = 0; $i -lt $CommandArgs.Count; $i++) {
+        if ([string]::IsNullOrWhiteSpace($CommandArgs[$i])) {
+            continue
+        }
+        switch ($CommandArgs[$i]) {
+            "--src" {
+                if ($i + 1 -ge $CommandArgs.Count) { throw "--src requires a value" }
+                $source = $CommandArgs[++$i]
+            }
+            "--out" {
+                if ($i + 1 -ge $CommandArgs.Count) { throw "--out requires a value" }
+                $outFile = $CommandArgs[++$i]
+            }
+            "--stdout" { $stdout = $true }
+            default { throw "Unknown doc argument: $($CommandArgs[$i])" }
+        }
+    }
+
+    $docGen = Join-Path $repoRoot "compiler/finc/stage0/doc_main_exit.ps1"
+    if ($stdout -and -not [string]::IsNullOrWhiteSpace($outFile)) {
+        throw "Cannot combine --stdout and --out."
+    }
+    if ($stdout) {
+        & $docGen -SourcePath $source -Stdout
+    }
+    elseif ([string]::IsNullOrWhiteSpace($outFile)) {
+        & $docGen -SourcePath $source
+    }
+    else {
+        & $docGen -SourcePath $source -OutFile $outFile
+    }
+}
+
 function Invoke-Test {
     $quick = $false
     $skipDoctor = $false
@@ -313,6 +351,7 @@ Usage:
   ./cmd/fin/fin.ps1 build [--src <file>] [--out <file>] [--no-verify]
   ./cmd/fin/fin.ps1 run [--src <file>] [--out <file>] [--no-build] [--expect-exit <0..255>] [--no-verify]
   ./cmd/fin/fin.ps1 fmt [--src <file>] [--check | --stdout]
+  ./cmd/fin/fin.ps1 doc [--src <file>] [--out <file> | --stdout]
   ./cmd/fin/fin.ps1 test [--quick] [--no-doctor] [--no-run]
 
 Planned unified commands (tracked in FIP-0015):
@@ -327,6 +366,7 @@ switch ($Command) {
     "build" { Invoke-Build; break }
     "run" { Invoke-Run; break }
     "fmt" { Invoke-Fmt; break }
+    "doc" { Invoke-Doc; break }
     "test" { Invoke-Test; break }
     "" { Show-Usage; break }
     default {
