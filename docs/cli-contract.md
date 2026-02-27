@@ -11,6 +11,7 @@ Until native `fin` is available, a compatibility shim is provided:
 - `./fin.ps1 emit-elf-exit0 [output-path]`
 - `./fin.ps1 build [--src <file>] [--out <file>] [--no-verify]`
 - `./fin.ps1 run [--src <file>] [--out <file>] [--no-build] [--expect-exit <0..255>] [--no-verify]`
+- `./fin.ps1 fmt [--src <file>] [--check | --stdout]`
 - `./fin.ps1 test [--quick] [--no-doctor] [--no-run]`
 
 ## Commands
