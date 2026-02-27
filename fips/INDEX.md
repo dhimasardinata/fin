@@ -13,8 +13,8 @@
 | FIP-0009 | Linux ABI and Syscall Contract | Implemented | `fin://fip/FIP-0009` |
 | FIP-0010 | Direct ELF Emitter | Implemented | `fin://fip/FIP-0010` |
 | FIP-0011 | Self-Hosting Closure Criteria | InProgress | `fin://fip/FIP-0011` |
-| FIP-0012 | Windows PE Emitter | InProgress | `fin://fip/FIP-0012` |
-| FIP-0013 | Fin Object Format (finobj) | InProgress | `fin://fip/FIP-0013` |
+| FIP-0012 | Windows PE Emitter | Implemented | `fin://fip/FIP-0012` |
+| FIP-0013 | Fin Object Format (finobj) | Implemented | `fin://fip/FIP-0013` |
 | FIP-0014 | Fin Linker (finld) | InProgress | `fin://fip/FIP-0014` |
 | FIP-0015 | Unified fin CLI Contract | Implemented | `fin://fip/FIP-0015` |
 | FIP-0016 | Package Manifest and Lockfile | Implemented | `fin://fip/FIP-0016` |

@@ -2,7 +2,7 @@
 
 - id: FIP-0013
 - address: fin://fip/FIP-0013
-- status: InProgress
+- status: Implemented
 - authors: @fin-maintainers
 - created: 2026-02-27
 - requires: ["FIP-0010"]
@@ -30,7 +30,7 @@ Current stage0 finobj format is deterministic key-value text with required field
 
 1. `finobj_format=finobj-stage0`
 2. `finobj_version=1`
-3. `target=x86_64-linux-elf`
+3. `target=<x86_64-linux-elf|x86_64-windows-pe>`
 4. `entry_symbol=main`
 5. `exit_code=<0..255>`
 6. `source_path=<repo-relative path>`
@@ -41,7 +41,7 @@ Stage0 scope is single-unit object container; full relocations/symbol tables rem
 Reader validation requirements in stage0:
 
 1. Reject duplicate keys.
-2. Require `target=x86_64-linux-elf`.
+2. Require `target` to be one of: `x86_64-linux-elf`, `x86_64-windows-pe`.
 3. Require repository-relative `source_path` (no rooted path or `..` traversal).
 4. Require `source_sha256` to be a 64-hex digest.
 
@@ -61,5 +61,5 @@ Compatibility impact must be documented before Implemented status.
 
 Current checks:
 
-1. `tests/conformance/verify_finobj_roundtrip.ps1` validates deterministic writer output hash, reader decode, and malformed-object rejection (duplicate key, bad target, invalid source metadata).
+1. `tests/conformance/verify_finobj_roundtrip.ps1` validates deterministic writer output hash, reader decode for Linux+Windows targets, and malformed-object rejection (duplicate key, bad target, invalid source metadata).
 2. `tests/run_stage0_suite.ps1` includes finobj conformance checks in `fin test`.

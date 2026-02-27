@@ -12,40 +12,29 @@ if (Test-Path $tmpDir) {
 }
 New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
 
-function Assert-Fails {
-    param(
-        [scriptblock]$Action,
-        [string]$Label
-    )
-
-    $failed = $false
-    try {
-        & $Action
-    }
-    catch {
-        $failed = $true
-    }
-
-    if (-not $failed) {
-        Write-Error ("Expected failure: {0}" -f $Label)
-        exit 1
-    }
-}
-
 $source = "tests/conformance/fixtures/main_exit7.fn"
 $buildOut = Join-Path $tmpDir "main-build.exe"
+$buildFinobjOut = Join-Path $tmpDir "main-build-finobj.exe"
 $runOut = Join-Path $tmpDir "main-run.exe"
-$badOut = Join-Path $tmpDir "main-bad.exe"
+$runFinobjOut = Join-Path $tmpDir "main-run-finobj.exe"
 
 & $fin build --src $source --out $buildOut --target x86_64-windows-pe
+& $fin build --src $source --out $buildFinobjOut --target x86_64-windows-pe --pipeline finobj
 & $verifyPe -Path $buildOut -ExpectedExitCode 7
+& $verifyPe -Path $buildFinobjOut -ExpectedExitCode 7
 & $runPe -Path $buildOut -ExpectedExitCode 7
+& $runPe -Path $buildFinobjOut -ExpectedExitCode 7
 
 & $fin run --src $source --out $runOut --target x86_64-windows-pe --expect-exit 7
+& $fin run --src $source --out $runFinobjOut --target x86_64-windows-pe --pipeline finobj --expect-exit 7
 & $verifyPe -Path $runOut -ExpectedExitCode 7
+& $verifyPe -Path $runFinobjOut -ExpectedExitCode 7
 
-Assert-Fails -Action {
-    & $fin build --src $source --out $badOut --target x86_64-windows-pe --pipeline finobj | Out-Null
-} -Label "windows target with finobj pipeline"
+$directHash = (Get-FileHash -Path $buildOut -Algorithm SHA256).Hash.ToLowerInvariant()
+$finobjHash = (Get-FileHash -Path $buildFinobjOut -Algorithm SHA256).Hash.ToLowerInvariant()
+if ($directHash -ne $finobjHash) {
+    Write-Error ("windows pipeline mismatch: direct={0} finobj={1}" -f $directHash, $finobjHash)
+    exit 1
+}
 
 Write-Host "build target windows integration check passed."

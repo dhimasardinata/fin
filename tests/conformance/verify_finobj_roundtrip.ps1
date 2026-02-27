@@ -14,6 +14,7 @@ New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
 $source = Join-Path $repoRoot "tests/conformance/fixtures/main_exit7.fn"
 $objA = Join-Path $tmpDir "a.finobj"
 $objB = Join-Path $tmpDir "b.finobj"
+$objWin = Join-Path $tmpDir "win.finobj"
 
 function Assert-ReaderFails {
     param(
@@ -36,6 +37,7 @@ function Assert-ReaderFails {
 
 & $writer -SourcePath $source -OutFile $objA
 & $writer -SourcePath $source -OutFile $objB
+& $writer -SourcePath $source -OutFile $objWin -Target x86_64-windows-pe
 
 $hashA = (Get-FileHash -Path $objA -Algorithm SHA256).Hash
 $hashB = (Get-FileHash -Path $objB -Algorithm SHA256).Hash
@@ -47,6 +49,12 @@ if ($hashA -ne $hashB) {
 $exitCode = [int](& $reader -ObjectPath $objA)
 if ($exitCode -ne 7) {
     Write-Error ("Expected finobj reader exit code 7, got {0}" -f $exitCode)
+    exit 1
+}
+
+$exitCodeWin = [int](& $reader -ObjectPath $objWin -ExpectedTarget x86_64-windows-pe)
+if ($exitCodeWin -ne 7) {
+    Write-Error ("Expected windows finobj reader exit code 7, got {0}" -f $exitCodeWin)
     exit 1
 }
 
@@ -71,7 +79,7 @@ $badTargetObj = Join-Path $tmpDir "invalid-target.finobj"
 Set-Content -Path $badTargetObj -Value @"
 finobj_format=finobj-stage0
 finobj_version=1
-target=x86_64-windows-pe
+target=x86_64-riscv-none
 entry_symbol=main
 exit_code=7
 source_path=tests/conformance/fixtures/main_exit7.fn

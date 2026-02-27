@@ -65,7 +65,14 @@ $buildWinB = Join-Path $tmpDir "build-win-b.exe"
 & $fin build --src tests/conformance/fixtures/main_exit_var_assign.fn --out $buildWinB --target x86_64-windows-pe
 Assert-SameHash -PathA $buildWinA -PathB $buildWinB -Label "fin build --target x86_64-windows-pe"
 
-# 6) Package publish determinism on fixed inputs.
+# 6) Stage0 Windows target build determinism through finobj+finld pipeline.
+$buildWinFinobjA = Join-Path $tmpDir "build-win-finobj-a.exe"
+$buildWinFinobjB = Join-Path $tmpDir "build-win-finobj-b.exe"
+& $fin build --src tests/conformance/fixtures/main_exit_var_assign.fn --out $buildWinFinobjA --target x86_64-windows-pe --pipeline finobj
+& $fin build --src tests/conformance/fixtures/main_exit_var_assign.fn --out $buildWinFinobjB --target x86_64-windows-pe --pipeline finobj
+Assert-SameHash -PathA $buildWinFinobjA -PathB $buildWinFinobjB -Label "fin build --target x86_64-windows-pe --pipeline finobj"
+
+# 7) Package publish determinism on fixed inputs.
 $project = Join-Path $tmpDir "repro_pkg"
 $manifest = Join-Path $project "fin.toml"
 $srcDir = Join-Path $project "src"
@@ -81,7 +88,7 @@ $artifactA = Join-Path $outDirA "repro_pkg-0.1.0-dev.fnpkg"
 $artifactB = Join-Path $outDirB "repro_pkg-0.1.0-dev.fnpkg"
 Assert-SameHash -PathA $artifactA -PathB $artifactB -Label "fin pkg publish"
 
-# 7) finobj writer determinism on fixed source.
+# 8) finobj writer determinism on fixed source.
 $finobjA = Join-Path $tmpDir "main-a.finobj"
 $finobjB = Join-Path $tmpDir "main-b.finobj"
 $finobjSrc = "tests/conformance/fixtures/main_exit_var_assign.fn"
@@ -89,11 +96,20 @@ $finobjSrc = "tests/conformance/fixtures/main_exit_var_assign.fn"
 & $writeFinobj -SourcePath $finobjSrc -OutFile $finobjB
 Assert-SameHash -PathA $finobjA -PathB $finobjB -Label "write_finobj_exit"
 
-# 8) finld linker determinism on fixed finobj input.
+# 9) finld linker determinism on fixed Linux finobj input.
 $linkedA = Join-Path $tmpDir "linked-a"
 $linkedB = Join-Path $tmpDir "linked-b"
-& $linkFinobj -ObjectPath $finobjA -OutFile $linkedA
-& $linkFinobj -ObjectPath $finobjA -OutFile $linkedB
+& $linkFinobj -ObjectPath $finobjA -OutFile $linkedA -Target x86_64-linux-elf
+& $linkFinobj -ObjectPath $finobjA -OutFile $linkedB -Target x86_64-linux-elf
 Assert-SameHash -PathA $linkedA -PathB $linkedB -Label "link_finobj_to_elf"
+
+# 10) finld linker determinism on fixed Windows finobj input.
+$finobjWinA = Join-Path $tmpDir "main-win-a.finobj"
+$linkedWinA = Join-Path $tmpDir "linked-win-a.exe"
+$linkedWinB = Join-Path $tmpDir "linked-win-b.exe"
+& $writeFinobj -SourcePath $finobjSrc -OutFile $finobjWinA -Target x86_64-windows-pe
+& $linkFinobj -ObjectPath $finobjWinA -OutFile $linkedWinA -Target x86_64-windows-pe
+& $linkFinobj -ObjectPath $finobjWinA -OutFile $linkedWinB -Target x86_64-windows-pe
+Assert-SameHash -PathA $linkedWinA -PathB $linkedWinB -Label "link_finobj_to_elf --target x86_64-windows-pe"
 
 Write-Host "stage0 reproducibility check passed."

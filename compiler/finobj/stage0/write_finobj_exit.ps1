@@ -1,6 +1,8 @@
 param(
     [string]$SourcePath = "src/main.fn",
-    [string]$OutFile = "artifacts/main.finobj"
+    [string]$OutFile = "artifacts/main.finobj",
+    [ValidateSet("x86_64-linux-elf", "x86_64-windows-pe")]
+    [string]$Target = "x86_64-linux-elf"
 )
 
 Set-StrictMode -Version Latest
@@ -85,7 +87,7 @@ $sourceRel = Get-RelativePathNormalized -BasePath $repoRoot -FullPath $sourceFul
 $lines = [System.Collections.Generic.List[string]]::new()
 $lines.Add("finobj_format=finobj-stage0")
 $lines.Add("finobj_version=1")
-$lines.Add("target=x86_64-linux-elf")
+$lines.Add(("target={0}" -f $Target))
 $lines.Add("entry_symbol=main")
 $lines.Add(("exit_code={0}" -f $exitCode))
 $lines.Add(("source_path={0}" -f $sourceRel))
