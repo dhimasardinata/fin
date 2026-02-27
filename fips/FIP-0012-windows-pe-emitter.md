@@ -2,13 +2,20 @@
 
 - id: FIP-0012
 - address: fin://fip/FIP-0012
-- status: Draft
+- status: InProgress
 - authors: @fin-maintainers
 - created: 2026-02-27
 - requires: ["FIP-0010"]
 - target_release: M4
 - discussion: TBD
-- implementation: []
+- implementation:
+  - compiler/finc/stage0/emit_pe_exit0.ps1
+  - tests/bootstrap/verify_pe_exit0.ps1
+  - tests/integration/run_windows_pe.ps1
+  - tests/integration/verify_windows_pe_exit.ps1
+  - tests/run_stage0_suite.ps1
+  - runtime/windows_x64/syscall-table.md
+  - .github/workflows/ci.yml
 - acceptance:
   - Compiler emits PE binaries that run on Windows without external runtime.
 
@@ -22,7 +29,19 @@ This proposal is part of the Fin independent-toolchain baseline and is required 
 
 ## Design
 
-Initial design details are tracked in the corresponding spec and architecture documents. Concrete implementation deltas must be appended to this section before status changes to InProgress.
+Current stage0 PE path:
+
+1. Emits deterministic PE32+ image directly for x64 target.
+2. Uses single `.text` section and minimal entry payload:
+   - `mov eax, <u8>`
+   - `ret`
+3. Produces console subsystem executable with no import table.
+4. Validates structure via deterministic header/section/payload checks.
+
+Runtime execution check:
+
+1. On Windows hosts, runs emitted PE and validates process exit code.
+2. On non-Windows hosts, runtime execution check is skipped while structure checks remain enforced.
 
 ## Alternatives
 
@@ -38,4 +57,9 @@ Compatibility impact must be documented before Implemented status.
 
 ## Test Plan
 
-Acceptance criteria listed above are normative; CI coverage for this proposal must be linked in implementation once available.
+Current checks:
+
+1. `tests/bootstrap/verify_pe_exit0.ps1` validates PE signature, headers, section metadata, and payload bytes.
+2. `tests/integration/verify_windows_pe_exit.ps1` validates emit+verify flow and runtime exit on Windows.
+3. `tests/run_stage0_suite.ps1` includes PE checks in `fin test`.
+4. CI executes PE emit+verify structure checks on push/PR.
