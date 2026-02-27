@@ -48,6 +48,14 @@ jobs:
         shell: pwsh
         run: ./tests/bootstrap/verify_elf_exit0.ps1 -Path artifacts/fin-build-exit7 -ExpectedExitCode 7
 
+      - name: Run default stage0 program
+        shell: pwsh
+        run: ./cmd/fin/fin.ps1 run
+
+      - name: Run built stage0 fixture
+        shell: pwsh
+        run: ./cmd/fin/fin.ps1 run --no-build --out artifacts/fin-build-exit7 --expect-exit 7
+
       - name: Collect changed files
         if: github.event_name == 'pull_request'
         id: changed

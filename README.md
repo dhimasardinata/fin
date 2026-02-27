@@ -27,7 +27,8 @@ This repository implements the foundation phase:
 
 1. Run policy checks: `./fin.ps1 doctor`
 2. Build default source: `./fin.ps1 build`
-3. Build a specific file: `./fin.ps1 build --src tests/conformance/fixtures/main_exit7.fn --out artifacts/fin-build-exit7`
+3. Build and run default source: `./fin.ps1 run`
+4. Build and run a specific file: `./fin.ps1 run --src tests/conformance/fixtures/main_exit7.fn --out artifacts/fin-build-exit7 --expect-exit 7`
 
 ## Repository Layout
 
