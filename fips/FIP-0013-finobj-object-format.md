@@ -35,6 +35,9 @@ Current stage0 finobj format is deterministic key-value text with required field
 5. `exit_code=<0..255>`
 6. `source_path=<repo-relative path>`
 7. `source_sha256=<normalized source hash>`
+8. `provides=<comma-separated symbols>` (stage0 writer emits; defaults to `main` for entry object)
+9. `requires=<comma-separated symbols>` (stage0 writer emits; defaults to empty)
+10. `relocs=<comma-separated relocation entries>` where each entry is `<symbol>@<offset>`
 
 Stage0 scope is still minimal; `entry_symbol=unit` enables linker multi-object checkpoint while full relocations/symbol tables remain deferred.
 
@@ -45,6 +48,11 @@ Reader validation requirements in stage0:
 3. Require `entry_symbol` to be one of: `main`, `unit`.
 4. Require repository-relative `source_path` (no rooted path or `..` traversal).
 5. Require `source_sha256` to be a 64-hex digest.
+6. Require symbol identifiers in `provides`/`requires` to match `[A-Za-z_][A-Za-z0-9_]*`.
+7. Reject duplicate symbols inside a symbol list and overlap between `provides` and `requires`.
+8. Parse `relocs` as `<symbol>@<offset>` entries and reject malformed or duplicate entries.
+9. Reject duplicate relocation offsets within one object in stage0.
+10. Require relocation symbols to be listed in `requires` and not locally provided in `provides` (stage0 restriction).
 
 ## Alternatives
 
@@ -62,5 +70,5 @@ Compatibility impact must be documented before Implemented status.
 
 Current checks:
 
-1. `tests/conformance/verify_finobj_roundtrip.ps1` validates deterministic writer output hash, reader decode for Linux+Windows targets and `main/unit` entry symbols, and malformed-object rejection (duplicate key, bad target/entry symbol, invalid source metadata).
+1. `tests/conformance/verify_finobj_roundtrip.ps1` validates deterministic writer output hash, reader decode for Linux+Windows targets and `main/unit` entry symbols, symbol metadata roundtrip (`provides`/`requires`/`relocs`), and malformed-object rejection (duplicate key, bad target/entry symbol, invalid source metadata, invalid symbol/relocation lists).
 2. `tests/run_stage0_suite.ps1` includes finobj conformance checks in `fin test`.

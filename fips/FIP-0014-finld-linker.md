@@ -32,9 +32,17 @@ Current stage0 linker path:
 
 1. Read stage0 finobj metadata payload via finobj reader.
 2. Require exactly one entry object (`entry_symbol=main`) and allow additional non-entry objects (`entry_symbol=unit`).
-3. Emit final native image through direct emitter path with decoded entry exit code (`x86_64-linux-elf` or `x86_64-windows-pe`).
-4. Expose `fin build/run --pipeline finobj` to route stage0 compilation through finobj+finld.
-5. Optional structure verification after link.
+3. Canonicalize object-set metadata deterministically (entry-priority + source identity order) before link evaluation.
+4. Reject duplicate object path input and duplicate object identity (`entry_symbol|source_path|source_sha256`).
+5. Build stage0 symbol provider table from finobj `provides` metadata and reject duplicate symbol providers.
+6. Require entry object to provide `main` symbol and reject entry/provider mismatches.
+7. Validate finobj `requires` metadata and reject unresolved symbols.
+8. Validate stage0 relocation metadata (`relocs`) and reject unresolved relocation targets.
+9. Emit deterministic relocation-resolution witness hash for auditability.
+10. Expose deterministic structured linker diagnostics via `-AsRecord` (including object-set and relocation-resolution witness hashes).
+11. Emit final native image through direct emitter path with decoded entry exit code (`x86_64-linux-elf` or `x86_64-windows-pe`).
+12. Expose `fin build/run --pipeline finobj` to route stage0 compilation through finobj+finld.
+13. Optional structure verification after link.
 
 This is a minimal multi-object checkpoint before full symbol-resolution and relocation support.
 
@@ -54,6 +62,7 @@ Compatibility impact must be documented before Implemented status.
 
 Current checks:
 
-1. `tests/integration/verify_finobj_link.ps1` validates multi-object finobj -> native link path for Linux ELF and Windows PE runtime behavior, including missing/duplicate entry-object rejection.
+1. `tests/integration/verify_finobj_link.ps1` validates multi-object finobj -> native link path for Linux ELF and Windows PE runtime behavior, including missing/duplicate entry-object rejection, duplicate path/identity rejection, unresolved symbol rejection, duplicate symbol provider rejection, relocation-bearing object acceptance, order-independent output, and stable linker witness hashes via `-AsRecord`.
 2. `tests/integration/verify_build_pipeline_finobj.ps1` validates Linux `fin build/run --pipeline finobj` and output parity with direct pipeline.
-3. `tests/run_stage0_suite.ps1` includes finld integration checks in `fin test`.
+3. `tests/reproducibility/verify_stage0_reproducibility.ps1` validates deterministic multi-object linking for Linux/Windows, including stable output and stable `-AsRecord` witness hashes under object input reordering for symbol + relocation metadata object sets.
+4. `tests/run_stage0_suite.ps1` includes finld integration checks in `fin test`.

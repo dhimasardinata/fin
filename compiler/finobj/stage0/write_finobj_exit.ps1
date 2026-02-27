@@ -4,7 +4,10 @@ param(
     [ValidateSet("x86_64-linux-elf", "x86_64-windows-pe")]
     [string]$Target = "x86_64-linux-elf",
     [ValidateSet("main", "unit")]
-    [string]$EntrySymbol = "main"
+    [string]$EntrySymbol = "main",
+    [string[]]$Provides = @(),
+    [string[]]$Requires = @(),
+    [string[]]$Relocs = @()
 )
 
 Set-StrictMode -Version Latest
@@ -30,6 +33,90 @@ function Get-TextSha256 {
     finally {
         $sha.Dispose()
     }
+}
+
+function Get-NormalizedSymbolList {
+    param(
+        [string[]]$Items,
+        [string]$Label
+    )
+
+    $symbols = [System.Collections.Generic.List[string]]::new()
+    $seen = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+
+    foreach ($item in $Items) {
+        if ([string]::IsNullOrWhiteSpace($item)) {
+            continue
+        }
+
+        foreach ($part in ($item -split ",")) {
+            $symbol = $part.Trim()
+            if ([string]::IsNullOrWhiteSpace($symbol)) {
+                continue
+            }
+            if ($symbol -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
+                throw ("Invalid {0} symbol: {1}" -f $Label, $symbol)
+            }
+            if (-not $seen.Add($symbol)) {
+                throw ("Duplicate {0} symbol: {1}" -f $Label, $symbol)
+            }
+            $symbols.Add($symbol)
+        }
+    }
+
+    return @($symbols.ToArray())
+}
+
+function Get-NormalizedRelocationList {
+    param([string[]]$Items)
+
+    $relocations = [System.Collections.Generic.List[object]]::new()
+    $seen = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    $seenOffsets = [System.Collections.Generic.HashSet[UInt32]]::new()
+
+    foreach ($item in $Items) {
+        if ([string]::IsNullOrWhiteSpace($item)) {
+            continue
+        }
+
+        foreach ($part in ($item -split '[,;]')) {
+            $token = $part.Trim()
+            if ([string]::IsNullOrWhiteSpace($token)) {
+                continue
+            }
+
+            if ($token -notmatch '^([A-Za-z_][A-Za-z0-9_]*)@([0-9]+)$') {
+                throw ("Invalid relocation entry: {0}. Expected <symbol>@<offset>." -f $token)
+            }
+
+            $symbol = $Matches[1]
+            [UInt64]$offset = 0
+            if (-not [UInt64]::TryParse($Matches[2], [ref]$offset)) {
+                throw ("Invalid relocation offset: {0}" -f $Matches[2])
+            }
+            if ($offset -gt [UInt32]::MaxValue) {
+                throw ("Relocation offset out of stage0 range (0..4294967295): {0}" -f $offset)
+            }
+
+            $normalized = ("{0}@{1}" -f $symbol, $offset)
+            if (-not $seen.Add($normalized)) {
+                throw ("Duplicate relocation entry: {0}" -f $normalized)
+            }
+            $offset32 = [UInt32]$offset
+            if (-not $seenOffsets.Add($offset32)) {
+                throw ("Duplicate relocation offset: {0}" -f $offset32)
+            }
+
+            $relocations.Add([pscustomobject]@{
+                    Symbol = $symbol
+                    Offset = $offset32
+                    Key = $normalized
+                })
+        }
+    }
+
+    $ordered = @($relocations | Sort-Object @{Expression = { [UInt64]$_.Offset } }, @{Expression = { $_.Symbol } })
+    return @($ordered)
 }
 
 function Get-RelativePathNormalized {
@@ -85,6 +172,36 @@ if ($outDir -and -not (Test-Path $outDir)) {
 $rawSource = Get-Content -Path $sourceFull -Raw
 $sourceHash = Get-TextSha256 -Text (Normalize-Text -Text $rawSource)
 $sourceRel = Get-RelativePathNormalized -BasePath $repoRoot -FullPath $sourceFull
+$providedSymbols = @(Get-NormalizedSymbolList -Items $Provides -Label "provides")
+$requiredSymbols = @(Get-NormalizedSymbolList -Items $Requires -Label "requires")
+$relocations = @(Get-NormalizedRelocationList -Items $Relocs)
+
+if ($providedSymbols.Count -eq 0 -and $EntrySymbol -eq "main") {
+    $providedSymbols = @("main")
+}
+
+$providedSet = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+foreach ($symbol in $providedSymbols) {
+    [void]$providedSet.Add($symbol)
+}
+foreach ($symbol in $requiredSymbols) {
+    if ($providedSet.Contains($symbol)) {
+        throw ("Symbol cannot appear in both provides and requires: {0}" -f $symbol)
+    }
+}
+
+$requiredSet = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+foreach ($symbol in $requiredSymbols) {
+    [void]$requiredSet.Add($symbol)
+}
+foreach ($reloc in $relocations) {
+    if ($providedSet.Contains($reloc.Symbol)) {
+        throw ("Relocation symbol cannot be locally provided in stage0: {0}" -f $reloc.Symbol)
+    }
+    if (-not $requiredSet.Contains($reloc.Symbol)) {
+        throw ("Relocation symbol must be listed in requires: {0}" -f $reloc.Symbol)
+    }
+}
 
 $lines = [System.Collections.Generic.List[string]]::new()
 $lines.Add("finobj_format=finobj-stage0")
@@ -94,6 +211,9 @@ $lines.Add(("entry_symbol={0}" -f $EntrySymbol))
 $lines.Add(("exit_code={0}" -f $exitCode))
 $lines.Add(("source_path={0}" -f $sourceRel))
 $lines.Add(("source_sha256={0}" -f $sourceHash))
+$lines.Add(("provides={0}" -f ($providedSymbols -join ",")))
+$lines.Add(("requires={0}" -f ($requiredSymbols -join ",")))
+$lines.Add(("relocs={0}" -f ((@($relocations | ForEach-Object { $_.Key }) -join ","))))
 
 $content = ($lines.ToArray() -join "`n") + "`n"
 Set-Content -Path $outFull -Value $content -NoNewline
