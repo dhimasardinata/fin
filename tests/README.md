@@ -18,3 +18,4 @@ Entry points:
 - `tests/integration/verify_build_target_windows.ps1`: stage0 `fin build/run --target x86_64-windows-pe` integration gate.
 - `tests/integration/verify_manifest_target_resolution.ps1`: stage0 target resolution from manifest primary gate.
 - `tests/integration/verify_build_pipeline_finobj.ps1`: stage0 `fin build/run --pipeline finobj` integration gate.
+- `tests/reproducibility/verify_manifest_policy_gate.ps1`: manifest policy gate self-check coverage.
