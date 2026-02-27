@@ -1,5 +1,7 @@
 param(
-    [string]$OutFile = "artifacts/fin-elf-exit0"
+    [string]$OutFile = "artifacts/fin-elf-exit0",
+    [ValidateRange(0, 255)]
+    [int]$ExitCode = 0
 )
 
 Set-StrictMode -Version Latest
@@ -13,16 +15,22 @@ function Ensure-Directory {
     }
 }
 
-function New-Exit0ElfBytes {
+function New-ExitElfBytes {
+    param([int]$Code)
+
     $baseAddr = [UInt64]0x400000
     $elfHeaderSize = 64
     $programHeaderSize = 56
 
     # Linux x86_64:
     #   mov eax, 60   ; sys_exit
-    #   xor edi, edi  ; status = 0
+    #   mov edi, <code>
     #   syscall
-    [byte[]]$code = @(0xB8, 0x3C, 0x00, 0x00, 0x00, 0x31, 0xFF, 0x0F, 0x05)
+    [byte[]]$code = @(
+        0xB8, 0x3C, 0x00, 0x00, 0x00,
+        0xBF, [byte]($Code -band 0xFF), 0x00, 0x00, 0x00,
+        0x0F, 0x05
+    )
 
     $codeOffset = $elfHeaderSize + $programHeaderSize
     $fileSize = $codeOffset + $code.Length
@@ -66,9 +74,10 @@ function New-Exit0ElfBytes {
 }
 
 Ensure-Directory -Path $OutFile
-$bytes = New-Exit0ElfBytes
+$bytes = New-ExitElfBytes -Code $ExitCode
 [System.IO.File]::WriteAllBytes($OutFile, $bytes)
 
 $hash = (Get-FileHash -Path $OutFile -Algorithm SHA256).Hash.ToLowerInvariant()
 Write-Host ("Wrote {0} bytes to {1}" -f $bytes.Length, (Resolve-Path $OutFile))
+Write-Host ("exit_code={0}" -f $ExitCode)
 Write-Host ("sha256={0}" -f $hash)

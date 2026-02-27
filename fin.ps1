@@ -3,8 +3,8 @@ param(
     [string]$Command = "",
 
     [Parameter(ValueFromRemainingArguments = $true)]
-    [string[]]$Args
+    [string[]]$CommandArgs
 )
 
-& (Join-Path $PSScriptRoot "cmd/fin/fin.ps1") $Command @Args
+& (Join-Path $PSScriptRoot "cmd/fin/fin.ps1") $Command @CommandArgs
 exit $LASTEXITCODE

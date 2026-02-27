@@ -2,13 +2,15 @@
 
 - id: FIP-0005
 - address: fin://fip/FIP-0005
-- status: Scheduled
+- status: InProgress
 - authors: @fin-maintainers
 - created: 2026-02-27
 - requires: ["FIP-0004"]
 - target_release: M2
 - discussion: TBD
-- implementation: []
+- implementation:
+  - compiler/finc/stage0/parse_main_exit.ps1
+  - tests/conformance/verify_stage0_grammar.ps1
 - acceptance:
   - Parser conformance suite passes canonical grammar fixtures.
 
@@ -22,7 +24,17 @@ This proposal is part of the Fin independent-toolchain baseline and is required 
 
 ## Design
 
-Initial design details are tracked in the corresponding spec and architecture documents. Concrete implementation deltas must be appended to this section before status changes to InProgress.
+Current stage0 subset grammar:
+
+`fn main() { exit(<u8>) }`
+
+Accepted stage0 tolerances:
+
+1. Arbitrary whitespace/newlines.
+2. Optional semicolon after `exit(...)`.
+3. Exit code range constrained to `0..255`.
+
+This subset is intentionally minimal and acts as the first executable parser checkpoint.
 
 ## Alternatives
 
@@ -38,4 +50,7 @@ Compatibility impact must be documented before Implemented status.
 
 ## Test Plan
 
-Acceptance criteria listed above are normative; CI coverage for this proposal must be linked in implementation once available.
+Current checks:
+
+1. `tests/conformance/verify_stage0_grammar.ps1` validates valid and invalid fixtures.
+2. Parser must reject non-`main` entrypoint patterns for stage0 subset.
