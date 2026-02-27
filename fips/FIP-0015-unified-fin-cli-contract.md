@@ -48,7 +48,7 @@ Current commands:
 5. `run`: builds (optional) and executes Linux ELF artifact with expected exit-code assertion.
 6. `fmt`: formats stage0 `.fn` subset into canonical style.
 7. `doc`: generates stage0 documentation from `.fn` subset.
-8. `pkg add`: inserts/updates dependency entries in `fin.toml`.
+8. `pkg add`: inserts/updates dependency entries in `fin.toml` and rewrites `fin.lock`.
 9. `pkg publish`: emits deterministic stage0 package artifact (`.fnpkg`).
 10. `test`: executes aggregated stage0 test suite.
 
@@ -80,6 +80,6 @@ Current checks:
 8. `./fin.ps1 fmt --src <file> --check` fails on unformatted source and passes on formatted source.
 9. `./fin.ps1 doc --src <file> --out <file>` generates doc output with expected summary and exit code.
 10. `./fin.ps1 doc --src <file> --stdout` prints generated document.
-11. `./fin.ps1 pkg add <name[@version]>` updates manifest dependencies deterministically.
+11. `./fin.ps1 pkg add <name[@version]>` updates manifest dependencies and rewrites `fin.lock` deterministically.
 12. `./fin.ps1 pkg publish --manifest fin.toml --src src --out-dir artifacts/publish` emits deterministic stage0 package artifact.
 13. `./fin.ps1 test` executes stage0 suite end-to-end.

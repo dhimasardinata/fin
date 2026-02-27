@@ -25,7 +25,7 @@ Until native `fin` is available, a compatibility shim is provided:
 - `fin test`: run package tests.
 - `fin fmt`: format `.fn` files.
 - `fin doc`: generate API and language docs.
-- `fin pkg add <name>`: add dependency.
+- `fin pkg add <name>`: add dependency and update `fin.lock`.
 - `fin pkg publish`: publish package.
 - `fin doctor`: validate environment and policy constraints.
 
