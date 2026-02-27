@@ -15,6 +15,7 @@ $source = Join-Path $repoRoot "tests/conformance/fixtures/main_exit7.fn"
 $objA = Join-Path $tmpDir "a.finobj"
 $objB = Join-Path $tmpDir "b.finobj"
 $objWin = Join-Path $tmpDir "win.finobj"
+$objUnit = Join-Path $tmpDir "unit.finobj"
 
 function Assert-ReaderFails {
     param(
@@ -38,6 +39,7 @@ function Assert-ReaderFails {
 & $writer -SourcePath $source -OutFile $objA
 & $writer -SourcePath $source -OutFile $objB
 & $writer -SourcePath $source -OutFile $objWin -Target x86_64-windows-pe
+& $writer -SourcePath $source -OutFile $objUnit -EntrySymbol unit
 
 $hashA = (Get-FileHash -Path $objA -Algorithm SHA256).Hash
 $hashB = (Get-FileHash -Path $objB -Algorithm SHA256).Hash
@@ -55,6 +57,16 @@ if ($exitCode -ne 7) {
 $exitCodeWin = [int](& $reader -ObjectPath $objWin -ExpectedTarget x86_64-windows-pe)
 if ($exitCodeWin -ne 7) {
     Write-Error ("Expected windows finobj reader exit code 7, got {0}" -f $exitCodeWin)
+    exit 1
+}
+
+$unitRecord = & $reader -ObjectPath $objUnit -ExpectedTarget x86_64-linux-elf -AsRecord
+if ($unitRecord.EntrySymbol -ne "unit") {
+    Write-Error ("Expected unit entry symbol, got {0}" -f $unitRecord.EntrySymbol)
+    exit 1
+}
+if ([int]$unitRecord.ExitCode -ne 7) {
+    Write-Error ("Expected unit record exit code 7, got {0}" -f $unitRecord.ExitCode)
     exit 1
 }
 
@@ -86,6 +98,18 @@ source_path=tests/conformance/fixtures/main_exit7.fn
 source_sha256=1111111111111111111111111111111111111111111111111111111111111111
 "@
 Assert-ReaderFails -Path $badTargetObj -Label "unsupported target"
+
+$badEntryObj = Join-Path $tmpDir "invalid-entry-symbol.finobj"
+Set-Content -Path $badEntryObj -Value @"
+finobj_format=finobj-stage0
+finobj_version=1
+target=x86_64-linux-elf
+entry_symbol=start
+exit_code=7
+source_path=tests/conformance/fixtures/main_exit7.fn
+source_sha256=1111111111111111111111111111111111111111111111111111111111111111
+"@
+Assert-ReaderFails -Path $badEntryObj -Label "unsupported entry symbol"
 
 $badSourcePathObj = Join-Path $tmpDir "invalid-source-path.finobj"
 Set-Content -Path $badSourcePathObj -Value @"

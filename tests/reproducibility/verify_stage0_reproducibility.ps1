@@ -99,17 +99,21 @@ Assert-SameHash -PathA $finobjA -PathB $finobjB -Label "write_finobj_exit"
 # 9) finld linker determinism on fixed Linux finobj input.
 $linkedA = Join-Path $tmpDir "linked-a"
 $linkedB = Join-Path $tmpDir "linked-b"
-& $linkFinobj -ObjectPath $finobjA -OutFile $linkedA -Target x86_64-linux-elf
-& $linkFinobj -ObjectPath $finobjA -OutFile $linkedB -Target x86_64-linux-elf
+$finobjUnitLinux = Join-Path $tmpDir "main-unit-linux.finobj"
+& $writeFinobj -SourcePath "tests/conformance/fixtures/main_exit0.fn" -OutFile $finobjUnitLinux -Target x86_64-linux-elf -EntrySymbol unit
+& $linkFinobj -ObjectPath @($finobjA, $finobjUnitLinux) -OutFile $linkedA -Target x86_64-linux-elf
+& $linkFinobj -ObjectPath @($finobjA, $finobjUnitLinux) -OutFile $linkedB -Target x86_64-linux-elf
 Assert-SameHash -PathA $linkedA -PathB $linkedB -Label "link_finobj_to_elf"
 
 # 10) finld linker determinism on fixed Windows finobj input.
 $finobjWinA = Join-Path $tmpDir "main-win-a.finobj"
+$finobjWinUnit = Join-Path $tmpDir "main-win-unit.finobj"
 $linkedWinA = Join-Path $tmpDir "linked-win-a.exe"
 $linkedWinB = Join-Path $tmpDir "linked-win-b.exe"
 & $writeFinobj -SourcePath $finobjSrc -OutFile $finobjWinA -Target x86_64-windows-pe
-& $linkFinobj -ObjectPath $finobjWinA -OutFile $linkedWinA -Target x86_64-windows-pe
-& $linkFinobj -ObjectPath $finobjWinA -OutFile $linkedWinB -Target x86_64-windows-pe
+& $writeFinobj -SourcePath "tests/conformance/fixtures/main_exit0.fn" -OutFile $finobjWinUnit -Target x86_64-windows-pe -EntrySymbol unit
+& $linkFinobj -ObjectPath @($finobjWinA, $finobjWinUnit) -OutFile $linkedWinA -Target x86_64-windows-pe
+& $linkFinobj -ObjectPath @($finobjWinA, $finobjWinUnit) -OutFile $linkedWinB -Target x86_64-windows-pe
 Assert-SameHash -PathA $linkedWinA -PathB $linkedWinB -Label "link_finobj_to_elf --target x86_64-windows-pe"
 
 Write-Host "stage0 reproducibility check passed."

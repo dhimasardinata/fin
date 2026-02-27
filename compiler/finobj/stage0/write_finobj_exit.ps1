@@ -2,7 +2,9 @@ param(
     [string]$SourcePath = "src/main.fn",
     [string]$OutFile = "artifacts/main.finobj",
     [ValidateSet("x86_64-linux-elf", "x86_64-windows-pe")]
-    [string]$Target = "x86_64-linux-elf"
+    [string]$Target = "x86_64-linux-elf",
+    [ValidateSet("main", "unit")]
+    [string]$EntrySymbol = "main"
 )
 
 Set-StrictMode -Version Latest
@@ -88,7 +90,7 @@ $lines = [System.Collections.Generic.List[string]]::new()
 $lines.Add("finobj_format=finobj-stage0")
 $lines.Add("finobj_version=1")
 $lines.Add(("target={0}" -f $Target))
-$lines.Add("entry_symbol=main")
+$lines.Add(("entry_symbol={0}" -f $EntrySymbol))
 $lines.Add(("exit_code={0}" -f $exitCode))
 $lines.Add(("source_path={0}" -f $sourceRel))
 $lines.Add(("source_sha256={0}" -f $sourceHash))
