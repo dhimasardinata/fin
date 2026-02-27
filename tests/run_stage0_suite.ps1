@@ -24,6 +24,7 @@ $verifyPkgPublish = Join-Path $repoRoot "tests/integration/verify_pkg_publish.ps
 $verifyLinuxWriteExit = Join-Path $repoRoot "tests/integration/verify_linux_write_exit.ps1"
 $verifyWindowsPeExit = Join-Path $repoRoot "tests/integration/verify_windows_pe_exit.ps1"
 $verifyBuildTargetWindows = Join-Path $repoRoot "tests/integration/verify_build_target_windows.ps1"
+$verifyManifestTargetResolution = Join-Path $repoRoot "tests/integration/verify_manifest_target_resolution.ps1"
 $verifyFinobjLink = Join-Path $repoRoot "tests/integration/verify_finobj_link.ps1"
 $verifyBuildPipelineFinobj = Join-Path $repoRoot "tests/integration/verify_build_pipeline_finobj.ps1"
 $verifyRepro = Join-Path $repoRoot "tests/reproducibility/verify_stage0_reproducibility.ps1"
@@ -51,6 +52,7 @@ if (-not $SkipDoctor) {
 & $verifyLinuxWriteExit
 & $verifyWindowsPeExit
 & $verifyBuildTargetWindows
+& $verifyManifestTargetResolution
 & $verifyFinobjLink
 & $verifyBuildPipelineFinobj
 & $verifyRepro

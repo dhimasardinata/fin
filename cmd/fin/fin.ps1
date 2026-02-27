@@ -22,6 +22,53 @@ function Invoke-Doctor {
     Write-Host "fin doctor: all checks passed"
 }
 
+function Assert-SupportedTarget {
+    param([string]$Target)
+
+    if ($Target -ne "x86_64-linux-elf" -and $Target -ne "x86_64-windows-pe") {
+        throw "Unsupported target '$Target'. Expected: x86_64-linux-elf or x86_64-windows-pe"
+    }
+}
+
+function Resolve-ManifestPrimaryTarget {
+    param(
+        [string]$ManifestPath = "fin.toml",
+        [switch]$RequireExists
+    )
+
+    $manifestFull = if ([System.IO.Path]::IsPathRooted($ManifestPath)) {
+        [System.IO.Path]::GetFullPath($ManifestPath)
+    }
+    else {
+        [System.IO.Path]::GetFullPath((Join-Path (Get-Location).Path $ManifestPath))
+    }
+
+    if (-not (Test-Path $manifestFull)) {
+        if ($RequireExists) {
+            throw "Manifest file not found: $manifestFull"
+        }
+        return ""
+    }
+
+    $raw = Get-Content -Path $manifestFull -Raw
+    $inTargets = $false
+    foreach ($line in ([regex]::Split($raw, "`r?`n"))) {
+        $trimmed = $line.Trim()
+        if ([string]::IsNullOrWhiteSpace($trimmed)) { continue }
+        if ($trimmed.StartsWith("#")) { continue }
+        if ($trimmed -match '^\[([A-Za-z0-9_.-]+)\]\s*$') {
+            $inTargets = ($Matches[1] -eq "targets")
+            continue
+        }
+        if (-not $inTargets) { continue }
+        if ($trimmed -match '^primary\s*=\s*"([^"]+)"\s*$') {
+            return $Matches[1].Trim()
+        }
+    }
+
+    return ""
+}
+
 function Invoke-Init {
     $targetDir = (Get-Location).Path
     $name = ""
@@ -135,7 +182,9 @@ function Invoke-Build {
     $source = "src/main.fn"
     $outFile = "artifacts/main"
     $outProvided = $false
-    $target = "x86_64-linux-elf"
+    $target = ""
+    $manifest = "fin.toml"
+    $manifestProvided = $false
     $pipeline = "direct"
     $verify = $true
 
@@ -156,9 +205,11 @@ function Invoke-Build {
             "--target" {
                 if ($i + 1 -ge $CommandArgs.Count) { throw "--target requires a value: x86_64-linux-elf|x86_64-windows-pe" }
                 $target = $CommandArgs[++$i]
-                if ($target -ne "x86_64-linux-elf" -and $target -ne "x86_64-windows-pe") {
-                    throw "--target must be one of: x86_64-linux-elf, x86_64-windows-pe"
-                }
+            }
+            "--manifest" {
+                if ($i + 1 -ge $CommandArgs.Count) { throw "--manifest requires a value" }
+                $manifest = $CommandArgs[++$i]
+                $manifestProvided = $true
             }
             "--pipeline" {
                 if ($i + 1 -ge $CommandArgs.Count) { throw "--pipeline requires a value: direct|finobj" }
@@ -176,6 +227,17 @@ function Invoke-Build {
         }
     }
 
+    if ($manifestProvided) {
+        $null = Resolve-ManifestPrimaryTarget -ManifestPath $manifest -RequireExists
+    }
+    if ([string]::IsNullOrWhiteSpace($target)) {
+        $target = Resolve-ManifestPrimaryTarget -ManifestPath $manifest
+    }
+    if ([string]::IsNullOrWhiteSpace($target)) {
+        $target = "x86_64-linux-elf"
+    }
+    Assert-SupportedTarget -Target $target
+
     if (-not $outProvided -and $target -eq "x86_64-windows-pe") {
         $outFile = "artifacts/main.exe"
     }
@@ -192,7 +254,9 @@ function Invoke-Run {
     $source = "src/main.fn"
     $outFile = "artifacts/main"
     $outProvided = $false
-    $target = "x86_64-linux-elf"
+    $target = ""
+    $manifest = "fin.toml"
+    $manifestProvided = $false
     $pipeline = "direct"
     $verify = $true
     $build = $true
@@ -216,9 +280,11 @@ function Invoke-Run {
             "--target" {
                 if ($i + 1 -ge $CommandArgs.Count) { throw "--target requires a value: x86_64-linux-elf|x86_64-windows-pe" }
                 $target = $CommandArgs[++$i]
-                if ($target -ne "x86_64-linux-elf" -and $target -ne "x86_64-windows-pe") {
-                    throw "--target must be one of: x86_64-linux-elf, x86_64-windows-pe"
-                }
+            }
+            "--manifest" {
+                if ($i + 1 -ge $CommandArgs.Count) { throw "--manifest requires a value" }
+                $manifest = $CommandArgs[++$i]
+                $manifestProvided = $true
             }
             "--pipeline" {
                 if ($i + 1 -ge $CommandArgs.Count) { throw "--pipeline requires a value: direct|finobj" }
@@ -245,6 +311,17 @@ function Invoke-Run {
             }
         }
     }
+
+    if ($manifestProvided) {
+        $null = Resolve-ManifestPrimaryTarget -ManifestPath $manifest -RequireExists
+    }
+    if ([string]::IsNullOrWhiteSpace($target)) {
+        $target = Resolve-ManifestPrimaryTarget -ManifestPath $manifest
+    }
+    if ([string]::IsNullOrWhiteSpace($target)) {
+        $target = "x86_64-linux-elf"
+    }
+    Assert-SupportedTarget -Target $target
 
     if (-not $outProvided -and $target -eq "x86_64-windows-pe") {
         $outFile = "artifacts/main.exe"
@@ -485,8 +562,8 @@ Usage:
   ./cmd/fin/fin.ps1 init [--name <project>] [--dir <path>] [--force]
   ./cmd/fin/fin.ps1 doctor
   ./cmd/fin/fin.ps1 emit-elf-exit0 [output-path]
-  ./cmd/fin/fin.ps1 build [--src <file>] [--out <file>] [--target <x86_64-linux-elf|x86_64-windows-pe>] [--pipeline <direct|finobj>] [--no-verify]
-  ./cmd/fin/fin.ps1 run [--src <file>] [--out <file>] [--target <x86_64-linux-elf|x86_64-windows-pe>] [--pipeline <direct|finobj>] [--no-build] [--expect-exit <0..255>] [--no-verify]
+  ./cmd/fin/fin.ps1 build [--src <file>] [--out <file>] [--manifest <path>] [--target <x86_64-linux-elf|x86_64-windows-pe>] [--pipeline <direct|finobj>] [--no-verify]
+  ./cmd/fin/fin.ps1 run [--src <file>] [--out <file>] [--manifest <path>] [--target <x86_64-linux-elf|x86_64-windows-pe>] [--pipeline <direct|finobj>] [--no-build] [--expect-exit <0..255>] [--no-verify]
   ./cmd/fin/fin.ps1 fmt [--src <file>] [--check | --stdout]
   ./cmd/fin/fin.ps1 doc [--src <file>] [--out <file> | --stdout]
   ./cmd/fin/fin.ps1 pkg add <name[@version]> [--version <ver>] [--manifest <path>]

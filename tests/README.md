@@ -16,4 +16,5 @@ Entry points:
 - `tests/conformance/verify_finobj_roundtrip.ps1`: stage0 finobj reader/writer and malformed-object validation gate.
 - `tests/integration/verify_finobj_link.ps1`: stage0 finld single-object link gate.
 - `tests/integration/verify_build_target_windows.ps1`: stage0 `fin build/run --target x86_64-windows-pe` integration gate.
+- `tests/integration/verify_manifest_target_resolution.ps1`: stage0 target resolution from manifest primary gate.
 - `tests/integration/verify_build_pipeline_finobj.ps1`: stage0 `fin build/run --pipeline finobj` integration gate.
