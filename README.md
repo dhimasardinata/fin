@@ -20,7 +20,7 @@ This repository implements the foundation phase:
 - CI policy gates for independent toolchain and FIP linkage are defined.
 - Stage0 direct ELF emitter starter is implemented (`compiler/finc/stage0/emit_elf_exit0.ps1`).
 - Stage0 minimal parser/build path is implemented for `.fn` subset.
-- Bootstrap CLI shim with `doctor` and `build` is available (`./fin.ps1 doctor`, `./fin.ps1 build`).
+- Bootstrap CLI shim covers stage0 workflows (`init`, `doctor`, `build`, `run`, `fmt`, `doc`, `pkg add`, `pkg publish`, `test`).
 - Compiler/linker/object-format/assembler tracks are scaffolded.
 
 ## Stage0 Quick Start
@@ -33,7 +33,8 @@ This repository implements the foundation phase:
 6. Format source subset: `./fin.ps1 fmt --src src/main.fn`
 7. Generate source docs: `./fin.ps1 doc --src src/main.fn --out docs/main.md`
 8. Add dependency to manifest: `./fin.ps1 pkg add serde --version 1.2.3`
-9. Run full stage0 suite: `./fin.ps1 test`
+9. Create publish artifact: `./fin.ps1 pkg publish --out-dir artifacts/publish`
+10. Run full stage0 suite: `./fin.ps1 test`
 
 ## Repository Layout
 

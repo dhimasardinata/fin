@@ -12,6 +12,7 @@ Current bootstrap shim:
 - `./fin.ps1 fmt [--src <file>] [--check | --stdout]`
 - `./fin.ps1 doc [--src <file>] [--out <file> | --stdout]`
 - `./fin.ps1 pkg add <name[@version]> [--version <ver>] [--manifest <path>]`
+- `./fin.ps1 pkg publish [--manifest <path>] [--src <dir>] [--out-dir <path>] [--dry-run]`
 - `./fin.ps1 test [--quick] [--no-doctor] [--no-run]`
 
 Planned unified commands:

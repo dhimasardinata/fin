@@ -298,7 +298,7 @@ function Invoke-Doc {
 
 function Invoke-Pkg {
     if ($CommandArgs.Count -lt 1 -or [string]::IsNullOrWhiteSpace($CommandArgs[0])) {
-        throw "Missing pkg subcommand. Supported: add"
+        throw "Missing pkg subcommand. Supported: add, publish"
     }
 
     $sub = $CommandArgs[0]
@@ -337,8 +337,47 @@ function Invoke-Pkg {
             & (Join-Path $repoRoot "compiler/finc/stage0/pkg_add.ps1") -Name $name -Version $version -ManifestPath $manifest
             break
         }
+        "publish" {
+            $manifest = "fin.toml"
+            $source = "src"
+            $outDir = "artifacts/publish"
+            $dryRun = $false
+
+            for ($i = 0; $i -lt $pkgArgs.Count; $i++) {
+                if ([string]::IsNullOrWhiteSpace($pkgArgs[$i])) { continue }
+                switch ($pkgArgs[$i]) {
+                    "--manifest" {
+                        if ($i + 1 -ge $pkgArgs.Count) { throw "--manifest requires a value" }
+                        $manifest = $pkgArgs[++$i]
+                    }
+                    "--src" {
+                        if ($i + 1 -ge $pkgArgs.Count) { throw "--src requires a value" }
+                        $source = $pkgArgs[++$i]
+                    }
+                    "--out-dir" {
+                        if ($i + 1 -ge $pkgArgs.Count) { throw "--out-dir requires a value" }
+                        $outDir = $pkgArgs[++$i]
+                    }
+                    "--dry-run" {
+                        $dryRun = $true
+                    }
+                    default {
+                        throw "Unknown pkg publish argument: $($pkgArgs[$i])"
+                    }
+                }
+            }
+
+            $publisher = Join-Path $repoRoot "compiler/finc/stage0/pkg_publish.ps1"
+            if ($dryRun) {
+                & $publisher -ManifestPath $manifest -SourceDir $source -OutDir $outDir -DryRun
+            }
+            else {
+                & $publisher -ManifestPath $manifest -SourceDir $source -OutDir $outDir
+            }
+            break
+        }
         default {
-            throw "Unsupported pkg subcommand '$sub'. Supported: add"
+            throw "Unsupported pkg subcommand '$sub'. Supported: add, publish"
         }
     }
 }
@@ -400,6 +439,7 @@ Usage:
   ./cmd/fin/fin.ps1 fmt [--src <file>] [--check | --stdout]
   ./cmd/fin/fin.ps1 doc [--src <file>] [--out <file> | --stdout]
   ./cmd/fin/fin.ps1 pkg add <name[@version]> [--version <ver>] [--manifest <path>]
+  ./cmd/fin/fin.ps1 pkg publish [--manifest <path>] [--src <dir>] [--out-dir <path>] [--dry-run]
   ./cmd/fin/fin.ps1 test [--quick] [--no-doctor] [--no-run]
 
 Planned unified commands (tracked in FIP-0015):
