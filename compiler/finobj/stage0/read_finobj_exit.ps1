@@ -64,6 +64,9 @@ if ($sourcePath.Contains("\")) {
 if ([System.IO.Path]::IsPathRooted($sourcePath)) {
     throw "Invalid source_path: must be repository-relative"
 }
+if ($sourcePath -match '^[A-Za-z]:/') {
+    throw "Invalid source_path: Windows drive-root paths are not allowed"
+}
 if ($sourcePath -match '(^|/)\.\.(/|$)') {
     throw "Invalid source_path: parent traversal segments are not allowed"
 }
