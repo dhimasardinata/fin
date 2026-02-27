@@ -12,6 +12,7 @@ Current script gates:
 - `ci/forbid_external_toolchain.ps1`
 - `tests/reproducibility/verify_toolchain_policy_gate.ps1`
 - `tests/reproducibility/verify_stage0_reproducibility.ps1`
+- `tests/bootstrap/verify_stage0_closure.ps1`
 
 ## Test Families
 
