@@ -1,7 +1,7 @@
 Stage0 conformance checks:
 
 - `verify_stage0_grammar.ps1`: validates minimal grammar subset parsing.
-- `verify_finobj_roundtrip.ps1`: validates stage0 finobj deterministic writer/reader roundtrip.
+- `verify_finobj_roundtrip.ps1`: validates stage0 finobj deterministic writer/reader roundtrip and malformed-object rejection cases.
 - `fixtures/main_exit0.fn`: valid source, expects exit code 0.
 - `fixtures/main_exit7.fn`: valid source, expects exit code 7.
 - `fixtures/main_exit_let7.fn`: valid source with `let` binding and identifier exit.

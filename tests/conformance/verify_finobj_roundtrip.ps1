@@ -15,6 +15,25 @@ $source = Join-Path $repoRoot "tests/conformance/fixtures/main_exit7.fn"
 $objA = Join-Path $tmpDir "a.finobj"
 $objB = Join-Path $tmpDir "b.finobj"
 
+function Assert-ReaderFails {
+    param(
+        [string]$Path,
+        [string]$Label
+    )
+
+    $failed = $false
+    try {
+        & $reader -ObjectPath $Path | Out-Null
+    }
+    catch {
+        $failed = $true
+    }
+    if (-not $failed) {
+        Write-Error ("Expected finobj reader failure: {0}" -f $Label)
+        exit 1
+    }
+}
+
 & $writer -SourcePath $source -OutFile $objA
 & $writer -SourcePath $source -OutFile $objB
 
@@ -33,16 +52,55 @@ if ($exitCode -ne 7) {
 
 $badObj = Join-Path $tmpDir "invalid.finobj"
 Set-Content -Path $badObj -Value "finobj_format=bad`nfinobj_version=1`nexit_code=0`n"
-$failed = $false
-try {
-    & $reader -ObjectPath $badObj | Out-Null
-}
-catch {
-    $failed = $true
-}
-if (-not $failed) {
-    Write-Error "Expected finobj reader to fail for invalid object."
-    exit 1
-}
+Assert-ReaderFails -Path $badObj -Label "bad format and missing required keys"
+
+$dupKeyObj = Join-Path $tmpDir "invalid-duplicate-key.finobj"
+Set-Content -Path $dupKeyObj -Value @"
+finobj_format=finobj-stage0
+finobj_version=1
+target=x86_64-linux-elf
+entry_symbol=main
+exit_code=7
+source_path=tests/conformance/fixtures/main_exit7.fn
+source_sha256=1111111111111111111111111111111111111111111111111111111111111111
+exit_code=9
+"@
+Assert-ReaderFails -Path $dupKeyObj -Label "duplicate key"
+
+$badTargetObj = Join-Path $tmpDir "invalid-target.finobj"
+Set-Content -Path $badTargetObj -Value @"
+finobj_format=finobj-stage0
+finobj_version=1
+target=x86_64-windows-pe
+entry_symbol=main
+exit_code=7
+source_path=tests/conformance/fixtures/main_exit7.fn
+source_sha256=1111111111111111111111111111111111111111111111111111111111111111
+"@
+Assert-ReaderFails -Path $badTargetObj -Label "unsupported target"
+
+$badSourcePathObj = Join-Path $tmpDir "invalid-source-path.finobj"
+Set-Content -Path $badSourcePathObj -Value @"
+finobj_format=finobj-stage0
+finobj_version=1
+target=x86_64-linux-elf
+entry_symbol=main
+exit_code=7
+source_path=C:/absolute/path/main.fn
+source_sha256=1111111111111111111111111111111111111111111111111111111111111111
+"@
+Assert-ReaderFails -Path $badSourcePathObj -Label "absolute source path"
+
+$badSourceHashObj = Join-Path $tmpDir "invalid-source-hash.finobj"
+Set-Content -Path $badSourceHashObj -Value @"
+finobj_format=finobj-stage0
+finobj_version=1
+target=x86_64-linux-elf
+entry_symbol=main
+exit_code=7
+source_path=tests/conformance/fixtures/main_exit7.fn
+source_sha256=1234
+"@
+Assert-ReaderFails -Path $badSourceHashObj -Label "invalid source hash format"
 
 Write-Host "finobj roundtrip conformance check passed."

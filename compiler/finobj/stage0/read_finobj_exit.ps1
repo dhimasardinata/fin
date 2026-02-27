@@ -19,7 +19,11 @@ foreach ($line in ([regex]::Split($raw, "`r?`n"))) {
     if ($trimmed -notmatch '^([A-Za-z0-9_.-]+)\s*=\s*(.+)$') {
         throw "Invalid finobj line: $trimmed"
     }
-    $map[$Matches[1]] = $Matches[2].Trim()
+    $key = $Matches[1]
+    if ($map.ContainsKey($key)) {
+        throw "Duplicate finobj key: $key"
+    }
+    $map[$key] = $Matches[2].Trim()
 }
 
 $required = @(
@@ -45,6 +49,31 @@ if ($map["finobj_version"] -ne "1") {
 }
 if ($map["entry_symbol"] -ne "main") {
     throw "Unsupported entry_symbol: $($map["entry_symbol"])"
+}
+if ($map["target"] -ne "x86_64-linux-elf") {
+    throw "Unsupported target: $($map["target"])"
+}
+
+$sourcePath = $map["source_path"]
+if ([string]::IsNullOrWhiteSpace($sourcePath)) {
+    throw "Invalid source_path: value is empty"
+}
+if ($sourcePath.Contains("\")) {
+    throw "Invalid source_path: must use '/' separators"
+}
+if ([System.IO.Path]::IsPathRooted($sourcePath)) {
+    throw "Invalid source_path: must be repository-relative"
+}
+if ($sourcePath -match '^[A-Za-z]:/') {
+    throw "Invalid source_path: Windows drive-root paths are not allowed"
+}
+if ($sourcePath -match '(^|/)\.\.(/|$)') {
+    throw "Invalid source_path: parent traversal segments are not allowed"
+}
+
+$sourceHash = $map["source_sha256"]
+if ($sourceHash -notmatch '^[0-9a-fA-F]{64}$') {
+    throw "Invalid source_sha256: expected 64 hex characters"
 }
 
 [int]$exitCode = 0
