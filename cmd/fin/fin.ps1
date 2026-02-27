@@ -22,6 +22,110 @@ function Invoke-Doctor {
     Write-Host "fin doctor: all checks passed"
 }
 
+function Invoke-Init {
+    $targetDir = (Get-Location).Path
+    $name = ""
+    $force = $false
+
+    for ($i = 0; $i -lt $CommandArgs.Count; $i++) {
+        if ([string]::IsNullOrWhiteSpace($CommandArgs[$i])) {
+            continue
+        }
+        switch ($CommandArgs[$i]) {
+            "--dir" {
+                if ($i + 1 -ge $CommandArgs.Count) { throw "--dir requires a value" }
+                $targetDir = $CommandArgs[++$i]
+            }
+            "--name" {
+                if ($i + 1 -ge $CommandArgs.Count) { throw "--name requires a value" }
+                $name = $CommandArgs[++$i]
+            }
+            "--force" {
+                $force = $true
+            }
+            default {
+                throw "Unknown init argument: $($CommandArgs[$i])"
+            }
+        }
+    }
+
+    if (-not [System.IO.Path]::IsPathRooted($targetDir)) {
+        $targetDir = Join-Path (Get-Location).Path $targetDir
+    }
+    $targetDir = [System.IO.Path]::GetFullPath($targetDir)
+
+    if ([string]::IsNullOrWhiteSpace($name)) {
+        $name = Split-Path -Path $targetDir -Leaf
+    }
+    if ([string]::IsNullOrWhiteSpace($name)) {
+        throw "Unable to infer project name. Provide --name."
+    }
+    if ($name -notmatch '^[A-Za-z][A-Za-z0-9_-]*$') {
+        throw "Invalid project name '$name'. Use pattern: ^[A-Za-z][A-Za-z0-9_-]*$"
+    }
+
+    if (-not (Test-Path $targetDir)) {
+        New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
+    }
+    $srcDir = Join-Path $targetDir "src"
+    if (-not (Test-Path $srcDir)) {
+        New-Item -ItemType Directory -Path $srcDir -Force | Out-Null
+    }
+
+    $finToml = @"
+[workspace]
+name = "$name"
+version = "0.1.0-dev"
+independent = true
+seed_hash = "UNSET"
+
+[targets]
+primary = "x86_64-linux-elf"
+secondary = "x86_64-windows-pe"
+
+[policy]
+external_toolchain_forbidden = true
+reproducible_build_required = true
+"@
+
+    $finLock = @"
+# Lockfile is intentionally minimal at foundation stage.
+# It will become machine-managed once package resolver is implemented.
+
+version = 1
+packages = []
+"@
+
+    $mainFn = @"
+fn main() {
+  exit(0)
+}
+"@
+
+    $writes = @(
+        @{ Path = (Join-Path $targetDir "fin.toml"); Content = $finToml },
+        @{ Path = (Join-Path $targetDir "fin.lock"); Content = $finLock },
+        @{ Path = (Join-Path $targetDir "src/main.fn"); Content = $mainFn }
+    )
+
+    $existing = @()
+    foreach ($item in $writes) {
+        if (Test-Path $item.Path) {
+            $existing += $item.Path
+        }
+    }
+    if ($existing.Count -gt 0 -and -not $force) {
+        throw ("Refusing to overwrite existing files:`n{0}`nUse --force to overwrite." -f ($existing -join "`n"))
+    }
+
+    foreach ($item in $writes) {
+        Set-Content -Path $item.Path -Value $item.Content
+    }
+
+    Write-Host ("initialized_project={0}" -f $name)
+    Write-Host ("initialized_dir={0}" -f $targetDir)
+}
+
 function Invoke-EmitElfExit0 {
     $outFile = if ($CommandArgs.Count -gt 0 -and $CommandArgs[0]) { $CommandArgs[0] } else { "artifacts/fin-elf-exit0" }
     & (Join-Path $repoRoot "compiler/finc/stage0/emit_elf_exit0.ps1") -OutFile $outFile
@@ -168,6 +272,7 @@ function Show-Usage {
 fin bootstrap CLI (PowerShell shim)
 
 Usage:
+  ./cmd/fin/fin.ps1 init [--name <project>] [--dir <path>] [--force]
   ./cmd/fin/fin.ps1 doctor
   ./cmd/fin/fin.ps1 emit-elf-exit0 [output-path]
   ./cmd/fin/fin.ps1 build [--src <file>] [--out <file>] [--no-verify]
@@ -180,6 +285,7 @@ Planned unified commands (tracked in FIP-0015):
 }
 
 switch ($Command) {
+    "init" { Invoke-Init; break }
     "doctor" { Invoke-Doctor; break }
     "emit-elf-exit0" { Invoke-EmitElfExit0; break }
     "build" { Invoke-Build; break }

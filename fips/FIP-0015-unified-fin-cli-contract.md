@@ -15,6 +15,7 @@
   - compiler/finc/stage0/build_stage0.ps1
   - tests/integration/run_linux_elf.ps1
   - tests/run_stage0_suite.ps1
+  - tests/integration/verify_init.ps1
 - acceptance:
   - CLI behavior tests pass for all mandatory commands.
 
@@ -32,11 +33,12 @@ Bootstrap implementation is available as a PowerShell shim until the native `fin
 
 Current commands:
 
-1. `doctor`: executes policy and seed checks.
-2. `emit-elf-exit0`: runs the FIP-0010 stage0 emitter and verifier.
-3. `build`: parses stage0 `.fn` subset and emits a verified ELF artifact.
-4. `run`: builds (optional) and executes Linux ELF artifact with expected exit-code assertion.
-5. `test`: executes aggregated stage0 test suite.
+1. `init`: scaffolds `fin.toml`, `fin.lock`, and `src/main.fn`.
+2. `doctor`: executes policy and seed checks.
+3. `emit-elf-exit0`: runs the FIP-0010 stage0 emitter and verifier.
+4. `build`: parses stage0 `.fn` subset and emits a verified ELF artifact.
+5. `run`: builds (optional) and executes Linux ELF artifact with expected exit-code assertion.
+6. `test`: executes aggregated stage0 test suite.
 
 This preserves forward compatibility with the planned unified CLI contract while enabling immediate policy enforcement.
 
@@ -56,11 +58,12 @@ Compatibility impact must be documented before Implemented status.
 
 Current checks:
 
-1. `./fin.ps1 doctor` succeeds on compliant repos.
-2. `./fin.ps1 emit-elf-exit0` produces and verifies a valid ELF sample.
-3. `./fin.ps1 build --src tests/conformance/fixtures/main_exit7.fn --out artifacts/fin-build-exit7` succeeds.
-4. `./fin.ps1 run` executes default stage0 program.
-5. `./fin.ps1 run --no-build --out artifacts/fin-build-exit7 --expect-exit 7` executes fixture artifact.
-6. `./fin.ps1 test` executes stage0 suite end-to-end.
+1. `./fin.ps1 init --dir <tmp> --name <name>` creates expected scaffold files.
+2. `./fin.ps1 doctor` succeeds on compliant repos.
+3. `./fin.ps1 emit-elf-exit0` produces and verifies a valid ELF sample.
+4. `./fin.ps1 build --src tests/conformance/fixtures/main_exit7.fn --out artifacts/fin-build-exit7` succeeds.
+5. `./fin.ps1 run` executes default stage0 program.
+6. `./fin.ps1 run --no-build --out artifacts/fin-build-exit7 --expect-exit 7` executes fixture artifact.
+7. `./fin.ps1 test` executes stage0 suite end-to-end.
 
 Remaining command set (`init/fmt/doc/pkg`) remains scheduled.
