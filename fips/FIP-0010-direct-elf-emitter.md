@@ -12,6 +12,7 @@
   - compiler/finc/stage0/emit_elf_exit0.ps1
   - compiler/finc/stage0/build_stage0.ps1
   - tests/bootstrap/verify_elf_exit0.ps1
+  - tests/run_stage0_suite.ps1
   - .github/workflows/ci.yml
 - acceptance:
   - Compiler emits runnable ELF binaries with valid headers/segments.
@@ -58,7 +59,6 @@ CI now runs:
 
 1. `compiler/finc/stage0/emit_elf_exit0.ps1`
 2. `tests/bootstrap/verify_elf_exit0.ps1`
-3. `cmd/fin/fin.ps1 build --src tests/conformance/fixtures/main_exit7.fn --out artifacts/fin-build-exit7`
-4. `cmd/fin/fin.ps1 run --no-build --out artifacts/fin-build-exit7 --expect-exit 7`
+3. `cmd/fin/fin.ps1 test --no-doctor`
 
 These tests validate direct-image emission without assembler/linker usage.

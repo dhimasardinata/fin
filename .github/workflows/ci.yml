@@ -40,21 +40,9 @@ jobs:
         shell: pwsh
         run: ./tests/conformance/verify_stage0_grammar.ps1
 
-      - name: Build stage0 fixture via fin CLI
+      - name: Run stage0 test suite
         shell: pwsh
-        run: ./cmd/fin/fin.ps1 build --src tests/conformance/fixtures/main_exit7.fn --out artifacts/fin-build-exit7
-
-      - name: Verify built stage0 fixture
-        shell: pwsh
-        run: ./tests/bootstrap/verify_elf_exit0.ps1 -Path artifacts/fin-build-exit7 -ExpectedExitCode 7
-
-      - name: Run default stage0 program
-        shell: pwsh
-        run: ./cmd/fin/fin.ps1 run
-
-      - name: Run built stage0 fixture
-        shell: pwsh
-        run: ./cmd/fin/fin.ps1 run --no-build --out artifacts/fin-build-exit7 --expect-exit 7
+        run: ./cmd/fin/fin.ps1 test --no-doctor
 
       - name: Collect changed files
         if: github.event_name == 'pull_request'

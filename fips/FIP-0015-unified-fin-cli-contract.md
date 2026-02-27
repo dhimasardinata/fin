@@ -14,6 +14,7 @@
   - cmd/fin/README.md
   - compiler/finc/stage0/build_stage0.ps1
   - tests/integration/run_linux_elf.ps1
+  - tests/run_stage0_suite.ps1
 - acceptance:
   - CLI behavior tests pass for all mandatory commands.
 
@@ -35,6 +36,7 @@ Current commands:
 2. `emit-elf-exit0`: runs the FIP-0010 stage0 emitter and verifier.
 3. `build`: parses stage0 `.fn` subset and emits a verified ELF artifact.
 4. `run`: builds (optional) and executes Linux ELF artifact with expected exit-code assertion.
+5. `test`: executes aggregated stage0 test suite.
 
 This preserves forward compatibility with the planned unified CLI contract while enabling immediate policy enforcement.
 
@@ -59,5 +61,6 @@ Current checks:
 3. `./fin.ps1 build --src tests/conformance/fixtures/main_exit7.fn --out artifacts/fin-build-exit7` succeeds.
 4. `./fin.ps1 run` executes default stage0 program.
 5. `./fin.ps1 run --no-build --out artifacts/fin-build-exit7 --expect-exit 7` executes fixture artifact.
+6. `./fin.ps1 test` executes stage0 suite end-to-end.
 
-Remaining command set (`init/test/fmt/doc/pkg`) remains scheduled.
+Remaining command set (`init/fmt/doc/pkg`) remains scheduled.
