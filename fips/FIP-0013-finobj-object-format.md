@@ -38,6 +38,13 @@ Current stage0 finobj format is deterministic key-value text with required field
 
 Stage0 scope is single-unit object container; full relocations/symbol tables remain deferred.
 
+Reader validation requirements in stage0:
+
+1. Reject duplicate keys.
+2. Require `target=x86_64-linux-elf`.
+3. Require repository-relative `source_path` (no rooted path or `..` traversal).
+4. Require `source_sha256` to be a 64-hex digest.
+
 ## Alternatives
 
 Alternatives are considered in milestone planning and linked PR discussions. Rejected alternatives must be listed here when status moves beyond Review.
@@ -54,5 +61,5 @@ Compatibility impact must be documented before Implemented status.
 
 Current checks:
 
-1. `tests/conformance/verify_finobj_roundtrip.ps1` validates deterministic writer output hash, reader decode, and invalid object rejection.
+1. `tests/conformance/verify_finobj_roundtrip.ps1` validates deterministic writer output hash, reader decode, and malformed-object rejection (duplicate key, bad target, invalid source metadata).
 2. `tests/run_stage0_suite.ps1` includes finobj conformance checks in `fin test`.
