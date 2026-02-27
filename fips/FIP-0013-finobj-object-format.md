@@ -2,13 +2,17 @@
 
 - id: FIP-0013
 - address: fin://fip/FIP-0013
-- status: Draft
+- status: InProgress
 - authors: @fin-maintainers
 - created: 2026-02-27
 - requires: ["FIP-0010"]
 - target_release: M5
 - discussion: TBD
-- implementation: []
+- implementation:
+  - compiler/finobj/stage0/write_finobj_exit.ps1
+  - compiler/finobj/stage0/read_finobj_exit.ps1
+  - tests/conformance/verify_finobj_roundtrip.ps1
+  - tests/run_stage0_suite.ps1
 - acceptance:
   - Object reader/writer round-trip tests pass.
 
@@ -22,7 +26,17 @@ This proposal is part of the Fin independent-toolchain baseline and is required 
 
 ## Design
 
-Initial design details are tracked in the corresponding spec and architecture documents. Concrete implementation deltas must be appended to this section before status changes to InProgress.
+Current stage0 finobj format is deterministic key-value text with required fields:
+
+1. `finobj_format=finobj-stage0`
+2. `finobj_version=1`
+3. `target=x86_64-linux-elf`
+4. `entry_symbol=main`
+5. `exit_code=<0..255>`
+6. `source_path=<repo-relative path>`
+7. `source_sha256=<normalized source hash>`
+
+Stage0 scope is single-unit object container; full relocations/symbol tables remain deferred.
 
 ## Alternatives
 
@@ -38,4 +52,7 @@ Compatibility impact must be documented before Implemented status.
 
 ## Test Plan
 
-Acceptance criteria listed above are normative; CI coverage for this proposal must be linked in implementation once available.
+Current checks:
+
+1. `tests/conformance/verify_finobj_roundtrip.ps1` validates deterministic writer output hash, reader decode, and invalid object rejection.
+2. `tests/run_stage0_suite.ps1` includes finobj conformance checks in `fin test`.

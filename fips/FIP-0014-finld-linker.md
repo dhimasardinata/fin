@@ -2,13 +2,16 @@
 
 - id: FIP-0014
 - address: fin://fip/FIP-0014
-- status: Draft
+- status: InProgress
 - authors: @fin-maintainers
 - created: 2026-02-27
 - requires: ["FIP-0013"]
 - target_release: M5
 - discussion: TBD
-- implementation: []
+- implementation:
+  - compiler/finld/stage0/link_finobj_to_elf.ps1
+  - tests/integration/verify_finobj_link.ps1
+  - tests/run_stage0_suite.ps1
 - acceptance:
   - Linker suite passes symbol and relocation correctness checks.
 
@@ -22,7 +25,13 @@ This proposal is part of the Fin independent-toolchain baseline and is required 
 
 ## Design
 
-Initial design details are tracked in the corresponding spec and architecture documents. Concrete implementation deltas must be appended to this section before status changes to InProgress.
+Current stage0 linker path:
+
+1. Read stage0 finobj payload (`exit_code`) via finobj reader.
+2. Emit final Linux ELF through direct emitter path with decoded exit code.
+3. Optional structure verification after link.
+
+This is a minimal single-object checkpoint before full symbol-resolution and relocation support.
 
 ## Alternatives
 
@@ -38,4 +47,7 @@ Compatibility impact must be documented before Implemented status.
 
 ## Test Plan
 
-Acceptance criteria listed above are normative; CI coverage for this proposal must be linked in implementation once available.
+Current checks:
+
+1. `tests/integration/verify_finobj_link.ps1` validates finobj -> ELF link path and runtime exit behavior.
+2. `tests/run_stage0_suite.ps1` includes finld integration check in `fin test`.

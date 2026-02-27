@@ -15,6 +15,7 @@ $verifyElf = Join-Path $repoRoot "tests/bootstrap/verify_elf_exit0.ps1"
 $verifyPe = Join-Path $repoRoot "tests/bootstrap/verify_pe_exit0.ps1"
 $verifyClosure = Join-Path $repoRoot "tests/bootstrap/verify_stage0_closure.ps1"
 $verifyGrammar = Join-Path $repoRoot "tests/conformance/verify_stage0_grammar.ps1"
+$verifyFinobjRoundtrip = Join-Path $repoRoot "tests/conformance/verify_finobj_roundtrip.ps1"
 $verifyInit = Join-Path $repoRoot "tests/integration/verify_init.ps1"
 $verifyFmt = Join-Path $repoRoot "tests/integration/verify_fmt.ps1"
 $verifyDoc = Join-Path $repoRoot "tests/integration/verify_doc.ps1"
@@ -22,6 +23,7 @@ $verifyPkg = Join-Path $repoRoot "tests/integration/verify_pkg.ps1"
 $verifyPkgPublish = Join-Path $repoRoot "tests/integration/verify_pkg_publish.ps1"
 $verifyLinuxWriteExit = Join-Path $repoRoot "tests/integration/verify_linux_write_exit.ps1"
 $verifyWindowsPeExit = Join-Path $repoRoot "tests/integration/verify_windows_pe_exit.ps1"
+$verifyFinobjLink = Join-Path $repoRoot "tests/integration/verify_finobj_link.ps1"
 $verifyRepro = Join-Path $repoRoot "tests/reproducibility/verify_stage0_reproducibility.ps1"
 $verifyPolicyGate = Join-Path $repoRoot "tests/reproducibility/verify_toolchain_policy_gate.ps1"
 
@@ -38,6 +40,7 @@ if (-not $SkipDoctor) {
 & $verifyClosure -VerifyBaseline
 
 & $verifyGrammar
+& $verifyFinobjRoundtrip
 & $verifyInit
 & $verifyFmt
 & $verifyDoc
@@ -45,6 +48,7 @@ if (-not $SkipDoctor) {
 & $verifyPkgPublish
 & $verifyLinuxWriteExit
 & $verifyWindowsPeExit
+& $verifyFinobjLink
 & $verifyRepro
 & $verifyPolicyGate
 

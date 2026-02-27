@@ -8,6 +8,7 @@ Integration checks:
 - `verify_pkg_publish.ps1`: validates `fin pkg publish` artifact generation, determinism, and dry-run behavior.
 - `verify_linux_write_exit.ps1`: validates Linux `sys_write + sys_exit` emitted ELF behavior and stdout.
 - `verify_windows_pe_exit.ps1`: validates Windows PE emit/verify flow and runtime exit code on Windows hosts.
+- `verify_finobj_link.ps1`: validates stage0 finobj-to-ELF link path and runtime behavior.
 
 On Windows hosts this script uses WSL to execute Linux artifacts.
 It is used by `./fin.ps1 run` and `./fin.ps1 test`.

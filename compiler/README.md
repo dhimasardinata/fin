@@ -8,3 +8,5 @@ This directory contains language toolchain tracks:
 - `finas/`: optional assembler track.
 
 Normal build path must stay independent from external toolchains.
+
+Stage0 now includes starter finobj/finld scripts for deterministic single-unit object/link flows.

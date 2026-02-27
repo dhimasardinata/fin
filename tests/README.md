@@ -13,3 +13,5 @@ Entry points:
 - `tests/reproducibility/verify_stage0_reproducibility.ps1`: stage0 reproducibility hash gate.
 - `tests/bootstrap/verify_stage0_closure.ps1`: stage0 bootstrap closure witness gate.
 - `tests/bootstrap/verify_pe_exit0.ps1`: stage0 Windows PE image structure gate.
+- `tests/conformance/verify_finobj_roundtrip.ps1`: stage0 finobj reader/writer roundtrip gate.
+- `tests/integration/verify_finobj_link.ps1`: stage0 finld single-object link gate.

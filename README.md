@@ -24,6 +24,7 @@ This repository implements the foundation phase:
 - Stage0 minimal parser/build path is implemented for `.fn` subset.
 - Bootstrap CLI shim covers stage0 workflows (`init`, `doctor`, `build`, `run`, `fmt`, `doc`, `pkg add`, `pkg publish`, `test`).
 - Stage0 bootstrap closure proxy witness is implemented with baseline verification (`tests/bootstrap/verify_stage0_closure.ps1`, `seed/stage0-closure-baseline.txt`).
+- Stage0 finobj/finld starter flow is implemented for single-unit object-to-ELF path.
 - Compiler/linker/object-format/assembler tracks are scaffolded.
 
 ## Stage0 Quick Start
@@ -40,7 +41,8 @@ This repository implements the foundation phase:
 10. Run Linux syscall smoke (`write + exit`): `./tests/integration/verify_linux_write_exit.ps1`
 11. Generate closure witness: `./tests/bootstrap/verify_stage0_closure.ps1`
 12. Verify PE structure sample: `./tests/integration/verify_windows_pe_exit.ps1`
-13. Run full stage0 suite: `./fin.ps1 test`
+13. Verify finobj link sample: `./tests/integration/verify_finobj_link.ps1`
+14. Run full stage0 suite: `./fin.ps1 test`
 
 ## Repository Layout
 
