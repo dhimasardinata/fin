@@ -5,6 +5,8 @@ $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\\..")
 $fin = Join-Path $repoRoot "cmd/fin/fin.ps1"
 $emitExit = Join-Path $repoRoot "compiler/finc/stage0/emit_elf_exit0.ps1"
 $emitWriteExit = Join-Path $repoRoot "compiler/finc/stage0/emit_elf_write_exit.ps1"
+$writeFinobj = Join-Path $repoRoot "compiler/finobj/stage0/write_finobj_exit.ps1"
+$linkFinobj = Join-Path $repoRoot "compiler/finld/stage0/link_finobj_to_elf.ps1"
 $tmpDir = Join-Path $repoRoot "artifacts/tmp/repro-smoke"
 
 if (Test-Path $tmpDir) {
@@ -64,5 +66,20 @@ $outDirB = Join-Path $project "publish-b"
 $artifactA = Join-Path $outDirA "repro_pkg-0.1.0-dev.fnpkg"
 $artifactB = Join-Path $outDirB "repro_pkg-0.1.0-dev.fnpkg"
 Assert-SameHash -PathA $artifactA -PathB $artifactB -Label "fin pkg publish"
+
+# 5) finobj writer determinism on fixed source.
+$finobjA = Join-Path $tmpDir "main-a.finobj"
+$finobjB = Join-Path $tmpDir "main-b.finobj"
+$finobjSrc = "tests/conformance/fixtures/main_exit_var_assign.fn"
+& $writeFinobj -SourcePath $finobjSrc -OutFile $finobjA
+& $writeFinobj -SourcePath $finobjSrc -OutFile $finobjB
+Assert-SameHash -PathA $finobjA -PathB $finobjB -Label "write_finobj_exit"
+
+# 6) finld linker determinism on fixed finobj input.
+$linkedA = Join-Path $tmpDir "linked-a"
+$linkedB = Join-Path $tmpDir "linked-b"
+& $linkFinobj -ObjectPath $finobjA -OutFile $linkedA
+& $linkFinobj -ObjectPath $finobjA -OutFile $linkedB
+Assert-SameHash -PathA $linkedA -PathB $linkedB -Label "link_finobj_to_elf"
 
 Write-Host "stage0 reproducibility check passed."
