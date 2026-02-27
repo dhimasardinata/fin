@@ -29,13 +29,18 @@ This proposal is part of the Fin independent-toolchain baseline and is required 
 
 Current stage0 closure proxy:
 
-1. Build fixed source input twice through stage0 pipeline (`gen1`, `gen2`).
-2. Require `sha256(gen1) == sha256(gen2)`.
-3. Compute and record snapshot hashes for:
+1. Build fixed source input twice for each stage0 matrix case:
+   - `x86_64-linux-elf` + `direct`
+   - `x86_64-linux-elf` + `finobj`
+   - `x86_64-windows-pe` + `direct`
+   - `x86_64-windows-pe` + `finobj`
+2. Require per-case deterministic equality (`sha256(gen1) == sha256(gen2)`).
+3. Require direct/finobj parity for each target (Linux and Windows).
+4. Compute and record snapshot hashes for:
    - seed metadata files (`seed/manifest.toml`, `seed/SHA256SUMS`)
-   - stage0 toolchain control scripts (`cmd/fin/fin.ps1`, stage0 build/parser/emitter scripts)
-4. Write closure witness record to `artifacts/closure/stage0-closure-witness.txt`.
-5. Compare closure witness keys to committed baseline (`seed/stage0-closure-baseline.txt`) in stage0 test suite.
+   - stage0 toolchain control scripts (`cmd/fin/fin.ps1`, stage0 build/parser/emit/finobj/finld scripts)
+5. Write closure witness record to `artifacts/closure/stage0-closure-witness.txt`.
+6. Compare closure witness keys to committed baseline (`seed/stage0-closure-baseline.txt`) in stage0 test suite.
 
 This proxy establishes deterministic closure evidence before native self-hosting exists.
 Full `fin-seed -> finc -> finc` closure remains the completion requirement for Implemented status.
@@ -56,7 +61,7 @@ Compatibility impact must be documented before Implemented status.
 
 Current checks:
 
-1. `tests/bootstrap/verify_stage0_closure.ps1` validates `gen1 == gen2` hash equality and witness output.
+1. `tests/bootstrap/verify_stage0_closure.ps1` validates deterministic `gen1 == gen2` for all stage0 target/pipeline matrix cases and target-level direct/finobj parity.
 2. `tests/run_stage0_suite.ps1` includes closure check in `fin test`.
 3. Stage0 suite verifies closure witness against committed baseline.
 4. CI executes `cmd/fin/fin.ps1 test --no-doctor` on push/PR.

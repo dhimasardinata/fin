@@ -20,10 +20,15 @@ Until native self-hosting is available, stage0 closure evidence is produced by:
 
 Proxy rule:
 
-1. Build the same source twice using current stage0 toolchain path.
-2. Require generation-1 and generation-2 output hashes to match.
-3. Emit witness metadata at `artifacts/closure/stage0-closure-witness.txt`.
-4. Verify witness keys against committed baseline `seed/stage0-closure-baseline.txt`.
+1. Build the same source twice for each stage0 matrix case:
+   - Linux ELF `direct`
+   - Linux ELF `finobj`
+   - Windows PE `direct`
+   - Windows PE `finobj`
+2. Require generation-1 and generation-2 output hashes to match per case.
+3. Require direct/finobj pipeline parity per target.
+4. Emit witness metadata at `artifacts/closure/stage0-closure-witness.txt`.
+5. Verify witness keys against committed baseline `seed/stage0-closure-baseline.txt`.
 
 ## Constraints
 
