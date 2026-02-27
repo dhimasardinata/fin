@@ -1,16 +1,16 @@
 # FIP-0011: Self-Hosting Closure Criteria
 
-- id: $(System.Collections.Hashtable.Id)
-- address: in://fip/FIP-0011
-- status: $(System.Collections.Hashtable.Status)
+- id: FIP-0011
+- address: fin://fip/FIP-0011
+- status: Scheduled
 - authors: @fin-maintainers
 - created: 2026-02-27
-- requires: $(System.Collections.Hashtable.Requires)
-- target_release: $(System.Collections.Hashtable.Target)
+- requires: ["FIP-0003", "FIP-0010"]
+- target_release: M3
 - discussion: TBD
 - implementation: []
 - acceptance:
-  - $(System.Collections.Hashtable.Acceptance)
+  - fin-seed -> finc -> finc closure hash is stable in CI.
 
 ## Summary
 

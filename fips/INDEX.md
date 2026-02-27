@@ -16,7 +16,7 @@
 | FIP-0012 | Windows PE Emitter | Draft | `fin://fip/FIP-0012` |
 | FIP-0013 | Fin Object Format (finobj) | Draft | `fin://fip/FIP-0013` |
 | FIP-0014 | Fin Linker (finld) | Draft | `fin://fip/FIP-0014` |
-| FIP-0015 | Unified fin CLI Contract | Scheduled | `fin://fip/FIP-0015` |
+| FIP-0015 | Unified fin CLI Contract | InProgress | `fin://fip/FIP-0015` |
 | FIP-0016 | Package Manifest and Lockfile | Draft | `fin://fip/FIP-0016` |
 | FIP-0017 | Lean Stdlib v0 (No-libc) | Draft | `fin://fip/FIP-0017` |
 | FIP-0018 | Deterministic and Reproducible Builds | Accepted | `fin://fip/FIP-0018` |

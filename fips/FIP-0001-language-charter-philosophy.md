@@ -1,16 +1,16 @@
 # FIP-0001: Language Charter and Philosophy
 
-- id: $(System.Collections.Hashtable.Id)
-- address: in://fip/FIP-0001
-- status: $(System.Collections.Hashtable.Status)
+- id: FIP-0001
+- address: fin://fip/FIP-0001
+- status: Accepted
 - authors: @fin-maintainers
 - created: 2026-02-27
-- requires: $(System.Collections.Hashtable.Requires)
-- target_release: $(System.Collections.Hashtable.Target)
+- requires: []
+- target_release: M0
 - discussion: TBD
 - implementation: []
 - acceptance:
-  - $(System.Collections.Hashtable.Acceptance)
+  - Charter is merged and referenced by spec and governance docs.
 
 ## Summary
 

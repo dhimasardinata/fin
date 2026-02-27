@@ -1,16 +1,16 @@
 # FIP-0018: Deterministic and Reproducible Builds
 
-- id: $(System.Collections.Hashtable.Id)
-- address: in://fip/FIP-0018
-- status: $(System.Collections.Hashtable.Status)
+- id: FIP-0018
+- address: fin://fip/FIP-0018
+- status: Accepted
 - authors: @fin-maintainers
 - created: 2026-02-27
-- requires: $(System.Collections.Hashtable.Requires)
-- target_release: $(System.Collections.Hashtable.Target)
+- requires: ["FIP-0003"]
+- target_release: M0
 - discussion: TBD
 - implementation: []
 - acceptance:
-  - $(System.Collections.Hashtable.Acceptance)
+  - CI reproducibility checks pass across repeated builds.
 
 ## Summary
 

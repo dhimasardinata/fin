@@ -1,16 +1,16 @@
 # FIP-0008: Error Model (Result + try)
 
-- id: $(System.Collections.Hashtable.Id)
-- address: in://fip/FIP-0008
-- status: $(System.Collections.Hashtable.Status)
+- id: FIP-0008
+- address: fin://fip/FIP-0008
+- status: Scheduled
 - authors: @fin-maintainers
 - created: 2026-02-27
-- requires: $(System.Collections.Hashtable.Requires)
-- target_release: $(System.Collections.Hashtable.Target)
+- requires: ["FIP-0006"]
+- target_release: M2
 - discussion: TBD
 - implementation: []
 - acceptance:
-  - $(System.Collections.Hashtable.Acceptance)
+  - Error-flow conformance suite passes without hidden control flow.
 
 ## Summary
 

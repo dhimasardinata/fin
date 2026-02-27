@@ -2,6 +2,13 @@
 
 The `fin` command is the single entry point for compiler and package workflows.
 
+## Bootstrap Shim
+
+Until native `fin` is available, a compatibility shim is provided:
+
+- `./fin.ps1 doctor`
+- `./fin.ps1 emit-elf-exit0 [output-path]`
+
 ## Commands
 
 - `fin init`: create a new package layout.

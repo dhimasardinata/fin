@@ -1,16 +1,16 @@
 # FIP-0014: Fin Linker (finld)
 
-- id: $(System.Collections.Hashtable.Id)
-- address: in://fip/FIP-0014
-- status: $(System.Collections.Hashtable.Status)
+- id: FIP-0014
+- address: fin://fip/FIP-0014
+- status: Draft
 - authors: @fin-maintainers
 - created: 2026-02-27
-- requires: $(System.Collections.Hashtable.Requires)
-- target_release: $(System.Collections.Hashtable.Target)
+- requires: ["FIP-0013"]
+- target_release: M5
 - discussion: TBD
 - implementation: []
 - acceptance:
-  - $(System.Collections.Hashtable.Acceptance)
+  - Linker suite passes symbol and relocation correctness checks.
 
 ## Summary
 

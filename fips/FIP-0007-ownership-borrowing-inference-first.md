@@ -1,16 +1,16 @@
 # FIP-0007: Ownership and Borrowing (Inference-First)
 
-- id: $(System.Collections.Hashtable.Id)
-- address: in://fip/FIP-0007
-- status: $(System.Collections.Hashtable.Status)
+- id: FIP-0007
+- address: fin://fip/FIP-0007
+- status: Scheduled
 - authors: @fin-maintainers
 - created: 2026-02-27
-- requires: $(System.Collections.Hashtable.Requires)
-- target_release: $(System.Collections.Hashtable.Target)
+- requires: ["FIP-0006"]
+- target_release: M2
 - discussion: TBD
 - implementation: []
 - acceptance:
-  - $(System.Collections.Hashtable.Acceptance)
+  - Safety suite catches use-after-free and double-free classes.
 
 ## Summary
 
