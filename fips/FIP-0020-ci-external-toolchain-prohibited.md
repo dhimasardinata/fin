@@ -1,16 +1,16 @@
 # FIP-0020: CI Gate: External Toolchain Prohibited
 
-- id: $(System.Collections.Hashtable.Id)
-- address: in://fip/FIP-0020
-- status: $(System.Collections.Hashtable.Status)
+- id: FIP-0020
+- address: fin://fip/FIP-0020
+- status: Scheduled
 - authors: @fin-maintainers
 - created: 2026-02-27
-- requires: $(System.Collections.Hashtable.Requires)
-- target_release: $(System.Collections.Hashtable.Target)
+- requires: ["FIP-0002", "FIP-0018"]
+- target_release: M0
 - discussion: TBD
 - implementation: []
 - acceptance:
-  - $(System.Collections.Hashtable.Acceptance)
+  - CI job fails on disallowed command invocation patterns.
 
 ## Summary
 

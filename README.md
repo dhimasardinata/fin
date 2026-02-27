@@ -18,6 +18,8 @@ This repository implements the foundation phase:
 - FIP lifecycle and proposal corpus (`FIP-0001` to `FIP-0020`) are in place.
 - Bootstrap trust model is defined (`seed/`).
 - CI policy gates for independent toolchain and FIP linkage are defined.
+- Stage0 direct ELF emitter starter is implemented (`compiler/finc/stage0/emit_elf_exit0.ps1`).
+- Bootstrap CLI shim with `doctor` is available (`./fin.ps1 doctor`).
 - Compiler/linker/object-format/assembler tracks are scaffolded.
 
 ## Repository Layout

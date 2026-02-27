@@ -1,16 +1,16 @@
 # FIP-0016: Package Manifest and Lockfile
 
-- id: $(System.Collections.Hashtable.Id)
-- address: in://fip/FIP-0016
-- status: $(System.Collections.Hashtable.Status)
+- id: FIP-0016
+- address: fin://fip/FIP-0016
+- status: Draft
 - authors: @fin-maintainers
 - created: 2026-02-27
-- requires: $(System.Collections.Hashtable.Requires)
-- target_release: $(System.Collections.Hashtable.Target)
+- requires: ["FIP-0015"]
+- target_release: M6
 - discussion: TBD
 - implementation: []
 - acceptance:
-  - $(System.Collections.Hashtable.Acceptance)
+  - Deterministic resolution and lockfile update tests pass.
 
 ## Summary
 

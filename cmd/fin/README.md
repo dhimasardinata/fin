@@ -2,7 +2,12 @@
 
 Command contract is defined in `FIP-0015`.
 
-Commands (planned):
+Current bootstrap shim:
+
+- `./fin.ps1 doctor`
+- `./fin.ps1 emit-elf-exit0 [output-path]`
+
+Planned unified commands:
 
 - `fin init`
 - `fin build`

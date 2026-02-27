@@ -13,4 +13,9 @@
 
 ## Current State
 
-Design and contracts are defined; implementation code will be added incrementally under proposal control.
+Implemented starter:
+
+- `stage0/emit_elf_exit0.ps1` writes a deterministic Linux x86_64 ELF executable directly.
+- `tests/bootstrap/verify_elf_exit0.ps1` validates ELF header, program header, entry point, and payload bytes.
+
+Design and contracts continue to evolve under proposal control.

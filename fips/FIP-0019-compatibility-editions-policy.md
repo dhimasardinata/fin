@@ -1,16 +1,16 @@
 # FIP-0019: Compatibility and Editions Policy
 
-- id: $(System.Collections.Hashtable.Id)
-- address: in://fip/FIP-0019
-- status: $(System.Collections.Hashtable.Status)
+- id: FIP-0019
+- address: fin://fip/FIP-0019
+- status: Accepted
 - authors: @fin-maintainers
 - created: 2026-02-27
-- requires: $(System.Collections.Hashtable.Requires)
-- target_release: $(System.Collections.Hashtable.Target)
+- requires: ["FIP-0002"]
+- target_release: M0
 - discussion: TBD
 - implementation: []
 - acceptance:
-  - $(System.Collections.Hashtable.Acceptance)
+  - Compatibility policy is published and referenced by release process.
 
 ## Summary
 

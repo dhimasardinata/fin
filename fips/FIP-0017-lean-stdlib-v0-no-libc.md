@@ -1,16 +1,16 @@
 # FIP-0017: Lean Stdlib v0 (No-libc)
 
-- id: $(System.Collections.Hashtable.Id)
-- address: in://fip/FIP-0017
-- status: $(System.Collections.Hashtable.Status)
+- id: FIP-0017
+- address: fin://fip/FIP-0017
+- status: Draft
 - authors: @fin-maintainers
 - created: 2026-02-27
-- requires: $(System.Collections.Hashtable.Requires)
-- target_release: $(System.Collections.Hashtable.Target)
+- requires: ["FIP-0009", "FIP-0012"]
+- target_release: M6
 - discussion: TBD
 - implementation: []
 - acceptance:
-  - $(System.Collections.Hashtable.Acceptance)
+  - Stdlib API conformance and runtime ABI tests pass.
 
 ## Summary
 

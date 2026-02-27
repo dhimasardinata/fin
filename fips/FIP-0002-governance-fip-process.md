@@ -1,16 +1,16 @@
 # FIP-0002: Governance and FIP Process
 
-- id: $(System.Collections.Hashtable.Id)
-- address: in://fip/FIP-0002
-- status: $(System.Collections.Hashtable.Status)
+- id: FIP-0002
+- address: fin://fip/FIP-0002
+- status: Accepted
 - authors: @fin-maintainers
 - created: 2026-02-27
-- requires: $(System.Collections.Hashtable.Requires)
-- target_release: $(System.Collections.Hashtable.Target)
+- requires: ["FIP-0001"]
+- target_release: M0
 - discussion: TBD
 - implementation: []
 - acceptance:
-  - $(System.Collections.Hashtable.Acceptance)
+  - Lifecycle and merge checks are documented and enforced in CI.
 
 ## Summary
 

@@ -1,16 +1,16 @@
 # FIP-0003: Bootstrap Trust Model (Seed Binary)
 
-- id: $(System.Collections.Hashtable.Id)
-- address: in://fip/FIP-0003
-- status: $(System.Collections.Hashtable.Status)
+- id: FIP-0003
+- address: fin://fip/FIP-0003
+- status: Accepted
 - authors: @fin-maintainers
 - created: 2026-02-27
-- requires: $(System.Collections.Hashtable.Requires)
-- target_release: $(System.Collections.Hashtable.Target)
+- requires: ["FIP-0001", "FIP-0002"]
+- target_release: M0
 - discussion: TBD
 - implementation: []
 - acceptance:
-  - $(System.Collections.Hashtable.Acceptance)
+  - Seed manifest schema and verification scripts exist and pass checks.
 
 ## Summary
 

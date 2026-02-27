@@ -1,16 +1,16 @@
 # FIP-0009: Linux ABI and Syscall Contract
 
-- id: $(System.Collections.Hashtable.Id)
-- address: in://fip/FIP-0009
-- status: $(System.Collections.Hashtable.Status)
+- id: FIP-0009
+- address: fin://fip/FIP-0009
+- status: Scheduled
 - authors: @fin-maintainers
 - created: 2026-02-27
-- requires: $(System.Collections.Hashtable.Requires)
-- target_release: $(System.Collections.Hashtable.Target)
+- requires: ["FIP-0010"]
+- target_release: M1
 - discussion: TBD
 - implementation: []
 - acceptance:
-  - $(System.Collections.Hashtable.Acceptance)
+  - Hello-world and syscall smoke tests run on Linux without libc.
 
 ## Summary
 

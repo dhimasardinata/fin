@@ -28,6 +28,14 @@ jobs:
         shell: pwsh
         run: ./ci/forbid_external_toolchain.ps1
 
+      - name: Emit minimal ELF sample
+        shell: pwsh
+        run: ./compiler/finc/stage0/emit_elf_exit0.ps1 -OutFile artifacts/fin-elf-exit0
+
+      - name: Verify minimal ELF sample
+        shell: pwsh
+        run: ./tests/bootstrap/verify_elf_exit0.ps1 -Path artifacts/fin-elf-exit0
+
       - name: Collect changed files
         if: github.event_name == 'pull_request'
         id: changed
