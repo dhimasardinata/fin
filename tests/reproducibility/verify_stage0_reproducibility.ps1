@@ -51,7 +51,14 @@ $buildB = Join-Path $tmpDir "build-b"
 & $fin build --src tests/conformance/fixtures/main_exit_var_assign.fn --out $buildB
 Assert-SameHash -PathA $buildA -PathB $buildB -Label "fin build"
 
-# 4) Package publish determinism on fixed inputs.
+# 4) Stage0 build determinism through finobj+finld pipeline.
+$buildFinobjA = Join-Path $tmpDir "build-finobj-a"
+$buildFinobjB = Join-Path $tmpDir "build-finobj-b"
+& $fin build --src tests/conformance/fixtures/main_exit_var_assign.fn --out $buildFinobjA --pipeline finobj
+& $fin build --src tests/conformance/fixtures/main_exit_var_assign.fn --out $buildFinobjB --pipeline finobj
+Assert-SameHash -PathA $buildFinobjA -PathB $buildFinobjB -Label "fin build --pipeline finobj"
+
+# 5) Package publish determinism on fixed inputs.
 $project = Join-Path $tmpDir "repro_pkg"
 $manifest = Join-Path $project "fin.toml"
 $srcDir = Join-Path $project "src"
@@ -67,7 +74,7 @@ $artifactA = Join-Path $outDirA "repro_pkg-0.1.0-dev.fnpkg"
 $artifactB = Join-Path $outDirB "repro_pkg-0.1.0-dev.fnpkg"
 Assert-SameHash -PathA $artifactA -PathB $artifactB -Label "fin pkg publish"
 
-# 5) finobj writer determinism on fixed source.
+# 6) finobj writer determinism on fixed source.
 $finobjA = Join-Path $tmpDir "main-a.finobj"
 $finobjB = Join-Path $tmpDir "main-b.finobj"
 $finobjSrc = "tests/conformance/fixtures/main_exit_var_assign.fn"
@@ -75,7 +82,7 @@ $finobjSrc = "tests/conformance/fixtures/main_exit_var_assign.fn"
 & $writeFinobj -SourcePath $finobjSrc -OutFile $finobjB
 Assert-SameHash -PathA $finobjA -PathB $finobjB -Label "write_finobj_exit"
 
-# 6) finld linker determinism on fixed finobj input.
+# 7) finld linker determinism on fixed finobj input.
 $linkedA = Join-Path $tmpDir "linked-a"
 $linkedB = Join-Path $tmpDir "linked-b"
 & $linkFinobj -ObjectPath $finobjA -OutFile $linkedA

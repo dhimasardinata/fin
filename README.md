@@ -25,6 +25,7 @@ This repository implements the foundation phase:
 - Bootstrap CLI shim covers stage0 workflows (`init`, `doctor`, `build`, `run`, `fmt`, `doc`, `pkg add`, `pkg publish`, `test`).
 - Stage0 bootstrap closure proxy witness is implemented with baseline verification (`tests/bootstrap/verify_stage0_closure.ps1`, `seed/stage0-closure-baseline.txt`).
 - Stage0 finobj/finld starter flow is implemented for single-unit object-to-ELF path.
+- Stage0 build/run supports selectable pipeline (`direct` or `finobj`) for Linux ELF outputs.
 - Compiler/linker/object-format/assembler tracks are scaffolded.
 
 ## Stage0 Quick Start
@@ -33,16 +34,17 @@ This repository implements the foundation phase:
 2. Run policy checks: `./fin.ps1 doctor`
 3. Build default source: `./fin.ps1 build`
 4. Build and run default source: `./fin.ps1 run`
-5. Build and run a specific file: `./fin.ps1 run --src tests/conformance/fixtures/main_exit7.fn --out artifacts/fin-build-exit7 --expect-exit 7`
-6. Format source subset: `./fin.ps1 fmt --src src/main.fn`
-7. Generate source docs: `./fin.ps1 doc --src src/main.fn --out docs/main.md`
-8. Add dependency and sync lockfile: `./fin.ps1 pkg add serde --version 1.2.3`
-9. Create publish artifact: `./fin.ps1 pkg publish --out-dir artifacts/publish`
-10. Run Linux syscall smoke (`write + exit`): `./tests/integration/verify_linux_write_exit.ps1`
-11. Generate closure witness: `./tests/bootstrap/verify_stage0_closure.ps1`
-12. Verify PE structure sample: `./tests/integration/verify_windows_pe_exit.ps1`
-13. Verify finobj link sample: `./tests/integration/verify_finobj_link.ps1`
-14. Run full stage0 suite: `./fin.ps1 test`
+5. Build through finobj+finld stage0 path: `./fin.ps1 build --pipeline finobj`
+6. Build and run a specific file: `./fin.ps1 run --src tests/conformance/fixtures/main_exit7.fn --out artifacts/fin-build-exit7 --expect-exit 7`
+7. Format source subset: `./fin.ps1 fmt --src src/main.fn`
+8. Generate source docs: `./fin.ps1 doc --src src/main.fn --out docs/main.md`
+9. Add dependency and sync lockfile: `./fin.ps1 pkg add serde --version 1.2.3`
+10. Create publish artifact: `./fin.ps1 pkg publish --out-dir artifacts/publish`
+11. Run Linux syscall smoke (`write + exit`): `./tests/integration/verify_linux_write_exit.ps1`
+12. Generate closure witness: `./tests/bootstrap/verify_stage0_closure.ps1`
+13. Verify PE structure sample: `./tests/integration/verify_windows_pe_exit.ps1`
+14. Verify finobj link sample: `./tests/integration/verify_finobj_link.ps1`
+15. Run full stage0 suite: `./fin.ps1 test`
 
 ## Repository Layout
 

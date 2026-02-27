@@ -15,3 +15,4 @@ Entry points:
 - `tests/bootstrap/verify_pe_exit0.ps1`: stage0 Windows PE image structure gate.
 - `tests/conformance/verify_finobj_roundtrip.ps1`: stage0 finobj reader/writer roundtrip gate.
 - `tests/integration/verify_finobj_link.ps1`: stage0 finld single-object link gate.
+- `tests/integration/verify_build_pipeline_finobj.ps1`: stage0 `fin build/run --pipeline finobj` integration gate.
