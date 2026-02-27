@@ -1,0 +1,7 @@
+fn main() {
+  # stage0 supports line comments
+  let base = 2; // initialize base value
+  var code = base
+  code = 9
+  exit(code); # final stage0 exit code
+}

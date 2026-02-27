@@ -3,4 +3,9 @@ Stage0 conformance checks:
 - `verify_stage0_grammar.ps1`: validates minimal grammar subset parsing.
 - `fixtures/main_exit0.fn`: valid source, expects exit code 0.
 - `fixtures/main_exit7.fn`: valid source, expects exit code 7.
+- `fixtures/main_exit_let7.fn`: valid source with `let` binding and identifier exit.
+- `fixtures/main_exit_var_assign.fn`: valid source with `var` mutation before exit.
+- `fixtures/main_exit_comments.fn`: valid source with `#` and `//` comments.
 - `fixtures/invalid_missing_main.fn`: invalid source, parser must reject.
+- `fixtures/invalid_undefined_identifier.fn`: invalid source, parser must reject undefined identifier use.
+- `fixtures/invalid_assign_immutable.fn`: invalid source, parser must reject assignment to `let`.
