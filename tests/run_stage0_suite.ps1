@@ -35,7 +35,7 @@ if (-not $SkipDoctor) {
 & $verifyElf -Path (Join-Path $repoRoot "artifacts/fin-elf-exit0") -ExpectedExitCode 0
 & $emitPe -OutFile (Join-Path $repoRoot "artifacts/fin-pe-exit0.exe") -ExitCode 0
 & $verifyPe -Path (Join-Path $repoRoot "artifacts/fin-pe-exit0.exe") -ExpectedExitCode 0
-& $verifyClosure
+& $verifyClosure -VerifyBaseline
 
 & $verifyGrammar
 & $verifyInit

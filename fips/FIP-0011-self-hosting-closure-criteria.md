@@ -10,6 +10,7 @@
 - discussion: TBD
 - implementation:
   - tests/bootstrap/verify_stage0_closure.ps1
+  - seed/stage0-closure-baseline.txt
   - tests/run_stage0_suite.ps1
   - docs/bootstrap.md
 - acceptance:
@@ -34,6 +35,7 @@ Current stage0 closure proxy:
    - seed metadata files (`seed/manifest.toml`, `seed/SHA256SUMS`)
    - stage0 toolchain control scripts (`cmd/fin/fin.ps1`, stage0 build/parser/emitter scripts)
 4. Write closure witness record to `artifacts/closure/stage0-closure-witness.txt`.
+5. Compare closure witness keys to committed baseline (`seed/stage0-closure-baseline.txt`) in stage0 test suite.
 
 This proxy establishes deterministic closure evidence before native self-hosting exists.
 Full `fin-seed -> finc -> finc` closure remains the completion requirement for Implemented status.
@@ -56,4 +58,5 @@ Current checks:
 
 1. `tests/bootstrap/verify_stage0_closure.ps1` validates `gen1 == gen2` hash equality and witness output.
 2. `tests/run_stage0_suite.ps1` includes closure check in `fin test`.
-3. CI executes `cmd/fin/fin.ps1 test --no-doctor` on push/PR.
+3. Stage0 suite verifies closure witness against committed baseline.
+4. CI executes `cmd/fin/fin.ps1 test --no-doctor` on push/PR.

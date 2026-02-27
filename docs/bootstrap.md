@@ -23,6 +23,7 @@ Proxy rule:
 1. Build the same source twice using current stage0 toolchain path.
 2. Require generation-1 and generation-2 output hashes to match.
 3. Emit witness metadata at `artifacts/closure/stage0-closure-witness.txt`.
+4. Verify witness keys against committed baseline `seed/stage0-closure-baseline.txt`.
 
 ## Constraints
 

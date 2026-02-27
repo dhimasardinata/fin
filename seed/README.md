@@ -6,6 +6,7 @@
 
 - `manifest.toml`: immutable metadata for seed artifact identity.
 - `SHA256SUMS`: expected hashes.
+- `stage0-closure-baseline.txt`: expected closure proxy witness keys for stage0 deterministic gate.
 - `README.md`: policy and verification process.
 
 ## Policy
