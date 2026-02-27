@@ -25,11 +25,12 @@ This repository implements the foundation phase:
 
 ## Stage0 Quick Start
 
-1. Run policy checks: `./fin.ps1 doctor`
-2. Build default source: `./fin.ps1 build`
-3. Build and run default source: `./fin.ps1 run`
-4. Build and run a specific file: `./fin.ps1 run --src tests/conformance/fixtures/main_exit7.fn --out artifacts/fin-build-exit7 --expect-exit 7`
-5. Run full stage0 suite: `./fin.ps1 test`
+1. Initialize project scaffold: `./fin.ps1 init --name demo --dir artifacts/tmp/demo`
+2. Run policy checks: `./fin.ps1 doctor`
+3. Build default source: `./fin.ps1 build`
+4. Build and run default source: `./fin.ps1 run`
+5. Build and run a specific file: `./fin.ps1 run --src tests/conformance/fixtures/main_exit7.fn --out artifacts/fin-build-exit7 --expect-exit 7`
+6. Run full stage0 suite: `./fin.ps1 test`
 
 ## Repository Layout
 

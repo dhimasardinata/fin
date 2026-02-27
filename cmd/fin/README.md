@@ -4,6 +4,7 @@ Command contract is defined in `FIP-0015`.
 
 Current bootstrap shim:
 
+- `./fin.ps1 init [--name <project>] [--dir <path>] [--force]`
 - `./fin.ps1 doctor`
 - `./fin.ps1 emit-elf-exit0 [output-path]`
 - `./fin.ps1 build [--src <file>] [--out <file>] [--no-verify]`
