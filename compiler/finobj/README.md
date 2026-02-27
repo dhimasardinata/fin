@@ -2,4 +2,11 @@
 
 `finobj` defines Fin relocatable object representation.
 
-This format is introduced after direct executable emission is stable and self-host closure is achieved.
+## Stage0 Starter
+
+Stage0 provides a deterministic object container for single-unit `main` exit programs:
+
+- `stage0/write_finobj_exit.ps1`: writes `.finobj` from `.fn` source.
+- `stage0/read_finobj_exit.ps1`: reads `.finobj` metadata and exit code.
+
+This starter is intentionally minimal and serves as a stepping stone toward full relocatable multi-unit format.
