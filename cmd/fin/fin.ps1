@@ -296,6 +296,53 @@ function Invoke-Doc {
     }
 }
 
+function Invoke-Pkg {
+    if ($CommandArgs.Count -lt 1 -or [string]::IsNullOrWhiteSpace($CommandArgs[0])) {
+        throw "Missing pkg subcommand. Supported: add"
+    }
+
+    $sub = $CommandArgs[0]
+    $pkgArgs = @()
+    if ($CommandArgs.Count -gt 1) {
+        $pkgArgs = $CommandArgs[1..($CommandArgs.Count - 1)]
+    }
+
+    switch ($sub) {
+        "add" {
+            if ($pkgArgs.Count -lt 1 -or [string]::IsNullOrWhiteSpace($pkgArgs[0])) {
+                throw "Usage: fin pkg add <name[@version]> [--version <ver>] [--manifest <path>]"
+            }
+
+            $name = $pkgArgs[0]
+            $version = ""
+            $manifest = "fin.toml"
+
+            for ($i = 1; $i -lt $pkgArgs.Count; $i++) {
+                if ([string]::IsNullOrWhiteSpace($pkgArgs[$i])) { continue }
+                switch ($pkgArgs[$i]) {
+                    "--version" {
+                        if ($i + 1 -ge $pkgArgs.Count) { throw "--version requires a value" }
+                        $version = $pkgArgs[++$i]
+                    }
+                    "--manifest" {
+                        if ($i + 1 -ge $pkgArgs.Count) { throw "--manifest requires a value" }
+                        $manifest = $pkgArgs[++$i]
+                    }
+                    default {
+                        throw "Unknown pkg add argument: $($pkgArgs[$i])"
+                    }
+                }
+            }
+
+            & (Join-Path $repoRoot "compiler/finc/stage0/pkg_add.ps1") -Name $name -Version $version -ManifestPath $manifest
+            break
+        }
+        default {
+            throw "Unsupported pkg subcommand '$sub'. Supported: add"
+        }
+    }
+}
+
 function Invoke-Test {
     $quick = $false
     $skipDoctor = $false
@@ -352,6 +399,7 @@ Usage:
   ./cmd/fin/fin.ps1 run [--src <file>] [--out <file>] [--no-build] [--expect-exit <0..255>] [--no-verify]
   ./cmd/fin/fin.ps1 fmt [--src <file>] [--check | --stdout]
   ./cmd/fin/fin.ps1 doc [--src <file>] [--out <file> | --stdout]
+  ./cmd/fin/fin.ps1 pkg add <name[@version]> [--version <ver>] [--manifest <path>]
   ./cmd/fin/fin.ps1 test [--quick] [--no-doctor] [--no-run]
 
 Planned unified commands (tracked in FIP-0015):
@@ -367,6 +415,7 @@ switch ($Command) {
     "run" { Invoke-Run; break }
     "fmt" { Invoke-Fmt; break }
     "doc" { Invoke-Doc; break }
+    "pkg" { Invoke-Pkg; break }
     "test" { Invoke-Test; break }
     "" { Show-Usage; break }
     default {

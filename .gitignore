@@ -23,3 +23,6 @@ artifacts/
 
 # Seed local binary drops (if any)
 seed/local/
+
+# Agent local workflow memory (do not commit)
+AGENT_WORKFLOW.local.md

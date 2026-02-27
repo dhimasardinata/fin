@@ -13,6 +13,7 @@ Until native `fin` is available, a compatibility shim is provided:
 - `./fin.ps1 run [--src <file>] [--out <file>] [--no-build] [--expect-exit <0..255>] [--no-verify]`
 - `./fin.ps1 fmt [--src <file>] [--check | --stdout]`
 - `./fin.ps1 doc [--src <file>] [--out <file> | --stdout]`
+- `./fin.ps1 pkg add <name[@version]> [--version <ver>] [--manifest <path>]`
 - `./fin.ps1 test [--quick] [--no-doctor] [--no-run]`
 
 ## Commands
