@@ -17,6 +17,7 @@ $verifyFmt = Join-Path $repoRoot "tests/integration/verify_fmt.ps1"
 $verifyDoc = Join-Path $repoRoot "tests/integration/verify_doc.ps1"
 $verifyPkg = Join-Path $repoRoot "tests/integration/verify_pkg.ps1"
 $verifyPkgPublish = Join-Path $repoRoot "tests/integration/verify_pkg_publish.ps1"
+$verifyLinuxWriteExit = Join-Path $repoRoot "tests/integration/verify_linux_write_exit.ps1"
 
 Write-Host "fin test: stage0 suite starting"
 
@@ -33,6 +34,7 @@ if (-not $SkipDoctor) {
 & $verifyDoc
 & $verifyPkg
 & $verifyPkgPublish
+& $verifyLinuxWriteExit
 
 & $fin build --src tests/conformance/fixtures/main_exit0.fn --out artifacts/test-exit0
 & $fin build --src tests/conformance/fixtures/main_exit7.fn --out artifacts/test-exit7

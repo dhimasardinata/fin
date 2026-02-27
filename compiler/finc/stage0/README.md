@@ -3,6 +3,7 @@
 This directory contains the first executable implementation step for FIP-0010.
 
 - `emit_elf_exit0.ps1`: emits a minimal Linux x86_64 ELF executable that exits with a requested code.
+- `emit_elf_write_exit.ps1`: emits Linux x86_64 ELF that performs `sys_write` and then exits.
 - `parse_main_exit.ps1`: parses stage0 `.fn` subset (`let`/`var`/assign/`exit`) and resolves final exit code.
 - `build_stage0.ps1`: compiles `src/main.fn`-style input into a direct ELF output.
 - `format_main_exit.ps1`: canonical formatter for the stage0 `.fn` subset.

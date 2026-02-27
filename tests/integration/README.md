@@ -6,6 +6,7 @@ Integration checks:
 - `verify_doc.ps1`: validates `fin doc` file output and stdout behavior.
 - `verify_pkg.ps1`: validates `fin pkg add` manifest + lockfile updates and validation errors.
 - `verify_pkg_publish.ps1`: validates `fin pkg publish` artifact generation, determinism, and dry-run behavior.
+- `verify_linux_write_exit.ps1`: validates Linux `sys_write + sys_exit` emitted ELF behavior and stdout.
 
 On Windows hosts this script uses WSL to execute Linux artifacts.
 It is used by `./fin.ps1 run` and `./fin.ps1 test`.

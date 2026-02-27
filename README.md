@@ -18,7 +18,7 @@ This repository implements the foundation phase:
 - FIP lifecycle and proposal corpus (`FIP-0001` to `FIP-0020`) are in place.
 - Bootstrap trust model is defined (`seed/`).
 - CI policy gates for independent toolchain and FIP linkage are defined.
-- Stage0 direct ELF emitter starter is implemented (`compiler/finc/stage0/emit_elf_exit0.ps1`).
+- Stage0 direct ELF emitters are implemented (`emit_elf_exit0.ps1`, `emit_elf_write_exit.ps1`).
 - Stage0 minimal parser/build path is implemented for `.fn` subset.
 - Bootstrap CLI shim covers stage0 workflows (`init`, `doctor`, `build`, `run`, `fmt`, `doc`, `pkg add`, `pkg publish`, `test`).
 - Compiler/linker/object-format/assembler tracks are scaffolded.
@@ -34,7 +34,8 @@ This repository implements the foundation phase:
 7. Generate source docs: `./fin.ps1 doc --src src/main.fn --out docs/main.md`
 8. Add dependency and sync lockfile: `./fin.ps1 pkg add serde --version 1.2.3`
 9. Create publish artifact: `./fin.ps1 pkg publish --out-dir artifacts/publish`
-10. Run full stage0 suite: `./fin.ps1 test`
+10. Run Linux syscall smoke (`write + exit`): `./tests/integration/verify_linux_write_exit.ps1`
+11. Run full stage0 suite: `./fin.ps1 test`
 
 ## Repository Layout
 
