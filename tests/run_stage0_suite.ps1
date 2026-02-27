@@ -28,6 +28,7 @@ $verifyManifestTargetResolution = Join-Path $repoRoot "tests/integration/verify_
 $verifyFinobjLink = Join-Path $repoRoot "tests/integration/verify_finobj_link.ps1"
 $verifyBuildPipelineFinobj = Join-Path $repoRoot "tests/integration/verify_build_pipeline_finobj.ps1"
 $verifyRepro = Join-Path $repoRoot "tests/reproducibility/verify_stage0_reproducibility.ps1"
+$verifyManifestPolicyGate = Join-Path $repoRoot "tests/reproducibility/verify_manifest_policy_gate.ps1"
 $verifyPolicyGate = Join-Path $repoRoot "tests/reproducibility/verify_toolchain_policy_gate.ps1"
 
 Write-Host "fin test: stage0 suite starting"
@@ -56,6 +57,7 @@ if (-not $SkipDoctor) {
 & $verifyFinobjLink
 & $verifyBuildPipelineFinobj
 & $verifyRepro
+& $verifyManifestPolicyGate
 & $verifyPolicyGate
 
 & $fin build --src tests/conformance/fixtures/main_exit0.fn --out artifacts/test-exit0
