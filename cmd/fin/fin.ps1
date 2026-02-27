@@ -223,6 +223,41 @@ function Invoke-Run {
     & (Join-Path $repoRoot "tests/integration/run_linux_elf.ps1") -Path $outFile -ExpectedExitCode $expectedExitCode
 }
 
+function Invoke-Fmt {
+    $source = "src/main.fn"
+    $check = $false
+    $stdout = $false
+
+    for ($i = 0; $i -lt $CommandArgs.Count; $i++) {
+        if ([string]::IsNullOrWhiteSpace($CommandArgs[$i])) {
+            continue
+        }
+        switch ($CommandArgs[$i]) {
+            "--src" {
+                if ($i + 1 -ge $CommandArgs.Count) { throw "--src requires a value" }
+                $source = $CommandArgs[++$i]
+            }
+            "--check" { $check = $true }
+            "--stdout" { $stdout = $true }
+            default { throw "Unknown fmt argument: $($CommandArgs[$i])" }
+        }
+    }
+
+    $formatter = Join-Path $repoRoot "compiler/finc/stage0/format_main_exit.ps1"
+    if ($check -and $stdout) {
+        throw "Cannot combine --check and --stdout."
+    }
+    if ($check) {
+        & $formatter -SourcePath $source -Check
+    }
+    elseif ($stdout) {
+        & $formatter -SourcePath $source -Stdout
+    }
+    else {
+        & $formatter -SourcePath $source
+    }
+}
+
 function Invoke-Test {
     $quick = $false
     $skipDoctor = $false
@@ -277,6 +312,7 @@ Usage:
   ./cmd/fin/fin.ps1 emit-elf-exit0 [output-path]
   ./cmd/fin/fin.ps1 build [--src <file>] [--out <file>] [--no-verify]
   ./cmd/fin/fin.ps1 run [--src <file>] [--out <file>] [--no-build] [--expect-exit <0..255>] [--no-verify]
+  ./cmd/fin/fin.ps1 fmt [--src <file>] [--check | --stdout]
   ./cmd/fin/fin.ps1 test [--quick] [--no-doctor] [--no-run]
 
 Planned unified commands (tracked in FIP-0015):
@@ -290,6 +326,7 @@ switch ($Command) {
     "emit-elf-exit0" { Invoke-EmitElfExit0; break }
     "build" { Invoke-Build; break }
     "run" { Invoke-Run; break }
+    "fmt" { Invoke-Fmt; break }
     "test" { Invoke-Test; break }
     "" { Show-Usage; break }
     default {
