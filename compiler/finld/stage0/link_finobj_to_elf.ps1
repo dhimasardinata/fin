@@ -371,15 +371,23 @@ if ($entryRelocationPlans.Count -gt 0) {
     [System.IO.File]::WriteAllBytes($outFull, $imageBytes)
 }
 
-if ($Verify -and $entryRelocationPlans.Count -gt 0) {
-    Write-Host "verify_skipped=relocation_patched_output"
-}
-elseif ($Verify) {
-    if ($Target -eq "x86_64-linux-elf") {
-        & $verifyElf -Path $outFull -ExpectedExitCode $exitCode
+if ($Verify) {
+    if ($entryRelocationPlans.Count -gt 0) {
+        Write-Host "verify_mode=structure_only_relocation_patched"
+        if ($Target -eq "x86_64-linux-elf") {
+            & $verifyElf -Path $outFull -ExpectedExitCode $exitCode -AllowPatchedCode
+        }
+        else {
+            & $verifyPe -Path $outFull -ExpectedExitCode $exitCode -AllowPatchedCode
+        }
     }
     else {
-        & $verifyPe -Path $outFull -ExpectedExitCode $exitCode
+        if ($Target -eq "x86_64-linux-elf") {
+            & $verifyElf -Path $outFull -ExpectedExitCode $exitCode
+        }
+        else {
+            & $verifyPe -Path $outFull -ExpectedExitCode $exitCode
+        }
     }
 }
 

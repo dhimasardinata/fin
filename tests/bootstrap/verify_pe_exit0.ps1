@@ -1,7 +1,8 @@
 param(
     [string]$Path = "artifacts/fin-pe-exit0.exe",
     [ValidateRange(0, 255)]
-    [int]$ExpectedExitCode = 0
+    [int]$ExpectedExitCode = 0,
+    [switch]$AllowPatchedCode
 )
 
 Set-StrictMode -Version Latest
@@ -87,14 +88,26 @@ if ($rawSize -ne 0x200) { Write-Error ("Expected .text RawSize=0x200, got 0x{0:X
 if ($rawPtr -ne 0x200) { Write-Error ("Expected .text RawPtr=0x200, got 0x{0:X}" -f $rawPtr); exit 1 }
 if ($chars -ne 0x60000020) { Write-Error ("Expected .text characteristics 0x60000020, got 0x{0:X}" -f $chars); exit 1 }
 
-[byte[]]$expectedCode = @(
-    0xB8, [byte]($ExpectedExitCode -band 0xFF), 0x00, 0x00, 0x00,
-    0xC3
-)
-for ($i = 0; $i -lt $expectedCode.Length; $i++) {
-    if ($bytes[$rawPtr + $i] -ne $expectedCode[$i]) {
-        Write-Error ("Code byte mismatch at +{0}: expected 0x{1:X2}, got 0x{2:X2}" -f $i, $expectedCode[$i], $bytes[$rawPtr + $i])
+if ($AllowPatchedCode) {
+    if ($bytes[$rawPtr + 0] -ne 0xB8) {
+        Write-Error ("Code opcode mismatch at +0: expected 0xB8, got 0x{0:X2}" -f $bytes[$rawPtr + 0])
         exit 1
+    }
+    if ($bytes[$rawPtr + 5] -ne 0xC3) {
+        Write-Error ("Code terminator mismatch at +5: expected 0xC3, got 0x{0:X2}" -f $bytes[$rawPtr + 5])
+        exit 1
+    }
+}
+else {
+    [byte[]]$expectedCode = @(
+        0xB8, [byte]($ExpectedExitCode -band 0xFF), 0x00, 0x00, 0x00,
+        0xC3
+    )
+    for ($i = 0; $i -lt $expectedCode.Length; $i++) {
+        if ($bytes[$rawPtr + $i] -ne $expectedCode[$i]) {
+            Write-Error ("Code byte mismatch at +{0}: expected 0x{1:X2}, got 0x{2:X2}" -f $i, $expectedCode[$i], $bytes[$rawPtr + $i])
+            exit 1
+        }
     }
 }
 

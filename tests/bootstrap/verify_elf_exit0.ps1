@@ -1,7 +1,8 @@
 param(
     [string]$Path = "artifacts/fin-elf-exit0",
     [ValidateRange(0, 255)]
-    [int]$ExpectedExitCode = 0
+    [int]$ExpectedExitCode = 0,
+    [switch]$AllowPatchedCode
 )
 
 Set-StrictMode -Version Latest
@@ -62,15 +63,30 @@ if ($pMemsz -ne [UInt64]$bytes.Length) { Write-Error "Expected p_memsz=$($bytes.
 if ($pAlign -ne 0x1000) { Write-Error ("Expected p_align=0x1000, got 0x{0:X}" -f $pAlign); exit 1 }
 
 $codeOffset = 120
-[byte[]]$expectedCode = @(
-    0xB8, 0x3C, 0x00, 0x00, 0x00,
-    0xBF, [byte]($ExpectedExitCode -band 0xFF), 0x00, 0x00, 0x00,
-    0x0F, 0x05
-)
-for ($i = 0; $i -lt $expectedCode.Length; $i++) {
-    if ($bytes[$codeOffset + $i] -ne $expectedCode[$i]) {
-        Write-Error ("Code byte mismatch at +{0}: expected 0x{1:X2}, got 0x{2:X2}" -f $i, $expectedCode[$i], $bytes[$codeOffset + $i])
+if ($AllowPatchedCode) {
+    [byte[]]$expectedPrefix = @(0xB8, 0x3C, 0x00, 0x00, 0x00, 0xBF)
+    for ($i = 0; $i -lt $expectedPrefix.Length; $i++) {
+        if ($bytes[$codeOffset + $i] -ne $expectedPrefix[$i]) {
+            Write-Error ("Code prefix mismatch at +{0}: expected 0x{1:X2}, got 0x{2:X2}" -f $i, $expectedPrefix[$i], $bytes[$codeOffset + $i])
+            exit 1
+        }
+    }
+    if ($bytes[$codeOffset + 10] -ne 0x0F -or $bytes[$codeOffset + 11] -ne 0x05) {
+        Write-Error ("Code suffix mismatch: expected 0x0F 0x05, got 0x{0:X2} 0x{1:X2}" -f $bytes[$codeOffset + 10], $bytes[$codeOffset + 11])
         exit 1
+    }
+}
+else {
+    [byte[]]$expectedCode = @(
+        0xB8, 0x3C, 0x00, 0x00, 0x00,
+        0xBF, [byte]($ExpectedExitCode -band 0xFF), 0x00, 0x00, 0x00,
+        0x0F, 0x05
+    )
+    for ($i = 0; $i -lt $expectedCode.Length; $i++) {
+        if ($bytes[$codeOffset + $i] -ne $expectedCode[$i]) {
+            Write-Error ("Code byte mismatch at +{0}: expected 0x{1:X2}, got 0x{2:X2}" -f $i, $expectedCode[$i], $bytes[$codeOffset + $i])
+            exit 1
+        }
     }
 }
 

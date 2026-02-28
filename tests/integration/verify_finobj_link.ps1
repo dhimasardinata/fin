@@ -210,12 +210,16 @@ if ($rel32Record.LinkedRelocationsAppliedCount -ne 1) {
     exit 1
 }
 
-$symbolValueRecord = & $linker -ObjectPath @($objLinuxMainRequiresHelper, $objLinuxUnitHelperValue) -OutFile $outWithResolvedSymbolValue -Target x86_64-linux-elf -AsRecord
+$symbolValueRecord = & $linker -ObjectPath @($objLinuxMainRequiresHelper, $objLinuxUnitHelperValue) -OutFile $outWithResolvedSymbolValue -Target x86_64-linux-elf -Verify -AsRecord
 & $runElf -Path $outWithResolvedSymbolValue -ExpectedExitCode 42
 if ($symbolValueRecord.LinkedRelocationsAppliedCount -ne 1) {
     Write-Error ("Expected 1 applied relocation for symbol value case, found {0}" -f $symbolValueRecord.LinkedRelocationsAppliedCount)
     exit 1
 }
+Assert-LinkFails -Action {
+    & $verifyElf -Path $outWithResolvedSymbolValue -ExpectedExitCode 8 | Out-Null
+} -Label "strict ELF verifier should fail for relocation-patched immediate mismatch"
+& $verifyElf -Path $outWithResolvedSymbolValue -ExpectedExitCode 8 -AllowPatchedCode
 
 $windowsResolvedRecord = & $linker -ObjectPath @($objWindowsMainRequiresHelper, $objWindowsUnitHelper) -OutFile $outWithResolvedSymbolWindows -Target x86_64-windows-pe -AsRecord
 & $verifyPe -Path $outWithResolvedSymbolWindows -ExpectedExitCode 8
@@ -231,12 +235,16 @@ Assert-SameValue -ValueA $windowsResolvedRecord.LinkedObjectSetSha256 -ValueB $w
 Assert-SameValue -ValueA $windowsResolvedRecord.LinkedSymbolResolutionSha256 -ValueB $windowsResolvedRecordReordered.LinkedSymbolResolutionSha256 -Label "windows resolved symbol symbol-resolution witness"
 Assert-SameValue -ValueA $windowsResolvedRecord.LinkedRelocationResolutionSha256 -ValueB $windowsResolvedRecordReordered.LinkedRelocationResolutionSha256 -Label "windows resolved symbol relocation-resolution witness"
 
-$windowsSymbolValueRecord = & $linker -ObjectPath @($objWindowsMainRequiresHelper, $objWindowsUnitHelperValue) -OutFile $outWithResolvedSymbolValueWindows -Target x86_64-windows-pe -AsRecord
+$windowsSymbolValueRecord = & $linker -ObjectPath @($objWindowsMainRequiresHelper, $objWindowsUnitHelperValue) -OutFile $outWithResolvedSymbolValueWindows -Target x86_64-windows-pe -Verify -AsRecord
 & $verifyPe -Path $outWithResolvedSymbolValueWindows -ExpectedExitCode 42
 & $runPe -Path $outWithResolvedSymbolValueWindows -ExpectedExitCode 42
 if ($windowsSymbolValueRecord.LinkedRelocationsAppliedCount -ne 1) {
     Write-Error ("Expected 1 applied relocation for windows symbol value case, found {0}" -f $windowsSymbolValueRecord.LinkedRelocationsAppliedCount)
     exit 1
 }
+Assert-LinkFails -Action {
+    & $verifyPe -Path $outWithResolvedSymbolValueWindows -ExpectedExitCode 8 | Out-Null
+} -Label "strict PE verifier should fail for relocation-patched immediate mismatch"
+& $verifyPe -Path $outWithResolvedSymbolValueWindows -ExpectedExitCode 8 -AllowPatchedCode
 
 Write-Host "finobj link integration check passed."
