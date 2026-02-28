@@ -42,6 +42,19 @@ function Assert-SameValue {
     }
 }
 
+function Assert-ExpectedValue {
+    param(
+        [string]$Actual,
+        [string]$Expected,
+        [string]$Label
+    )
+
+    if ($Actual -ne $Expected) {
+        Write-Error ("Reproducibility failure ({0}): expected {1}, found {2}" -f $Label, $Expected, $Actual)
+        exit 1
+    }
+}
+
 # 1) Exit-only emitter determinism.
 $exitA = Join-Path $tmpDir "elf-exit-a"
 $exitB = Join-Path $tmpDir "elf-exit-b"
@@ -123,12 +136,18 @@ Assert-SameValue -ValueA $linkedRecordA.LinkedObjectSetSha256 -ValueB $linkedRec
 Assert-SameValue -ValueA $linkedRecordA.LinkedSymbolResolutionSha256 -ValueB $linkedRecordB.LinkedSymbolResolutionSha256 -Label "link_finobj_to_elf symbol-resolution witness"
 Assert-SameValue -ValueA $linkedRecordA.LinkedRelocationResolutionSha256 -ValueB $linkedRecordB.LinkedRelocationResolutionSha256 -Label "link_finobj_to_elf relocation-resolution witness"
 Assert-SameValue -ValueA ([string]$linkedRecordA.LinkedRelocationsAppliedCount) -ValueB ([string]$linkedRecordB.LinkedRelocationsAppliedCount) -Label "link_finobj_to_elf applied-relocation count"
+Assert-SameValue -ValueA ([string]$linkedRecordA.LinkedVerifyEnabled).ToLowerInvariant() -ValueB ([string]$linkedRecordB.LinkedVerifyEnabled).ToLowerInvariant() -Label "link_finobj_to_elf verify-enabled"
+Assert-SameValue -ValueA ([string]$linkedRecordA.LinkedVerifyMode) -ValueB ([string]$linkedRecordB.LinkedVerifyMode) -Label "link_finobj_to_elf verify-mode"
+Assert-ExpectedValue -Actual ([string]$linkedRecordA.LinkedVerifyEnabled).ToLowerInvariant() -Expected "false" -Label "link_finobj_to_elf verify-enabled expected disabled"
+Assert-ExpectedValue -Actual ([string]$linkedRecordA.LinkedVerifyMode) -Expected "disabled" -Label "link_finobj_to_elf verify-mode expected disabled"
 $linkedRecordReordered = & $linkFinobj -ObjectPath @($finobjUnitLinux, $finobjA) -OutFile $linkedReordered -Target x86_64-linux-elf -AsRecord
 Assert-SameHash -PathA $linkedA -PathB $linkedReordered -Label "link_finobj_to_elf order-independent"
 Assert-SameValue -ValueA $linkedRecordA.LinkedObjectSetSha256 -ValueB $linkedRecordReordered.LinkedObjectSetSha256 -Label "link_finobj_to_elf object-set witness order-independent"
 Assert-SameValue -ValueA $linkedRecordA.LinkedSymbolResolutionSha256 -ValueB $linkedRecordReordered.LinkedSymbolResolutionSha256 -Label "link_finobj_to_elf symbol-resolution witness order-independent"
 Assert-SameValue -ValueA $linkedRecordA.LinkedRelocationResolutionSha256 -ValueB $linkedRecordReordered.LinkedRelocationResolutionSha256 -Label "link_finobj_to_elf relocation-resolution witness order-independent"
 Assert-SameValue -ValueA ([string]$linkedRecordA.LinkedRelocationsAppliedCount) -ValueB ([string]$linkedRecordReordered.LinkedRelocationsAppliedCount) -Label "link_finobj_to_elf applied-relocation count order-independent"
+Assert-SameValue -ValueA ([string]$linkedRecordA.LinkedVerifyEnabled).ToLowerInvariant() -ValueB ([string]$linkedRecordReordered.LinkedVerifyEnabled).ToLowerInvariant() -Label "link_finobj_to_elf verify-enabled order-independent"
+Assert-SameValue -ValueA ([string]$linkedRecordA.LinkedVerifyMode) -ValueB ([string]$linkedRecordReordered.LinkedVerifyMode) -Label "link_finobj_to_elf verify-mode order-independent"
 
 # 10) finld linker determinism on fixed Windows finobj input.
 $finobjWinA = Join-Path $tmpDir "main-win-a.finobj"
@@ -145,11 +164,39 @@ Assert-SameValue -ValueA $linkedWinRecordA.LinkedObjectSetSha256 -ValueB $linked
 Assert-SameValue -ValueA $linkedWinRecordA.LinkedSymbolResolutionSha256 -ValueB $linkedWinRecordB.LinkedSymbolResolutionSha256 -Label "link_finobj_to_elf --target x86_64-windows-pe symbol-resolution witness"
 Assert-SameValue -ValueA $linkedWinRecordA.LinkedRelocationResolutionSha256 -ValueB $linkedWinRecordB.LinkedRelocationResolutionSha256 -Label "link_finobj_to_elf --target x86_64-windows-pe relocation-resolution witness"
 Assert-SameValue -ValueA ([string]$linkedWinRecordA.LinkedRelocationsAppliedCount) -ValueB ([string]$linkedWinRecordB.LinkedRelocationsAppliedCount) -Label "link_finobj_to_elf --target x86_64-windows-pe applied-relocation count"
+Assert-SameValue -ValueA ([string]$linkedWinRecordA.LinkedVerifyEnabled).ToLowerInvariant() -ValueB ([string]$linkedWinRecordB.LinkedVerifyEnabled).ToLowerInvariant() -Label "link_finobj_to_elf --target x86_64-windows-pe verify-enabled"
+Assert-SameValue -ValueA ([string]$linkedWinRecordA.LinkedVerifyMode) -ValueB ([string]$linkedWinRecordB.LinkedVerifyMode) -Label "link_finobj_to_elf --target x86_64-windows-pe verify-mode"
+Assert-ExpectedValue -Actual ([string]$linkedWinRecordA.LinkedVerifyEnabled).ToLowerInvariant() -Expected "false" -Label "link_finobj_to_elf --target x86_64-windows-pe verify-enabled expected disabled"
+Assert-ExpectedValue -Actual ([string]$linkedWinRecordA.LinkedVerifyMode) -Expected "disabled" -Label "link_finobj_to_elf --target x86_64-windows-pe verify-mode expected disabled"
 $linkedWinRecordReordered = & $linkFinobj -ObjectPath @($finobjWinUnit, $finobjWinA) -OutFile $linkedWinReordered -Target x86_64-windows-pe -AsRecord
 Assert-SameHash -PathA $linkedWinA -PathB $linkedWinReordered -Label "link_finobj_to_elf --target x86_64-windows-pe order-independent"
 Assert-SameValue -ValueA $linkedWinRecordA.LinkedObjectSetSha256 -ValueB $linkedWinRecordReordered.LinkedObjectSetSha256 -Label "link_finobj_to_elf --target x86_64-windows-pe object-set witness order-independent"
 Assert-SameValue -ValueA $linkedWinRecordA.LinkedSymbolResolutionSha256 -ValueB $linkedWinRecordReordered.LinkedSymbolResolutionSha256 -Label "link_finobj_to_elf --target x86_64-windows-pe symbol-resolution witness order-independent"
 Assert-SameValue -ValueA $linkedWinRecordA.LinkedRelocationResolutionSha256 -ValueB $linkedWinRecordReordered.LinkedRelocationResolutionSha256 -Label "link_finobj_to_elf --target x86_64-windows-pe relocation-resolution witness order-independent"
 Assert-SameValue -ValueA ([string]$linkedWinRecordA.LinkedRelocationsAppliedCount) -ValueB ([string]$linkedWinRecordReordered.LinkedRelocationsAppliedCount) -Label "link_finobj_to_elf --target x86_64-windows-pe applied-relocation count order-independent"
+Assert-SameValue -ValueA ([string]$linkedWinRecordA.LinkedVerifyEnabled).ToLowerInvariant() -ValueB ([string]$linkedWinRecordReordered.LinkedVerifyEnabled).ToLowerInvariant() -Label "link_finobj_to_elf --target x86_64-windows-pe verify-enabled order-independent"
+Assert-SameValue -ValueA ([string]$linkedWinRecordA.LinkedVerifyMode) -ValueB ([string]$linkedWinRecordReordered.LinkedVerifyMode) -Label "link_finobj_to_elf --target x86_64-windows-pe verify-mode order-independent"
+
+# 11) finld verify-mode determinism for strict and relocation-patched verification.
+$linkedVerifyStrictA = Join-Path $tmpDir "linked-verify-strict-a"
+$linkedVerifyStrictB = Join-Path $tmpDir "linked-verify-strict-b"
+$linkedVerifyPatchedA = Join-Path $tmpDir "linked-verify-patched-a"
+$linkedVerifyPatchedB = Join-Path $tmpDir "linked-verify-patched-b"
+
+$strictRecordA = & $linkFinobj -ObjectPath @($finobjB) -OutFile $linkedVerifyStrictA -Target x86_64-linux-elf -Verify -AsRecord
+$strictRecordB = & $linkFinobj -ObjectPath @($finobjB) -OutFile $linkedVerifyStrictB -Target x86_64-linux-elf -Verify -AsRecord
+Assert-SameHash -PathA $linkedVerifyStrictA -PathB $linkedVerifyStrictB -Label "link_finobj_to_elf strict verify mode"
+Assert-SameValue -ValueA ([string]$strictRecordA.LinkedVerifyEnabled).ToLowerInvariant() -ValueB ([string]$strictRecordB.LinkedVerifyEnabled).ToLowerInvariant() -Label "link_finobj_to_elf strict verify-enabled"
+Assert-SameValue -ValueA ([string]$strictRecordA.LinkedVerifyMode) -ValueB ([string]$strictRecordB.LinkedVerifyMode) -Label "link_finobj_to_elf strict verify-mode"
+Assert-ExpectedValue -Actual ([string]$strictRecordA.LinkedVerifyEnabled).ToLowerInvariant() -Expected "true" -Label "link_finobj_to_elf strict verify-enabled expected true"
+Assert-ExpectedValue -Actual ([string]$strictRecordA.LinkedVerifyMode) -Expected "strict" -Label "link_finobj_to_elf strict verify-mode expected strict"
+
+$patchedRecordA = & $linkFinobj -ObjectPath @($finobjA, $finobjUnitLinux) -OutFile $linkedVerifyPatchedA -Target x86_64-linux-elf -Verify -AsRecord
+$patchedRecordB = & $linkFinobj -ObjectPath @($finobjA, $finobjUnitLinux) -OutFile $linkedVerifyPatchedB -Target x86_64-linux-elf -Verify -AsRecord
+Assert-SameHash -PathA $linkedVerifyPatchedA -PathB $linkedVerifyPatchedB -Label "link_finobj_to_elf patched verify mode"
+Assert-SameValue -ValueA ([string]$patchedRecordA.LinkedVerifyEnabled).ToLowerInvariant() -ValueB ([string]$patchedRecordB.LinkedVerifyEnabled).ToLowerInvariant() -Label "link_finobj_to_elf patched verify-enabled"
+Assert-SameValue -ValueA ([string]$patchedRecordA.LinkedVerifyMode) -ValueB ([string]$patchedRecordB.LinkedVerifyMode) -Label "link_finobj_to_elf patched verify-mode"
+Assert-ExpectedValue -Actual ([string]$patchedRecordA.LinkedVerifyEnabled).ToLowerInvariant() -Expected "true" -Label "link_finobj_to_elf patched verify-enabled expected true"
+Assert-ExpectedValue -Actual ([string]$patchedRecordA.LinkedVerifyMode) -Expected "structure_only_relocation_patched" -Label "link_finobj_to_elf patched verify-mode expected patched"
 
 Write-Host "stage0 reproducibility check passed."
