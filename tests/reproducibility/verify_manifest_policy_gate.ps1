@@ -3,13 +3,11 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\\..")
 $policy = Join-Path $repoRoot "ci/verify_manifest.ps1"
-$tmpRoot = Join-Path $repoRoot "artifacts/tmp/manifest-policy-gate-smoke"
+$tmpWorkspace = Join-Path $repoRoot "tests/common/test_tmp_workspace.ps1"
+. $tmpWorkspace
+$tmpState = Initialize-TestTmpWorkspace -RepoRoot $repoRoot -Prefix "manifest-policy-gate-smoke-"
+$tmpRoot = $tmpState.TmpDir
 $manifest = Join-Path $tmpRoot "fin.toml"
-
-if (Test-Path $tmpRoot) {
-    Remove-Item -Recurse -Force $tmpRoot
-}
-New-Item -ItemType Directory -Path $tmpRoot -Force | Out-Null
 
 function Write-Manifest {
     param(
@@ -72,5 +70,7 @@ Assert-Fails -Action { & $policy -Manifest $manifest | Out-Null } -Label "same p
 # Should fail: policy switch disabled.
 Write-Manifest -ExtPolicy "false"
 Assert-Fails -Action { & $policy -Manifest $manifest | Out-Null } -Label "external toolchain policy false"
+
+Finalize-TestTmpWorkspace -State $tmpState
 
 Write-Host "manifest policy gate self-check passed."
