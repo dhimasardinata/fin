@@ -50,23 +50,26 @@ $manifestUpdated = $manifestRaw -replace 'primary = "x86_64-linux-elf"', 'primar
 Set-Content -Path $manifest -Value $manifestUpdated
 
 & $fin build --manifest $manifest --src $source --out $winOut
-$buildWinFinobjOutput = & $fin build --manifest $manifest --src $source --out $winFinobjOut --pipeline finobj *>&1
-$buildWinFinobjOutput | ForEach-Object { Write-Host $_ }
-$buildWinFinobjObj = Get-FinobjWrittenPath -Lines @($buildWinFinobjOutput) -Label "fin build --manifest <win-primary> --pipeline finobj"
+$buildWinFinobjResult = Invoke-FinCommandCaptureFinobjOutput -Action {
+    & $fin build --manifest $manifest --src $source --out $winFinobjOut --pipeline finobj
+} -Label "fin build --manifest <win-primary> --pipeline finobj"
+$buildWinFinobjObj = $buildWinFinobjResult.FinobjPath
 & $verifyPe -Path $winOut -ExpectedExitCode 0
 & $verifyPe -Path $winFinobjOut -ExpectedExitCode 0
 
 & $fin run --manifest $manifest --src $source --out $runOut --expect-exit 0
-$runWinFinobjOutput = & $fin run --manifest $manifest --src $source --out $runFinobjOut --pipeline finobj --expect-exit 0 *>&1
-$runWinFinobjOutput | ForEach-Object { Write-Host $_ }
-$runWinFinobjObj = Get-FinobjWrittenPath -Lines @($runWinFinobjOutput) -Label "fin run --manifest <win-primary> --pipeline finobj"
+$runWinFinobjResult = Invoke-FinCommandCaptureFinobjOutput -Action {
+    & $fin run --manifest $manifest --src $source --out $runFinobjOut --pipeline finobj --expect-exit 0
+} -Label "fin run --manifest <win-primary> --pipeline finobj"
+$runWinFinobjObj = $runWinFinobjResult.FinobjPath
 & $verifyPe -Path $runOut -ExpectedExitCode 0
 & $verifyPe -Path $runFinobjOut -ExpectedExitCode 0
 
 & $fin build --manifest $manifest --src $source --out $linuxOverrideOut --target x86_64-linux-elf
-$buildLinuxFinobjOutput = & $fin build --manifest $manifest --src $source --out $linuxOverrideFinobjOut --target x86_64-linux-elf --pipeline finobj *>&1
-$buildLinuxFinobjOutput | ForEach-Object { Write-Host $_ }
-$buildLinuxFinobjObj = Get-FinobjWrittenPath -Lines @($buildLinuxFinobjOutput) -Label "fin build --manifest <win-primary> --target x86_64-linux-elf --pipeline finobj"
+$buildLinuxFinobjResult = Invoke-FinCommandCaptureFinobjOutput -Action {
+    & $fin build --manifest $manifest --src $source --out $linuxOverrideFinobjOut --target x86_64-linux-elf --pipeline finobj
+} -Label "fin build --manifest <win-primary> --target x86_64-linux-elf --pipeline finobj"
+$buildLinuxFinobjObj = $buildLinuxFinobjResult.FinobjPath
 & $verifyElf -Path $linuxOverrideOut -ExpectedExitCode 0
 & $verifyElf -Path $linuxOverrideFinobjOut -ExpectedExitCode 0
 
