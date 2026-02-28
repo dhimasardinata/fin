@@ -30,6 +30,12 @@ $objLinuxUnitHelper2 = Join-Path $tmpDir "unit-helper-dup.finobj"
 $objLinuxUnitHelperValue = Join-Path $tmpDir "unit-helper-value.finobj"
 $objWindowsMain = Join-Path $tmpDir "main-windows.finobj"
 $objWindowsUnit = Join-Path $tmpDir "unit-windows.finobj"
+$objWindowsMainRequiresHelper = Join-Path $tmpDir "main-requires-helper-windows.finobj"
+$objWindowsMainRequiresHelperBadOffset = Join-Path $tmpDir "main-requires-helper-windows-bad-offset.finobj"
+$objWindowsMainRequiresHelperBadSite = Join-Path $tmpDir "main-requires-helper-windows-bad-site.finobj"
+$objWindowsMainRequiresHelperRel32 = Join-Path $tmpDir "main-requires-helper-windows-rel32.finobj"
+$objWindowsUnitHelper = Join-Path $tmpDir "unit-helper-windows.finobj"
+$objWindowsUnitHelperValue = Join-Path $tmpDir "unit-helper-value-windows.finobj"
 $outLinux = Join-Path $tmpDir "main-linked"
 $outLinuxReordered = Join-Path $tmpDir "main-linked-reordered"
 $outWindows = Join-Path $tmpDir "main-linked.exe"
@@ -42,10 +48,16 @@ $outBadUnresolvedSymbol = Join-Path $tmpDir "bad-unresolved-symbol"
 $outBadDuplicateSymbol = Join-Path $tmpDir "bad-duplicate-symbol"
 $outBadRelocationBounds = Join-Path $tmpDir "bad-relocation-bounds"
 $outBadRelocationSite = Join-Path $tmpDir "bad-relocation-site"
+$outBadRelocationBoundsWindows = Join-Path $tmpDir "bad-relocation-bounds-windows.exe"
+$outBadRelocationSiteWindows = Join-Path $tmpDir "bad-relocation-site-windows.exe"
+$outBadRelocationKindWindows = Join-Path $tmpDir "bad-relocation-kind-windows.exe"
 $outWithResolvedSymbol = Join-Path $tmpDir "ok-resolved-symbol"
 $outWithResolvedSymbolReordered = Join-Path $tmpDir "ok-resolved-symbol-reordered"
 $outWithResolvedSymbolRel32 = Join-Path $tmpDir "ok-resolved-symbol-rel32"
 $outWithResolvedSymbolValue = Join-Path $tmpDir "ok-resolved-symbol-value"
+$outWithResolvedSymbolWindows = Join-Path $tmpDir "ok-resolved-symbol-windows.exe"
+$outWithResolvedSymbolWindowsReordered = Join-Path $tmpDir "ok-resolved-symbol-windows-reordered.exe"
+$outWithResolvedSymbolValueWindows = Join-Path $tmpDir "ok-resolved-symbol-value-windows.exe"
 $objLinuxUnitCopy = Join-Path $tmpDir "unit-linux-copy.finobj"
 
 function Assert-LinkFails {
@@ -109,6 +121,12 @@ function Assert-SameValue {
 & $writer -SourcePath $sourceUnit -OutFile $objLinuxUnitHelperValue -Target x86_64-linux-elf -EntrySymbol unit -Provides helper -ProvideValues helper=42
 & $writer -SourcePath $sourceMain -OutFile $objWindowsMain -Target x86_64-windows-pe -EntrySymbol main
 & $writer -SourcePath $sourceUnit -OutFile $objWindowsUnit -Target x86_64-windows-pe -EntrySymbol unit
+& $writer -SourcePath $sourceMain -OutFile $objWindowsMainRequiresHelper -Target x86_64-windows-pe -EntrySymbol main -Requires helper -Relocs helper@1
+& $writer -SourcePath $sourceMain -OutFile $objWindowsMainRequiresHelperBadOffset -Target x86_64-windows-pe -EntrySymbol main -Requires helper -Relocs helper@16
+& $writer -SourcePath $sourceMain -OutFile $objWindowsMainRequiresHelperBadSite -Target x86_64-windows-pe -EntrySymbol main -Requires helper -Relocs helper@0
+& $writer -SourcePath $sourceMain -OutFile $objWindowsMainRequiresHelperRel32 -Target x86_64-windows-pe -EntrySymbol main -Requires helper -Relocs helper@1:rel32
+& $writer -SourcePath $sourceMain -OutFile $objWindowsUnitHelper -Target x86_64-windows-pe -EntrySymbol unit -Provides helper
+& $writer -SourcePath $sourceUnit -OutFile $objWindowsUnitHelperValue -Target x86_64-windows-pe -EntrySymbol unit -Provides helper -ProvideValues helper=42
 Copy-Item -Path $objLinuxUnit -Destination $objLinuxUnitCopy -Force
 
 $linuxRecord = & $linker -ObjectPath @($objLinuxMain, $objLinuxUnit) -OutFile $outLinux -Target x86_64-linux-elf -Verify -AsRecord
@@ -163,6 +181,18 @@ Assert-LinkFails -Action {
     & $linker -ObjectPath @($objLinuxMainRequiresHelperBadSite, $objLinuxUnitHelper) -OutFile $outBadRelocationSite -Target x86_64-linux-elf -Verify | Out-Null
 } -Label "relocation offset not supported by stage0 code layout"
 
+Assert-LinkFails -Action {
+    & $linker -ObjectPath @($objWindowsMainRequiresHelperBadOffset, $objWindowsUnitHelper) -OutFile $outBadRelocationBoundsWindows -Target x86_64-windows-pe -Verify | Out-Null
+} -Label "windows relocation offset out of stage0 bounds"
+
+Assert-LinkFails -Action {
+    & $linker -ObjectPath @($objWindowsMainRequiresHelperBadSite, $objWindowsUnitHelper) -OutFile $outBadRelocationSiteWindows -Target x86_64-windows-pe -Verify | Out-Null
+} -Label "windows relocation offset not supported by stage0 code layout"
+
+Assert-LinkFails -Action {
+    & $linker -ObjectPath @($objWindowsMainRequiresHelperRel32, $objWindowsUnitHelper) -OutFile $outBadRelocationKindWindows -Target x86_64-windows-pe -Verify | Out-Null
+} -Label "windows rel32 relocation kind not supported in stage0"
+
 $resolvedRecord = & $linker -ObjectPath @($objLinuxMainRequiresHelper, $objLinuxUnitHelper) -OutFile $outWithResolvedSymbol -Target x86_64-linux-elf -Verify -AsRecord
 & $verifyElf -Path $outWithResolvedSymbol -ExpectedExitCode 8
 & $runElf -Path $outWithResolvedSymbol -ExpectedExitCode 8
@@ -184,6 +214,28 @@ $symbolValueRecord = & $linker -ObjectPath @($objLinuxMainRequiresHelper, $objLi
 & $runElf -Path $outWithResolvedSymbolValue -ExpectedExitCode 42
 if ($symbolValueRecord.LinkedRelocationsAppliedCount -ne 1) {
     Write-Error ("Expected 1 applied relocation for symbol value case, found {0}" -f $symbolValueRecord.LinkedRelocationsAppliedCount)
+    exit 1
+}
+
+$windowsResolvedRecord = & $linker -ObjectPath @($objWindowsMainRequiresHelper, $objWindowsUnitHelper) -OutFile $outWithResolvedSymbolWindows -Target x86_64-windows-pe -AsRecord
+& $verifyPe -Path $outWithResolvedSymbolWindows -ExpectedExitCode 8
+& $runPe -Path $outWithResolvedSymbolWindows -ExpectedExitCode 8
+if ($windowsResolvedRecord.LinkedRelocationsAppliedCount -ne 1) {
+    Write-Error ("Expected 1 applied relocation for windows abs32 case, found {0}" -f $windowsResolvedRecord.LinkedRelocationsAppliedCount)
+    exit 1
+}
+
+$windowsResolvedRecordReordered = & $linker -ObjectPath @($objWindowsUnitHelper, $objWindowsMainRequiresHelper) -OutFile $outWithResolvedSymbolWindowsReordered -Target x86_64-windows-pe -AsRecord
+Assert-SameHash -PathA $outWithResolvedSymbolWindows -PathB $outWithResolvedSymbolWindowsReordered -Label "windows resolved symbol relocation object order"
+Assert-SameValue -ValueA $windowsResolvedRecord.LinkedObjectSetSha256 -ValueB $windowsResolvedRecordReordered.LinkedObjectSetSha256 -Label "windows resolved symbol object-set witness"
+Assert-SameValue -ValueA $windowsResolvedRecord.LinkedSymbolResolutionSha256 -ValueB $windowsResolvedRecordReordered.LinkedSymbolResolutionSha256 -Label "windows resolved symbol symbol-resolution witness"
+Assert-SameValue -ValueA $windowsResolvedRecord.LinkedRelocationResolutionSha256 -ValueB $windowsResolvedRecordReordered.LinkedRelocationResolutionSha256 -Label "windows resolved symbol relocation-resolution witness"
+
+$windowsSymbolValueRecord = & $linker -ObjectPath @($objWindowsMainRequiresHelper, $objWindowsUnitHelperValue) -OutFile $outWithResolvedSymbolValueWindows -Target x86_64-windows-pe -AsRecord
+& $verifyPe -Path $outWithResolvedSymbolValueWindows -ExpectedExitCode 42
+& $runPe -Path $outWithResolvedSymbolValueWindows -ExpectedExitCode 42
+if ($windowsSymbolValueRecord.LinkedRelocationsAppliedCount -ne 1) {
+    Write-Error ("Expected 1 applied relocation for windows symbol value case, found {0}" -f $windowsSymbolValueRecord.LinkedRelocationsAppliedCount)
     exit 1
 }
 
