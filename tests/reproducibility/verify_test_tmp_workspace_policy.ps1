@@ -12,6 +12,8 @@ $savedStale = $env:FIN_TEST_TMP_STALE_HOURS
 $pwshPath = (Get-Command pwsh).Source
 $activeProc = $null
 $activePidDir = $null
+$inactiveProc = $null
+$inactivePidDir = $null
 
 function Assert-True {
     param(
@@ -131,7 +133,36 @@ try {
     Remove-Item -Recurse -Force $activePidDir
     Remove-Item Env:FIN_TEST_TMP_STALE_HOURS -ErrorAction SilentlyContinue
 
-    # Case 6: Invalid stale-hours config must fail fast.
+    # Case 6: Active legacy PID-only dir (no metadata) is preserved.
+    $env:FIN_TEST_TMP_STALE_HOURS = "1"
+    $activePidDir = Join-Path $tmpRoot ("{0}{1}" -f $prefix, $activeProc.Id)
+    if (-not (Test-Path $activePidDir)) {
+        New-Item -ItemType Directory -Path $activePidDir -Force | Out-Null
+    }
+    Remove-Item -Path (Join-Path $activePidDir ".fin-tmp-owner.json") -ErrorAction SilentlyContinue
+    (Get-Item $activePidDir).LastWriteTimeUtc = (Get-Date).ToUniversalTime().AddHours(-3)
+    $stateLegacyActive = Initialize-TestTmpWorkspace -RepoRoot $repoRoot -Prefix $prefix
+    Assert-True -Condition (Test-Path $activePidDir) -Message "Expected active legacy PID dir without metadata to be preserved."
+    Finalize-TestTmpWorkspace -State $stateLegacyActive
+    Remove-Item -Recurse -Force $activePidDir
+    Remove-Item Env:FIN_TEST_TMP_STALE_HOURS -ErrorAction SilentlyContinue
+
+    # Case 7: Inactive legacy PID-only dir (no metadata) is pruned.
+    $env:FIN_TEST_TMP_STALE_HOURS = "1"
+    $inactiveProc = Start-Process -FilePath $pwshPath -ArgumentList "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Seconds 1" -PassThru
+    Wait-Process -Id $inactiveProc.Id
+    $inactivePidDir = Join-Path $tmpRoot ("{0}{1}" -f $prefix, $inactiveProc.Id)
+    if (-not (Test-Path $inactivePidDir)) {
+        New-Item -ItemType Directory -Path $inactivePidDir -Force | Out-Null
+    }
+    Remove-Item -Path (Join-Path $inactivePidDir ".fin-tmp-owner.json") -ErrorAction SilentlyContinue
+    (Get-Item $inactivePidDir).LastWriteTimeUtc = (Get-Date).ToUniversalTime().AddHours(-3)
+    $stateLegacyInactive = Initialize-TestTmpWorkspace -RepoRoot $repoRoot -Prefix $prefix
+    Assert-False -Condition (Test-Path $inactivePidDir) -Message "Expected inactive legacy PID dir without metadata to be pruned."
+    Finalize-TestTmpWorkspace -State $stateLegacyInactive
+    Remove-Item Env:FIN_TEST_TMP_STALE_HOURS -ErrorAction SilentlyContinue
+
+    # Case 8: Invalid stale-hours config must fail fast.
     $env:FIN_TEST_TMP_STALE_HOURS = "0"
     Assert-Throws -Action { Initialize-TestTmpWorkspace -RepoRoot $repoRoot -Prefix $prefix } -Message "Expected invalid FIN_TEST_TMP_STALE_HOURS to fail."
     Remove-Item Env:FIN_TEST_TMP_STALE_HOURS -ErrorAction SilentlyContinue
@@ -156,6 +187,12 @@ finally {
     }
     if ($null -ne $activePidDir -and (Test-Path $activePidDir)) {
         Remove-Item -Recurse -Force $activePidDir -ErrorAction SilentlyContinue
+    }
+    if ($null -ne $inactiveProc -and -not $inactiveProc.HasExited) {
+        Stop-Process -Id $inactiveProc.Id -Force -ErrorAction SilentlyContinue
+    }
+    if ($null -ne $inactivePidDir -and (Test-Path $inactivePidDir)) {
+        Remove-Item -Recurse -Force $inactivePidDir -ErrorAction SilentlyContinue
     }
 
     Get-ChildItem -Path $tmpRoot -Directory -Filter ("{0}*" -f $prefix) -ErrorAction SilentlyContinue |
