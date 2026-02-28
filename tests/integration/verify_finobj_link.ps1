@@ -8,36 +8,10 @@ $verifyElf = Join-Path $repoRoot "tests/bootstrap/verify_elf_exit0.ps1"
 $verifyPe = Join-Path $repoRoot "tests/bootstrap/verify_pe_exit0.ps1"
 $runElf = Join-Path $repoRoot "tests/integration/run_linux_elf.ps1"
 $runPe = Join-Path $repoRoot "tests/integration/run_windows_pe.ps1"
-$tmpDir = Join-Path $repoRoot ("artifacts/tmp/finobj-link-{0}" -f $PID)
-$tmpRoot = Join-Path $repoRoot "artifacts/tmp"
-$tmpPrefix = "finobj-link-"
-$keepTmp = ($env:FIN_KEEP_TEST_TMP -eq "1")
-[int]$tmpStaleHours = 6
-if (-not [string]::IsNullOrWhiteSpace($env:FIN_TEST_TMP_STALE_HOURS)) {
-    [int]$parsedStaleHours = 0
-    if (-not [int]::TryParse($env:FIN_TEST_TMP_STALE_HOURS, [ref]$parsedStaleHours) -or $parsedStaleHours -lt 1) {
-        Write-Error ("FIN_TEST_TMP_STALE_HOURS must be a positive integer, found: {0}" -f $env:FIN_TEST_TMP_STALE_HOURS)
-        exit 1
-    }
-    $tmpStaleHours = $parsedStaleHours
-}
-$staleCutoffUtc = (Get-Date).ToUniversalTime().AddHours(-1 * $tmpStaleHours)
-
-if (-not (Test-Path $tmpRoot)) {
-    New-Item -ItemType Directory -Path $tmpRoot -Force | Out-Null
-}
-if (-not $keepTmp) {
-    Get-ChildItem -Path $tmpRoot -Directory -Filter ("{0}*" -f $tmpPrefix) -ErrorAction SilentlyContinue |
-        Where-Object { $_.FullName -ne $tmpDir -and $_.LastWriteTimeUtc -lt $staleCutoffUtc } |
-        ForEach-Object {
-            Remove-Item -Recurse -Force $_.FullName -ErrorAction SilentlyContinue
-        }
-}
-
-if (Test-Path $tmpDir) {
-    Remove-Item -Recurse -Force $tmpDir
-}
-New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
+$tmpWorkspace = Join-Path $repoRoot "tests/common/test_tmp_workspace.ps1"
+. $tmpWorkspace
+$tmpState = Initialize-TestTmpWorkspace -RepoRoot $repoRoot -Prefix "finobj-link-"
+$tmpDir = $tmpState.TmpDir
 
 $sourceMain = Join-Path $repoRoot "tests/conformance/fixtures/main_exit_var_assign.fn"
 $sourceUnit = Join-Path $repoRoot "tests/conformance/fixtures/main_exit0.fn"
@@ -314,11 +288,6 @@ Assert-LinkFails -Action {
 } -Label "strict PE verifier should fail for relocation-patched immediate mismatch"
 & $verifyPe -Path $outWithResolvedSymbolValueWindows -ExpectedExitCode 8 -AllowPatchedCode
 
-if ($keepTmp) {
-    Write-Host ("tmp_dir_retained={0}" -f $tmpDir)
-}
-elseif (Test-Path $tmpDir) {
-    Remove-Item -Recurse -Force $tmpDir
-}
+Finalize-TestTmpWorkspace -State $tmpState
 
 Write-Host "finobj link integration check passed."

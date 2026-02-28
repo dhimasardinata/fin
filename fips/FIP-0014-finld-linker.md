@@ -12,6 +12,7 @@
   - compiler/finld/stage0/link_finobj_to_elf.ps1
   - compiler/finc/stage0/build_stage0.ps1
   - cmd/fin/fin.ps1
+  - tests/common/test_tmp_workspace.ps1
   - tests/integration/verify_finobj_link.ps1
   - tests/integration/verify_build_pipeline_finobj.ps1
   - tests/run_stage0_suite.ps1
