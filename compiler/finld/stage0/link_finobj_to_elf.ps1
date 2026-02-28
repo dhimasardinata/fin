@@ -39,6 +39,7 @@ function Get-Stage0CodeLayout {
             CodeOffset = [UInt32](64 + 56)
             CodeSize = [UInt32]12
             AllowedRelocationOffsets = @([UInt32]6)
+            AllowedRelocationKinds = @("abs32", "rel32")
         }
     }
     if ($LinkTarget -eq "x86_64-windows-pe") {
@@ -46,6 +47,7 @@ function Get-Stage0CodeLayout {
             CodeOffset = [UInt32]0x200
             CodeSize = [UInt32]6
             AllowedRelocationOffsets = @([UInt32]1)
+            AllowedRelocationKinds = @("abs32")
         }
     }
 
@@ -255,10 +257,19 @@ if ($nonEntryRelocations.Count -gt 0) {
     throw ("Stage0 relocation materialization supports entry object relocations only: {0}" -f (($nonEntryRelocations.ToArray() | Sort-Object) -join "; "))
 }
 
+$layout = Get-Stage0CodeLayout -LinkTarget $Target
+$allowedKinds = @($layout.AllowedRelocationKinds)
+
 $relocationPlans = [System.Collections.Generic.List[object]]::new()
 $relocationResolutionLines = [System.Collections.Generic.List[string]]::new()
 foreach ($record in $orderedRecords) {
     foreach ($reloc in @($record.Relocations | Sort-Object @{Expression = { [UInt64]$_.Offset } }, @{Expression = { $_.Symbol } }, @{Expression = { $_.Kind } })) {
+        if (-not ($allowedKinds -contains [string]$reloc.Kind)) {
+            throw ("Relocation kind not supported for stage0 {0}: {1} (allowed: {2})" -f `
+                    $Target, `
+                    $reloc.Key, `
+                    ($allowedKinds -join ","))
+        }
         $resolvedProvider = $symbolProviders[$reloc.Symbol]
         $resolvedValue = Resolve-RelocationValue -Kind $reloc.Kind -Offset ([UInt32]$reloc.Offset) -SymbolValue ([UInt32]$resolvedProvider.SymbolValue)
         $relocationPlans.Add([pscustomobject]@{
@@ -314,7 +325,6 @@ $entryRelocationPlans = @($relocationPlans | Where-Object { [string]$_.Record.Ob
 [int]$relocationAppliedCount = $entryRelocationPlans.Count
 
 if ($entryRelocationPlans.Count -gt 0) {
-    $layout = Get-Stage0CodeLayout -LinkTarget $Target
     [byte[]]$imageBytes = [System.IO.File]::ReadAllBytes($outFull)
 
     foreach ($plan in $entryRelocationPlans) {
