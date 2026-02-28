@@ -117,7 +117,21 @@ try {
     Finalize-TestTmpWorkspace -State $stateMismatch
     Remove-Item Env:FIN_TEST_TMP_STALE_HOURS -ErrorAction SilentlyContinue
 
-    # Case 5: Invalid stale-hours config must fail fast.
+    # Case 5: Active PID dir with invalid owner metadata falls back to PID-active check and is preserved.
+    $env:FIN_TEST_TMP_STALE_HOURS = "1"
+    $activePidDir = Join-Path $tmpRoot ("{0}{1}" -f $prefix, $activeProc.Id)
+    if (-not (Test-Path $activePidDir)) {
+        New-Item -ItemType Directory -Path $activePidDir -Force | Out-Null
+    }
+    Set-Content -Path (Join-Path $activePidDir ".fin-tmp-owner.json") -Value "{bad-json" -NoNewline
+    (Get-Item $activePidDir).LastWriteTimeUtc = (Get-Date).ToUniversalTime().AddHours(-3)
+    $stateInvalidMetadata = Initialize-TestTmpWorkspace -RepoRoot $repoRoot -Prefix $prefix
+    Assert-True -Condition (Test-Path $activePidDir) -Message "Expected active PID dir with invalid metadata to be preserved via PID fallback."
+    Finalize-TestTmpWorkspace -State $stateInvalidMetadata
+    Remove-Item -Recurse -Force $activePidDir
+    Remove-Item Env:FIN_TEST_TMP_STALE_HOURS -ErrorAction SilentlyContinue
+
+    # Case 6: Invalid stale-hours config must fail fast.
     $env:FIN_TEST_TMP_STALE_HOURS = "0"
     Assert-Throws -Action { Initialize-TestTmpWorkspace -RepoRoot $repoRoot -Prefix $prefix } -Message "Expected invalid FIN_TEST_TMP_STALE_HOURS to fail."
     Remove-Item Env:FIN_TEST_TMP_STALE_HOURS -ErrorAction SilentlyContinue
