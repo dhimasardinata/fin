@@ -67,8 +67,15 @@ jobs:
       - name: Enforce FIP link for feature changes
         if: github.event_name == 'pull_request'
         shell: pwsh
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          CHANGED_FILES: ${{ steps.changed.outputs.files }}
         run: |
+          $prTitle = $env:PR_TITLE
+          $prBody = $env:PR_BODY
+          $changedFiles = $env:CHANGED_FILES
           ./ci/check_fip_link.ps1 `
-            -Title "${{ github.event.pull_request.title }}" `
-            -Body "${{ github.event.pull_request.body }}" `
-            -ChangedFiles "${{ steps.changed.outputs.files }}"
+            -Title $prTitle `
+            -Body $prBody `
+            -ChangedFiles $changedFiles
