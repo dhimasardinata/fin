@@ -51,3 +51,26 @@ function Assert-FinobjTempArtifactCleaned {
         exit 1
     }
 }
+
+function Assert-FileSha256Equal {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$LeftPath,
+        [Parameter(Mandatory = $true)]
+        [string]$RightPath,
+        [Parameter(Mandatory = $true)]
+        [string]$Label
+    )
+
+    $leftHash = (Get-FileHash -Path $LeftPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    $rightHash = (Get-FileHash -Path $RightPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($leftHash -ne $rightHash) {
+        Write-Error ("{0} mismatch: left={1} right={2}" -f $Label, $leftHash, $rightHash)
+        exit 1
+    }
+
+    return [pscustomobject]@{
+        LeftHash = [string]$leftHash
+        RightHash = [string]$rightHash
+    }
+}

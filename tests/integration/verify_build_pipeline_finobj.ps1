@@ -28,12 +28,9 @@ $buildFinobjObj = $buildFinobjResult.FinobjPath
 & $runLinux -Path $directOut -ExpectedExitCode 7
 & $runLinux -Path $finobjOut -ExpectedExitCode 7
 
-$directHash = (Get-FileHash -Path $directOut -Algorithm SHA256).Hash.ToLowerInvariant()
-$finobjHash = (Get-FileHash -Path $finobjOut -Algorithm SHA256).Hash.ToLowerInvariant()
-if ($directHash -ne $finobjHash) {
-    Write-Error ("build pipeline mismatch: direct={0} finobj={1}" -f $directHash, $finobjHash)
-    exit 1
-}
+$pipelineParity = Assert-FileSha256Equal -LeftPath $directOut -RightPath $finobjOut -Label "build pipeline"
+$directHash = $pipelineParity.LeftHash
+$finobjHash = $pipelineParity.RightHash
 
 $runFinobjResult = Invoke-FinCommandCaptureFinobjOutput -Action {
     & $fin run --src $source --out $runOut --pipeline finobj --expect-exit 7

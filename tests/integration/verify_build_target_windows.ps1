@@ -36,12 +36,7 @@ $runFinobjObj = $runFinobjResult.FinobjPath
 & $verifyPe -Path $runOut -ExpectedExitCode 7
 & $verifyPe -Path $runFinobjOut -ExpectedExitCode 7
 
-$directHash = (Get-FileHash -Path $buildOut -Algorithm SHA256).Hash.ToLowerInvariant()
-$finobjHash = (Get-FileHash -Path $buildFinobjOut -Algorithm SHA256).Hash.ToLowerInvariant()
-if ($directHash -ne $finobjHash) {
-    Write-Error ("windows pipeline mismatch: direct={0} finobj={1}" -f $directHash, $finobjHash)
-    exit 1
-}
+$null = Assert-FileSha256Equal -LeftPath $buildOut -RightPath $buildFinobjOut -Label "windows pipeline"
 
 Assert-FinobjTempArtifactCleaned -Path $buildFinobjObj -Label "build"
 Assert-FinobjTempArtifactCleaned -Path $runFinobjObj -Label "run"
