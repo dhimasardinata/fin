@@ -3,13 +3,12 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\\..")
 $fin = Join-Path $repoRoot "cmd/fin/fin.ps1"
-$tmpDir = Join-Path $repoRoot "artifacts/tmp/doc-smoke"
+$tmpWorkspace = Join-Path $repoRoot "tests/common/test_tmp_workspace.ps1"
+. $tmpWorkspace
+$tmpState = Initialize-TestTmpWorkspace -RepoRoot $repoRoot -Prefix "doc-smoke-"
+$tmpDir = $tmpState.TmpDir
 $source = Join-Path $tmpDir "main.fn"
 $out = Join-Path $tmpDir "main.md"
-
-if (-not (Test-Path $tmpDir)) {
-    New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
-}
 
 Set-Content -Path $source -Value "fn main(){ exit(9); }"
 
@@ -51,5 +50,7 @@ if (-not $failed) {
     Write-Error "Expected doc command to reject --stdout with --out."
     exit 1
 }
+
+Finalize-TestTmpWorkspace -State $tmpState
 
 Write-Host "doc integration check passed."
