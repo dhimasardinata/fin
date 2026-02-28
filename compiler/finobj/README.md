@@ -14,7 +14,7 @@ Stage0 symbol metadata:
 
 - `provides`: symbols defined by the object (defaults to `main` for `entry_symbol=main`).
 - `requires`: symbols required from other objects (defaults to empty).
-- `relocs`: relocation references (`<symbol>@<offset>`) validated against `requires` in stage0.
+- `relocs`: relocation references (`<symbol>@<offset>[:<kind>]`, kind in `abs32|rel32`, default `abs32`) validated against `requires` in stage0.
 - symbol lists are canonicalized deterministically (`main` first, then lexical order).
 
 Entry symbols currently supported:

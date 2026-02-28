@@ -161,12 +161,13 @@ if ($unresolvedRelocations.Count -gt 0) {
 
 $relocationResolutionLines = [System.Collections.Generic.List[string]]::new()
 foreach ($record in $orderedRecords) {
-    foreach ($reloc in @($record.Relocations | Sort-Object @{Expression = { [UInt64]$_.Offset } }, @{Expression = { $_.Symbol } })) {
+    foreach ($reloc in @($record.Relocations | Sort-Object @{Expression = { [UInt64]$_.Offset } }, @{Expression = { $_.Symbol } }, @{Expression = { $_.Kind } })) {
         $resolvedProvider = $symbolProviders[$reloc.Symbol]
-        $relocationResolutionLines.Add(("{0}|{1}|{2}|{3}|{4}" -f `
+        $relocationResolutionLines.Add(("{0}|{1}|{2}|{3}|{4}|{5}" -f `
                 $record.SourcePath, `
                 $reloc.Offset, `
                 $reloc.Symbol, `
+                $reloc.Kind, `
                 $resolvedProvider.SourcePath, `
                 $resolvedProvider.EntrySymbol))
     }
@@ -176,7 +177,7 @@ $relocationResolutionHash = Get-TextSha256 -Text $relocationResolutionPayload
 
 $objectSetLines = [System.Collections.Generic.List[string]]::new()
 foreach ($record in $orderedRecords) {
-    $relocationKeys = @($record.Relocations | Sort-Object @{Expression = { [UInt64]$_.Offset } }, @{Expression = { $_.Symbol } } | ForEach-Object { $_.Key })
+    $relocationKeys = @($record.Relocations | Sort-Object @{Expression = { [UInt64]$_.Offset } }, @{Expression = { $_.Symbol } }, @{Expression = { $_.Kind } } | ForEach-Object { $_.Key })
     $objectSetLines.Add(("{0}|{1}|{2}|{3}|{4}|{5}|{6}" -f `
             $record.EntrySymbol, `
             $record.SourcePath, `

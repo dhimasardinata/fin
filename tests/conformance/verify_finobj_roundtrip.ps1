@@ -44,7 +44,7 @@ function Assert-ReaderFails {
 & $writer -SourcePath $source -OutFile $objWin -Target x86_64-windows-pe
 & $writer -SourcePath $source -OutFile $objUnit -EntrySymbol unit
 & $writer -SourcePath $source -OutFile $objSymbols -Provides @("helper", "main") -Requires @("dep_b", "dep_a")
-& $writer -SourcePath $source -OutFile $objRelocs -Provides @("main", "helper") -Requires @("dep_a", "dep_b") -Relocs @("dep_b@32", "dep_a@16")
+& $writer -SourcePath $source -OutFile $objRelocs -Provides @("main", "helper") -Requires @("dep_a", "dep_b") -Relocs @("dep_b@32:rel32", "dep_a@16")
 
 $hashA = (Get-FileHash -Path $objA -Algorithm SHA256).Hash
 $hashB = (Get-FileHash -Path $objB -Algorithm SHA256).Hash
@@ -126,8 +126,8 @@ if ((@($manualOrderRecord.RequiredSymbols) -join ",") -ne "dep_a,dep_b") {
 
 $relocRecord = & $reader -ObjectPath $objRelocs -ExpectedTarget x86_64-linux-elf -AsRecord
 $relocKeys = @($relocRecord.Relocations | ForEach-Object { $_.Key })
-if (($relocKeys -join ",") -ne "dep_a@16,dep_b@32") {
-    Write-Error ("Expected relocation keys 'dep_a@16,dep_b@32', got '{0}'." -f ($relocKeys -join ","))
+if (($relocKeys -join ",") -ne "dep_a@16:abs32,dep_b@32:rel32") {
+    Write-Error ("Expected relocation keys 'dep_a@16:abs32,dep_b@32:rel32', got '{0}'." -f ($relocKeys -join ","))
     exit 1
 }
 
@@ -249,6 +249,20 @@ requires=dep
 relocs=dep
 "@
 Assert-ReaderFails -Path $badRelocObj -Label "invalid relocation token"
+
+$badRelocKindObj = Join-Path $tmpDir "invalid-reloc-kind.finobj"
+Set-Content -Path $badRelocKindObj -Value @"
+finobj_format=finobj-stage0
+finobj_version=1
+target=x86_64-linux-elf
+entry_symbol=main
+exit_code=7
+source_path=tests/conformance/fixtures/main_exit7.fn
+source_sha256=1111111111111111111111111111111111111111111111111111111111111111
+requires=dep
+relocs=dep@1:abs64
+"@
+Assert-ReaderFails -Path $badRelocKindObj -Label "unsupported relocation kind"
 
 $dupRelocObj = Join-Path $tmpDir "invalid-reloc-duplicate.finobj"
 Set-Content -Path $dupRelocObj -Value @"
