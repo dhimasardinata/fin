@@ -212,6 +212,30 @@ try {
         }
     )
     Assert-True -Condition ($duplicatedFinobjHelpers.Count -eq 0) -Message ("Found duplicated finobj parser helpers; use tests/common/finobj_output_helpers.ps1:`n{0}" -f ($duplicatedFinobjHelpers -join "`n"))
+
+    # Case 11: finobj output capture/parsing calls must use shared invoke helper.
+    $forbiddenFinobjParserCallPattern = '\bGet-FinobjWrittenPath\b.*-Lines'
+    $forbiddenFinobjCapturePattern = '(--pipeline\s+finobj.*\*>\&1)|(\*>\&1.*--pipeline\s+finobj)'
+    $nonCentralizedFinobjUsage = @(
+        foreach ($scriptFile in $scriptFiles) {
+            if ($scriptFile.FullName -eq $helperPath) {
+                continue
+            }
+
+            $relativePath = [System.IO.Path]::GetRelativePath($repoRoot, $scriptFile.FullName)
+
+            Select-String -Path $scriptFile.FullName -Pattern $forbiddenFinobjParserCallPattern |
+                ForEach-Object {
+                    "{0}:{1}: {2}" -f $relativePath, $_.LineNumber, $_.Line.Trim()
+                }
+
+            Select-String -Path $scriptFile.FullName -Pattern $forbiddenFinobjCapturePattern |
+                ForEach-Object {
+                    "{0}:{1}: {2}" -f $relativePath, $_.LineNumber, $_.Line.Trim()
+                }
+        }
+    )
+    Assert-True -Condition ($nonCentralizedFinobjUsage.Count -eq 0) -Message ("Found non-centralized finobj output capture/parsing; use Invoke-FinCommandCaptureFinobjOutput from tests/common/finobj_output_helpers.ps1:`n{0}" -f ($nonCentralizedFinobjUsage -join "`n"))
 }
 finally {
     if ($null -eq $savedKeep) {
