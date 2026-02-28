@@ -9,7 +9,9 @@ $verifyPe = Join-Path $repoRoot "tests/bootstrap/verify_pe_exit0.ps1"
 $runElf = Join-Path $repoRoot "tests/integration/run_linux_elf.ps1"
 $runPe = Join-Path $repoRoot "tests/integration/run_windows_pe.ps1"
 $tmpWorkspace = Join-Path $repoRoot "tests/common/test_tmp_workspace.ps1"
+$finobjHelpers = Join-Path $repoRoot "tests/common/finobj_output_helpers.ps1"
 . $tmpWorkspace
+. $finobjHelpers
 $tmpState = Initialize-TestTmpWorkspace -RepoRoot $repoRoot -Prefix "finobj-link-"
 $tmpDir = $tmpState.TmpDir
 
@@ -82,21 +84,6 @@ function Assert-LinkFails {
     }
 }
 
-function Assert-SameHash {
-    param(
-        [string]$PathA,
-        [string]$PathB,
-        [string]$Label
-    )
-
-    $hashA = (Get-FileHash -Path $PathA -Algorithm SHA256).Hash.ToLowerInvariant()
-    $hashB = (Get-FileHash -Path $PathB -Algorithm SHA256).Hash.ToLowerInvariant()
-    if ($hashA -ne $hashB) {
-        Write-Error ("Expected matching hashes ({0}): {1} vs {2}" -f $Label, $hashA, $hashB)
-        exit 1
-    }
-}
-
 function Assert-SameValue {
     param(
         [string]$ValueA,
@@ -158,7 +145,7 @@ Assert-VerifyRecord -Record $linuxRecord -ExpectedEnabled $true -ExpectedMode "s
 
 $linuxRecordReordered = & $linker -ObjectPath @($objLinuxUnit, $objLinuxMain) -OutFile $outLinuxReordered -Target x86_64-linux-elf -Verify -AsRecord
 Assert-VerifyRecord -Record $linuxRecordReordered -ExpectedEnabled $true -ExpectedMode "strict" -Label "linux reordered strict verification"
-Assert-SameHash -PathA $outLinux -PathB $outLinuxReordered -Label "linux object order"
+$null = Assert-FileSha256Equal -LeftPath $outLinux -RightPath $outLinuxReordered -Label "linux object order"
 Assert-SameValue -ValueA $linuxRecord.LinkedObjectSetSha256 -ValueB $linuxRecordReordered.LinkedObjectSetSha256 -Label "linux object-set witness"
 Assert-SameValue -ValueA $linuxRecord.LinkedSymbolResolutionSha256 -ValueB $linuxRecordReordered.LinkedSymbolResolutionSha256 -Label "linux symbol-resolution witness"
 Assert-SameValue -ValueA $linuxRecord.LinkedRelocationResolutionSha256 -ValueB $linuxRecordReordered.LinkedRelocationResolutionSha256 -Label "linux relocation-resolution witness"
@@ -170,7 +157,7 @@ Assert-VerifyRecord -Record $windowsRecord -ExpectedEnabled $true -ExpectedMode 
 
 $windowsRecordReordered = & $linker -ObjectPath @($objWindowsUnit, $objWindowsMain) -OutFile $outWindowsReordered -Target x86_64-windows-pe -Verify -AsRecord
 Assert-VerifyRecord -Record $windowsRecordReordered -ExpectedEnabled $true -ExpectedMode "strict" -Label "windows reordered strict verification"
-Assert-SameHash -PathA $outWindows -PathB $outWindowsReordered -Label "windows object order"
+$null = Assert-FileSha256Equal -LeftPath $outWindows -RightPath $outWindowsReordered -Label "windows object order"
 Assert-SameValue -ValueA $windowsRecord.LinkedObjectSetSha256 -ValueB $windowsRecordReordered.LinkedObjectSetSha256 -Label "windows object-set witness"
 Assert-SameValue -ValueA $windowsRecord.LinkedSymbolResolutionSha256 -ValueB $windowsRecordReordered.LinkedSymbolResolutionSha256 -Label "windows symbol-resolution witness"
 Assert-SameValue -ValueA $windowsRecord.LinkedRelocationResolutionSha256 -ValueB $windowsRecordReordered.LinkedRelocationResolutionSha256 -Label "windows relocation-resolution witness"
@@ -234,7 +221,7 @@ Assert-VerifyRecord -Record $resolvedRecord -ExpectedEnabled $true -ExpectedMode
 
 $resolvedRecordReordered = & $linker -ObjectPath @($objLinuxUnitHelper, $objLinuxMainRequiresHelper) -OutFile $outWithResolvedSymbolReordered -Target x86_64-linux-elf -Verify -AsRecord
 Assert-VerifyRecord -Record $resolvedRecordReordered -ExpectedEnabled $true -ExpectedMode "structure_only_relocation_patched" -Label "linux reordered relocation-patched verification"
-Assert-SameHash -PathA $outWithResolvedSymbol -PathB $outWithResolvedSymbolReordered -Label "resolved symbol relocation object order"
+$null = Assert-FileSha256Equal -LeftPath $outWithResolvedSymbol -RightPath $outWithResolvedSymbolReordered -Label "resolved symbol relocation object order"
 Assert-SameValue -ValueA $resolvedRecord.LinkedObjectSetSha256 -ValueB $resolvedRecordReordered.LinkedObjectSetSha256 -Label "resolved symbol object-set witness"
 Assert-SameValue -ValueA $resolvedRecord.LinkedSymbolResolutionSha256 -ValueB $resolvedRecordReordered.LinkedSymbolResolutionSha256 -Label "resolved symbol symbol-resolution witness"
 Assert-SameValue -ValueA $resolvedRecord.LinkedRelocationResolutionSha256 -ValueB $resolvedRecordReordered.LinkedRelocationResolutionSha256 -Label "resolved symbol relocation-resolution witness"
@@ -270,7 +257,7 @@ if ($windowsResolvedRecord.LinkedRelocationsAppliedCount -ne 1) {
 
 $windowsResolvedRecordReordered = & $linker -ObjectPath @($objWindowsUnitHelper, $objWindowsMainRequiresHelper) -OutFile $outWithResolvedSymbolWindowsReordered -Target x86_64-windows-pe -AsRecord
 Assert-VerifyRecord -Record $windowsResolvedRecordReordered -ExpectedEnabled $false -ExpectedMode "disabled" -Label "windows reordered abs32 no-verify mode"
-Assert-SameHash -PathA $outWithResolvedSymbolWindows -PathB $outWithResolvedSymbolWindowsReordered -Label "windows resolved symbol relocation object order"
+$null = Assert-FileSha256Equal -LeftPath $outWithResolvedSymbolWindows -RightPath $outWithResolvedSymbolWindowsReordered -Label "windows resolved symbol relocation object order"
 Assert-SameValue -ValueA $windowsResolvedRecord.LinkedObjectSetSha256 -ValueB $windowsResolvedRecordReordered.LinkedObjectSetSha256 -Label "windows resolved symbol object-set witness"
 Assert-SameValue -ValueA $windowsResolvedRecord.LinkedSymbolResolutionSha256 -ValueB $windowsResolvedRecordReordered.LinkedSymbolResolutionSha256 -Label "windows resolved symbol symbol-resolution witness"
 Assert-SameValue -ValueA $windowsResolvedRecord.LinkedRelocationResolutionSha256 -ValueB $windowsResolvedRecordReordered.LinkedRelocationResolutionSha256 -Label "windows resolved symbol relocation-resolution witness"
