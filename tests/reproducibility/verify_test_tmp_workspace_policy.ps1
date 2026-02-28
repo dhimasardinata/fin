@@ -94,6 +94,8 @@ try {
     if (-not (Test-Path $activePidDir)) {
         New-Item -ItemType Directory -Path $activePidDir -Force | Out-Null
     }
+    $activeStartUtc = Get-TestTmpWorkspaceProcessStartUtc -OwnerPid $activeProc.Id
+    Set-TestTmpWorkspaceOwnerMetadata -TmpDir $activePidDir -OwnerPid $activeProc.Id -OwnerStartUtc $activeStartUtc
     (Get-Item $staleDir).LastWriteTimeUtc = (Get-Date).ToUniversalTime().AddHours(-3)
     (Get-Item $recentDir).LastWriteTimeUtc = (Get-Date).ToUniversalTime()
     (Get-Item $activePidDir).LastWriteTimeUtc = (Get-Date).ToUniversalTime().AddHours(-3)
@@ -106,7 +108,16 @@ try {
     Remove-Item -Recurse -Force $recentDir
     Remove-Item Env:FIN_TEST_TMP_STALE_HOURS -ErrorAction SilentlyContinue
 
-    # Case 4: Invalid stale-hours config must fail fast.
+    # Case 4: Active PID dir with mismatched owner metadata is treated as stale and pruned.
+    $env:FIN_TEST_TMP_STALE_HOURS = "1"
+    Set-TestTmpWorkspaceOwnerMetadata -TmpDir $activePidDir -OwnerPid $activeProc.Id -OwnerStartUtc $activeStartUtc.AddMinutes(-5)
+    (Get-Item $activePidDir).LastWriteTimeUtc = (Get-Date).ToUniversalTime().AddHours(-3)
+    $stateMismatch = Initialize-TestTmpWorkspace -RepoRoot $repoRoot -Prefix $prefix
+    Assert-False -Condition (Test-Path $activePidDir) -Message "Expected mismatched owner metadata dir to be pruned."
+    Finalize-TestTmpWorkspace -State $stateMismatch
+    Remove-Item Env:FIN_TEST_TMP_STALE_HOURS -ErrorAction SilentlyContinue
+
+    # Case 5: Invalid stale-hours config must fail fast.
     $env:FIN_TEST_TMP_STALE_HOURS = "0"
     Assert-Throws -Action { Initialize-TestTmpWorkspace -RepoRoot $repoRoot -Prefix $prefix } -Message "Expected invalid FIN_TEST_TMP_STALE_HOURS to fail."
     Remove-Item Env:FIN_TEST_TMP_STALE_HOURS -ErrorAction SilentlyContinue
