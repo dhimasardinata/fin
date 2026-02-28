@@ -42,17 +42,29 @@ function Test-TestTmpWorkspaceOwnerMetadataActive {
     }
 
     $raw = Get-Content -Path $MetadataPath -Raw -ErrorAction Stop
-    $metadata = $raw | ConvertFrom-Json -ErrorAction Stop -DateKind String
-    if ($null -eq $metadata) {
+    $pidRaw = ""
+    $startRaw = ""
+    $doc = $null
+    try {
+        $doc = [System.Text.Json.JsonDocument]::Parse($raw)
+        $root = $doc.RootElement
+        $pidRaw = $root.GetProperty("pid").ToString()
+        $startRaw = $root.GetProperty("start_utc").GetString()
+    }
+    catch {
         return $false
+    }
+    finally {
+        if ($null -ne $doc) {
+            $doc.Dispose()
+        }
     }
 
     [int]$metadataPid = 0
-    if (-not [int]::TryParse([string]$metadata.pid, [ref]$metadataPid) -or $metadataPid -lt 1 -or $metadataPid -ne $ExpectedPid) {
+    if (-not [int]::TryParse([string]$pidRaw, [ref]$metadataPid) -or $metadataPid -lt 1 -or $metadataPid -ne $ExpectedPid) {
         return $false
     }
 
-    $startRaw = [string]$metadata.start_utc
     if ([string]::IsNullOrWhiteSpace($startRaw)) {
         return $false
     }
