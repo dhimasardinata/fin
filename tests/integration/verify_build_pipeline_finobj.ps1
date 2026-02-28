@@ -18,9 +18,10 @@ $finobjOut = Join-Path $tmpDir "main-finobj"
 $runOut = Join-Path $tmpDir "main-run-finobj"
 
 & $fin build --src $source --out $directOut --pipeline direct
-$buildFinobjOutput = & $fin build --src $source --out $finobjOut --pipeline finobj *>&1
-$buildFinobjOutput | ForEach-Object { Write-Host $_ }
-$buildFinobjObj = Get-FinobjWrittenPath -Lines @($buildFinobjOutput) -Label "fin build --pipeline finobj"
+$buildFinobjResult = Invoke-FinCommandCaptureFinobjOutput -Action {
+    & $fin build --src $source --out $finobjOut --pipeline finobj
+} -Label "fin build --pipeline finobj"
+$buildFinobjObj = $buildFinobjResult.FinobjPath
 
 & $verifyElf -Path $directOut -ExpectedExitCode 7
 & $verifyElf -Path $finobjOut -ExpectedExitCode 7
@@ -34,9 +35,10 @@ if ($directHash -ne $finobjHash) {
     exit 1
 }
 
-$runFinobjOutput = & $fin run --src $source --out $runOut --pipeline finobj --expect-exit 7 *>&1
-$runFinobjOutput | ForEach-Object { Write-Host $_ }
-$runFinobjObj = Get-FinobjWrittenPath -Lines @($runFinobjOutput) -Label "fin run --pipeline finobj"
+$runFinobjResult = Invoke-FinCommandCaptureFinobjOutput -Action {
+    & $fin run --src $source --out $runOut --pipeline finobj --expect-exit 7
+} -Label "fin run --pipeline finobj"
+$runFinobjObj = $runFinobjResult.FinobjPath
 
 if (Test-Path $buildFinobjObj) {
     Write-Error ("Expected stage0 finobj temp artifact cleanup after build: {0}" -f $buildFinobjObj)

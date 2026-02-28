@@ -19,18 +19,20 @@ $runOut = Join-Path $tmpDir "main-run.exe"
 $runFinobjOut = Join-Path $tmpDir "main-run-finobj.exe"
 
 & $fin build --src $source --out $buildOut --target x86_64-windows-pe
-$buildFinobjOutput = & $fin build --src $source --out $buildFinobjOut --target x86_64-windows-pe --pipeline finobj *>&1
-$buildFinobjOutput | ForEach-Object { Write-Host $_ }
-$buildFinobjObj = Get-FinobjWrittenPath -Lines @($buildFinobjOutput) -Label "fin build --target x86_64-windows-pe --pipeline finobj"
+$buildFinobjResult = Invoke-FinCommandCaptureFinobjOutput -Action {
+    & $fin build --src $source --out $buildFinobjOut --target x86_64-windows-pe --pipeline finobj
+} -Label "fin build --target x86_64-windows-pe --pipeline finobj"
+$buildFinobjObj = $buildFinobjResult.FinobjPath
 & $verifyPe -Path $buildOut -ExpectedExitCode 7
 & $verifyPe -Path $buildFinobjOut -ExpectedExitCode 7
 & $runPe -Path $buildOut -ExpectedExitCode 7
 & $runPe -Path $buildFinobjOut -ExpectedExitCode 7
 
 & $fin run --src $source --out $runOut --target x86_64-windows-pe --expect-exit 7
-$runFinobjOutput = & $fin run --src $source --out $runFinobjOut --target x86_64-windows-pe --pipeline finobj --expect-exit 7 *>&1
-$runFinobjOutput | ForEach-Object { Write-Host $_ }
-$runFinobjObj = Get-FinobjWrittenPath -Lines @($runFinobjOutput) -Label "fin run --target x86_64-windows-pe --pipeline finobj"
+$runFinobjResult = Invoke-FinCommandCaptureFinobjOutput -Action {
+    & $fin run --src $source --out $runFinobjOut --target x86_64-windows-pe --pipeline finobj --expect-exit 7
+} -Label "fin run --target x86_64-windows-pe --pipeline finobj"
+$runFinobjObj = $runFinobjResult.FinobjPath
 & $verifyPe -Path $runOut -ExpectedExitCode 7
 & $verifyPe -Path $runFinobjOut -ExpectedExitCode 7
 
