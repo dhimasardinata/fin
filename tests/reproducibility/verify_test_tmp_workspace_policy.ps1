@@ -236,6 +236,28 @@ try {
         }
     )
     Assert-True -Condition ($nonCentralizedFinobjUsage.Count -eq 0) -Message ("Found non-centralized finobj output capture/parsing; use Invoke-FinCommandCaptureFinobjOutput from tests/common/finobj_output_helpers.ps1:`n{0}" -f ($nonCentralizedFinobjUsage -join "`n"))
+
+    # Case 12: finobj SHA256 parity checks in helper-using integration scripts must be centralized.
+    $manualFinobjHashPattern = '\bGet-FileHash\b\s+-Path\b.*\b-Algorithm\b\s+SHA256\b'
+    $manualFinobjHashUsage = @(
+        foreach ($scriptFile in $scriptFiles) {
+            if ($scriptFile.FullName -eq $helperPath) {
+                continue
+            }
+
+            $usesFinobjHelper = Select-String -Path $scriptFile.FullName -Pattern 'tests/common/finobj_output_helpers\.ps1' -Quiet
+            if (-not $usesFinobjHelper) {
+                continue
+            }
+
+            $relativePath = [System.IO.Path]::GetRelativePath($repoRoot, $scriptFile.FullName)
+            Select-String -Path $scriptFile.FullName -Pattern $manualFinobjHashPattern |
+                ForEach-Object {
+                    "{0}:{1}: {2}" -f $relativePath, $_.LineNumber, $_.Line.Trim()
+                }
+        }
+    )
+    Assert-True -Condition ($manualFinobjHashUsage.Count -eq 0) -Message ("Found manual SHA256 parity logic in finobj helper scripts; use Assert-FileSha256Equal from tests/common/finobj_output_helpers.ps1:`n{0}" -f ($manualFinobjHashUsage -join "`n"))
 }
 finally {
     if ($null -eq $savedKeep) {
