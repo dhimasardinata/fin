@@ -143,6 +143,11 @@ try {
     (Get-Item $activePidDir).LastWriteTimeUtc = (Get-Date).ToUniversalTime().AddHours(-3)
     $stateLegacyActive = Initialize-TestTmpWorkspace -RepoRoot $repoRoot -Prefix $prefix
     Assert-True -Condition (Test-Path $activePidDir) -Message "Expected active legacy PID dir without metadata to be preserved."
+    $backfilledMetadataPath = Join-Path $activePidDir ".fin-tmp-owner.json"
+    Assert-True -Condition (Test-Path $backfilledMetadataPath) -Message "Expected legacy active PID dir to receive owner metadata backfill."
+    $backfillStatus = Get-TestTmpWorkspaceOwnerMetadataStatus -MetadataPath $backfilledMetadataPath -ExpectedPid $activeProc.Id
+    Assert-True -Condition ([bool]$backfillStatus.Valid) -Message "Expected backfilled owner metadata to be valid."
+    Assert-True -Condition ([bool]$backfillStatus.Active) -Message "Expected backfilled owner metadata to resolve active owner."
     Finalize-TestTmpWorkspace -State $stateLegacyActive
     Remove-Item -Recurse -Force $activePidDir
     Remove-Item Env:FIN_TEST_TMP_STALE_HOURS -ErrorAction SilentlyContinue

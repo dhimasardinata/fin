@@ -26,6 +26,6 @@ Temporary workspace policy:
 - `verify_finobj_link.ps1` and `verify_stage0_reproducibility.ps1` use PID-scoped temp roots under `artifacts/tmp` and prune stale temp dirs from prior runs.
 - Set `FIN_KEEP_TEST_TMP=1` to retain per-run temp artifacts for local debugging.
 - Stale pruning keeps recent temp dirs and skips stale dirs whose PID owner is still active with matching owner metadata (`pid` + process start time); if owner metadata is malformed it falls back to PID-active checks.
-- Legacy PID-only dirs without owner metadata are still supported: active PID dirs are preserved and inactive PID dirs are pruned.
+- Legacy PID-only dirs without owner metadata are still supported: active PID dirs are preserved and backfilled with owner metadata; inactive PID dirs are pruned.
 - Default staleness window is 6 hours and can be tuned via `FIN_TEST_TMP_STALE_HOURS`.
 - Shared helper implementation: `tests/common/test_tmp_workspace.ps1`.
