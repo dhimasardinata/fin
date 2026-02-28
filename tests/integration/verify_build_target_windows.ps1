@@ -6,7 +6,9 @@ $fin = Join-Path $repoRoot "cmd/fin/fin.ps1"
 $verifyPe = Join-Path $repoRoot "tests/bootstrap/verify_pe_exit0.ps1"
 $runPe = Join-Path $repoRoot "tests/integration/run_windows_pe.ps1"
 $tmpWorkspace = Join-Path $repoRoot "tests/common/test_tmp_workspace.ps1"
+$finobjHelpers = Join-Path $repoRoot "tests/common/finobj_output_helpers.ps1"
 . $tmpWorkspace
+. $finobjHelpers
 $tmpState = Initialize-TestTmpWorkspace -RepoRoot $repoRoot -Prefix "build-target-windows-smoke-"
 $tmpDir = $tmpState.TmpDir
 
@@ -15,25 +17,6 @@ $buildOut = Join-Path $tmpDir "main-build.exe"
 $buildFinobjOut = Join-Path $tmpDir "main-build-finobj.exe"
 $runOut = Join-Path $tmpDir "main-run.exe"
 $runFinobjOut = Join-Path $tmpDir "main-run-finobj.exe"
-
-function Get-FinobjWrittenPath {
-    param(
-        [Parameter(Mandatory = $true)]
-        [object[]]$Lines,
-        [Parameter(Mandatory = $true)]
-        [string]$Label
-    )
-
-    foreach ($line in $Lines) {
-        $text = [string]$line
-        if ($text -match '^finobj_written=(.+)$') {
-            return $Matches[1].Trim()
-        }
-    }
-
-    Write-Error ("Expected finobj_written output for {0}." -f $Label)
-    exit 1
-}
 
 & $fin build --src $source --out $buildOut --target x86_64-windows-pe
 $buildFinobjOutput = & $fin build --src $source --out $buildFinobjOut --target x86_64-windows-pe --pipeline finobj *>&1

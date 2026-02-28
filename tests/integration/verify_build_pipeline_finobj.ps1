@@ -6,7 +6,9 @@ $fin = Join-Path $repoRoot "cmd/fin/fin.ps1"
 $verifyElf = Join-Path $repoRoot "tests/bootstrap/verify_elf_exit0.ps1"
 $runLinux = Join-Path $repoRoot "tests/integration/run_linux_elf.ps1"
 $tmpWorkspace = Join-Path $repoRoot "tests/common/test_tmp_workspace.ps1"
+$finobjHelpers = Join-Path $repoRoot "tests/common/finobj_output_helpers.ps1"
 . $tmpWorkspace
+. $finobjHelpers
 $tmpState = Initialize-TestTmpWorkspace -RepoRoot $repoRoot -Prefix "build-pipeline-smoke-"
 $tmpDir = $tmpState.TmpDir
 
@@ -14,25 +16,6 @@ $source = "tests/conformance/fixtures/main_exit7.fn"
 $directOut = Join-Path $tmpDir "main-direct"
 $finobjOut = Join-Path $tmpDir "main-finobj"
 $runOut = Join-Path $tmpDir "main-run-finobj"
-
-function Get-FinobjWrittenPath {
-    param(
-        [Parameter(Mandatory = $true)]
-        [object[]]$Lines,
-        [Parameter(Mandatory = $true)]
-        [string]$Label
-    )
-
-    foreach ($line in $Lines) {
-        $text = [string]$line
-        if ($text -match '^finobj_written=(.+)$') {
-            return $Matches[1].Trim()
-        }
-    }
-
-    Write-Error ("Expected finobj_written output for {0}." -f $Label)
-    exit 1
-}
 
 & $fin build --src $source --out $directOut --pipeline direct
 $buildFinobjOutput = & $fin build --src $source --out $finobjOut --pipeline finobj *>&1

@@ -6,7 +6,9 @@ $fin = Join-Path $repoRoot "cmd/fin/fin.ps1"
 $verifyElf = Join-Path $repoRoot "tests/bootstrap/verify_elf_exit0.ps1"
 $verifyPe = Join-Path $repoRoot "tests/bootstrap/verify_pe_exit0.ps1"
 $tmpWorkspace = Join-Path $repoRoot "tests/common/test_tmp_workspace.ps1"
+$finobjHelpers = Join-Path $repoRoot "tests/common/finobj_output_helpers.ps1"
 . $tmpWorkspace
+. $finobjHelpers
 $tmpState = Initialize-TestTmpWorkspace -RepoRoot $repoRoot -Prefix "manifest-target-smoke-"
 $tmpDir = $tmpState.TmpDir
 
@@ -40,25 +42,6 @@ $runFinobjOut = Join-Path $tmpDir "main-manifest-run-finobj.exe"
 $linuxOverrideOut = Join-Path $tmpDir "main-target-override"
 $linuxOverrideFinobjOut = Join-Path $tmpDir "main-target-override-finobj"
 $missingManifest = Join-Path $tmpDir "missing-fin.toml"
-
-function Get-FinobjWrittenPath {
-    param(
-        [Parameter(Mandatory = $true)]
-        [object[]]$Lines,
-        [Parameter(Mandatory = $true)]
-        [string]$Label
-    )
-
-    foreach ($line in $Lines) {
-        $text = [string]$line
-        if ($text -match '^finobj_written=(.+)$') {
-            return $Matches[1].Trim()
-        }
-    }
-
-    Write-Error ("Expected finobj_written output for {0}." -f $Label)
-    exit 1
-}
 
 & $fin init --dir $project --name manifest_target_proj
 
