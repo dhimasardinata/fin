@@ -16,15 +16,38 @@ $buildFinobjOut = Join-Path $tmpDir "main-build-finobj.exe"
 $runOut = Join-Path $tmpDir "main-run.exe"
 $runFinobjOut = Join-Path $tmpDir "main-run-finobj.exe"
 
+function Get-FinobjWrittenPath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [object[]]$Lines,
+        [Parameter(Mandatory = $true)]
+        [string]$Label
+    )
+
+    foreach ($line in $Lines) {
+        $text = [string]$line
+        if ($text -match '^finobj_written=(.+)$') {
+            return $Matches[1].Trim()
+        }
+    }
+
+    Write-Error ("Expected finobj_written output for {0}." -f $Label)
+    exit 1
+}
+
 & $fin build --src $source --out $buildOut --target x86_64-windows-pe
-& $fin build --src $source --out $buildFinobjOut --target x86_64-windows-pe --pipeline finobj
+$buildFinobjOutput = & $fin build --src $source --out $buildFinobjOut --target x86_64-windows-pe --pipeline finobj *>&1
+$buildFinobjOutput | ForEach-Object { Write-Host $_ }
+$buildFinobjObj = Get-FinobjWrittenPath -Lines @($buildFinobjOutput) -Label "fin build --target x86_64-windows-pe --pipeline finobj"
 & $verifyPe -Path $buildOut -ExpectedExitCode 7
 & $verifyPe -Path $buildFinobjOut -ExpectedExitCode 7
 & $runPe -Path $buildOut -ExpectedExitCode 7
 & $runPe -Path $buildFinobjOut -ExpectedExitCode 7
 
 & $fin run --src $source --out $runOut --target x86_64-windows-pe --expect-exit 7
-& $fin run --src $source --out $runFinobjOut --target x86_64-windows-pe --pipeline finobj --expect-exit 7
+$runFinobjOutput = & $fin run --src $source --out $runFinobjOut --target x86_64-windows-pe --pipeline finobj --expect-exit 7 *>&1
+$runFinobjOutput | ForEach-Object { Write-Host $_ }
+$runFinobjObj = Get-FinobjWrittenPath -Lines @($runFinobjOutput) -Label "fin run --target x86_64-windows-pe --pipeline finobj"
 & $verifyPe -Path $runOut -ExpectedExitCode 7
 & $verifyPe -Path $runFinobjOut -ExpectedExitCode 7
 
@@ -32,6 +55,15 @@ $directHash = (Get-FileHash -Path $buildOut -Algorithm SHA256).Hash.ToLowerInvar
 $finobjHash = (Get-FileHash -Path $buildFinobjOut -Algorithm SHA256).Hash.ToLowerInvariant()
 if ($directHash -ne $finobjHash) {
     Write-Error ("windows pipeline mismatch: direct={0} finobj={1}" -f $directHash, $finobjHash)
+    exit 1
+}
+
+if (Test-Path $buildFinobjObj) {
+    Write-Error ("Expected stage0 finobj temp artifact cleanup after build: {0}" -f $buildFinobjObj)
+    exit 1
+}
+if (Test-Path $runFinobjObj) {
+    Write-Error ("Expected stage0 finobj temp artifact cleanup after run: {0}" -f $runFinobjObj)
     exit 1
 }
 
