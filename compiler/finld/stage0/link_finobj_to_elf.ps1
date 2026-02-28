@@ -133,6 +133,20 @@ if ($unresolved.Count -gt 0) {
     throw ("Unresolved symbols detected: {0}" -f (($unresolved.ToArray() | Sort-Object) -join "; "))
 }
 
+$symbolResolutionLines = [System.Collections.Generic.List[string]]::new()
+foreach ($record in $orderedRecords) {
+    foreach ($symbol in @($record.RequiredSymbols | Sort-Object)) {
+        $resolvedProvider = $symbolProviders[$symbol]
+        $symbolResolutionLines.Add(("{0}|{1}|{2}|{3}" -f `
+                $record.SourcePath, `
+                $symbol, `
+                $resolvedProvider.SourcePath, `
+                $resolvedProvider.EntrySymbol))
+    }
+}
+$symbolResolutionPayload = ($symbolResolutionLines.ToArray() -join "`n") + "`n"
+$symbolResolutionHash = Get-TextSha256 -Text $symbolResolutionPayload
+
 $unresolvedRelocations = [System.Collections.Generic.List[string]]::new()
 foreach ($record in $orderedRecords) {
     foreach ($reloc in @($record.Relocations)) {
@@ -201,6 +215,7 @@ $report = [ordered]@{
     LinkedSymbolsDefinedCount = [int]$symbolProviders.Count
     LinkedSymbolsRequiredCount = [int]$requiredCount
     LinkedRelocationCount = [int]$relocationCount
+    LinkedSymbolResolutionSha256 = [string]$symbolResolutionHash
     LinkedRelocationResolutionSha256 = [string]$relocationResolutionHash
     LinkedObjectSetSha256 = [string]$objectSetHash
     LinkedOutput = [string]$outFull
@@ -214,6 +229,7 @@ Write-Host ("linked_non_entry_objects_count={0}" -f $report.LinkedNonEntryObject
 Write-Host ("linked_symbols_defined_count={0}" -f $report.LinkedSymbolsDefinedCount)
 Write-Host ("linked_symbols_required_count={0}" -f $report.LinkedSymbolsRequiredCount)
 Write-Host ("linked_relocation_count={0}" -f $report.LinkedRelocationCount)
+Write-Host ("linked_symbol_resolution_sha256={0}" -f $report.LinkedSymbolResolutionSha256)
 Write-Host ("linked_relocation_resolution_sha256={0}" -f $report.LinkedRelocationResolutionSha256)
 Write-Host ("linked_object_set_sha256={0}" -f $report.LinkedObjectSetSha256)
 Write-Host ("linked_output={0}" -f $report.LinkedOutput)

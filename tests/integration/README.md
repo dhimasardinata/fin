@@ -10,7 +10,7 @@ Integration checks:
 - `verify_windows_pe_exit.ps1`: validates Windows PE emit/verify flow and runtime exit code on Windows hosts.
 - `verify_build_target_windows.ps1`: validates `fin build/run --target x86_64-windows-pe` flow for both `direct` and `finobj` pipelines.
 - `verify_manifest_target_resolution.ps1`: validates `fin build/run` target selection from `fin.toml` (`[targets].primary`) and explicit target override.
-- `verify_finobj_link.ps1`: validates stage0 finobj multi-object link path for Linux ELF and Windows PE runtime behavior, including missing/duplicate entry-object rejection, duplicate path/identity rejection, unresolved/duplicate symbol rejection, relocation-bearing object checks, order-independent output, and stable linker witness hashes via `-AsRecord`.
+- `verify_finobj_link.ps1`: validates stage0 finobj multi-object link path for Linux ELF and Windows PE runtime behavior, including missing/duplicate entry-object rejection, duplicate path/identity rejection, unresolved/duplicate symbol rejection, relocation-bearing object checks, order-independent output, and stable linker witness hashes via `-AsRecord` (object-set, symbol-resolution, relocation-resolution).
 - `verify_build_pipeline_finobj.ps1`: validates `fin build/run --pipeline finobj` path and parity with direct pipeline output.
 
 On Windows hosts this script uses WSL to execute Linux artifacts.

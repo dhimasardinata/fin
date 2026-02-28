@@ -106,6 +106,7 @@ $linuxRecord = & $linker -ObjectPath @($objLinuxMain, $objLinuxUnit) -OutFile $o
 $linuxRecordReordered = & $linker -ObjectPath @($objLinuxUnit, $objLinuxMain) -OutFile $outLinuxReordered -Target x86_64-linux-elf -Verify -AsRecord
 Assert-SameHash -PathA $outLinux -PathB $outLinuxReordered -Label "linux object order"
 Assert-SameValue -ValueA $linuxRecord.LinkedObjectSetSha256 -ValueB $linuxRecordReordered.LinkedObjectSetSha256 -Label "linux object-set witness"
+Assert-SameValue -ValueA $linuxRecord.LinkedSymbolResolutionSha256 -ValueB $linuxRecordReordered.LinkedSymbolResolutionSha256 -Label "linux symbol-resolution witness"
 Assert-SameValue -ValueA $linuxRecord.LinkedRelocationResolutionSha256 -ValueB $linuxRecordReordered.LinkedRelocationResolutionSha256 -Label "linux relocation-resolution witness"
 
 $windowsRecord = & $linker -ObjectPath @($objWindowsMain, $objWindowsUnit) -OutFile $outWindows -Target x86_64-windows-pe -Verify -AsRecord
@@ -115,6 +116,7 @@ $windowsRecord = & $linker -ObjectPath @($objWindowsMain, $objWindowsUnit) -OutF
 $windowsRecordReordered = & $linker -ObjectPath @($objWindowsUnit, $objWindowsMain) -OutFile $outWindowsReordered -Target x86_64-windows-pe -Verify -AsRecord
 Assert-SameHash -PathA $outWindows -PathB $outWindowsReordered -Label "windows object order"
 Assert-SameValue -ValueA $windowsRecord.LinkedObjectSetSha256 -ValueB $windowsRecordReordered.LinkedObjectSetSha256 -Label "windows object-set witness"
+Assert-SameValue -ValueA $windowsRecord.LinkedSymbolResolutionSha256 -ValueB $windowsRecordReordered.LinkedSymbolResolutionSha256 -Label "windows symbol-resolution witness"
 Assert-SameValue -ValueA $windowsRecord.LinkedRelocationResolutionSha256 -ValueB $windowsRecordReordered.LinkedRelocationResolutionSha256 -Label "windows relocation-resolution witness"
 
 Assert-LinkFails -Action {
@@ -148,6 +150,7 @@ $resolvedRecord = & $linker -ObjectPath @($objLinuxMainRequiresHelper, $objLinux
 $resolvedRecordReordered = & $linker -ObjectPath @($objLinuxUnitHelper, $objLinuxMainRequiresHelper) -OutFile $outWithResolvedSymbolReordered -Target x86_64-linux-elf -Verify -AsRecord
 Assert-SameHash -PathA $outWithResolvedSymbol -PathB $outWithResolvedSymbolReordered -Label "resolved symbol relocation object order"
 Assert-SameValue -ValueA $resolvedRecord.LinkedObjectSetSha256 -ValueB $resolvedRecordReordered.LinkedObjectSetSha256 -Label "resolved symbol object-set witness"
+Assert-SameValue -ValueA $resolvedRecord.LinkedSymbolResolutionSha256 -ValueB $resolvedRecordReordered.LinkedSymbolResolutionSha256 -Label "resolved symbol symbol-resolution witness"
 Assert-SameValue -ValueA $resolvedRecord.LinkedRelocationResolutionSha256 -ValueB $resolvedRecordReordered.LinkedRelocationResolutionSha256 -Label "resolved symbol relocation-resolution witness"
 
 Write-Host "finobj link integration check passed."
