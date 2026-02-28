@@ -3,17 +3,17 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\\..")
 $fin = Join-Path $repoRoot "cmd/fin/fin.ps1"
-$tmpDir = Join-Path $repoRoot "artifacts/tmp/init-smoke"
+$tmpWorkspace = Join-Path $repoRoot "tests/common/test_tmp_workspace.ps1"
+. $tmpWorkspace
+$tmpState = Initialize-TestTmpWorkspace -RepoRoot $repoRoot -Prefix "init-smoke-"
+$tmpDir = $tmpState.TmpDir
+$projectDir = Join-Path $tmpDir "smoke_init"
 
-if (Test-Path $tmpDir) {
-    Remove-Item -Recurse -Force $tmpDir
-}
+& $fin init --dir $projectDir --name smoke_init
 
-& $fin init --dir $tmpDir --name smoke_init
-
-$manifest = Join-Path $tmpDir "fin.toml"
-$lock = Join-Path $tmpDir "fin.lock"
-$mainFn = Join-Path $tmpDir "src/main.fn"
+$manifest = Join-Path $projectDir "fin.toml"
+$lock = Join-Path $projectDir "fin.lock"
+$mainFn = Join-Path $projectDir "src/main.fn"
 
 foreach ($path in @($manifest, $lock, $mainFn)) {
     if (-not (Test-Path $path)) {
@@ -37,7 +37,7 @@ if ($mainContent -notmatch 'fn\s+main\s*\(\)') {
 # Second init without --force must fail.
 $failed = $false
 try {
-    & $fin init --dir $tmpDir --name smoke_init | Out-Null
+    & $fin init --dir $projectDir --name smoke_init | Out-Null
 }
 catch {
     $failed = $true
@@ -49,6 +49,8 @@ if (-not $failed) {
 }
 
 # Force should succeed.
-& $fin init --dir $tmpDir --name smoke_init --force
+& $fin init --dir $projectDir --name smoke_init --force
+
+Finalize-TestTmpWorkspace -State $tmpState
 
 Write-Host "init scaffold integration check passed."
