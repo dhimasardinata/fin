@@ -3,13 +3,12 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\\..")
 $policy = Join-Path $repoRoot "ci/forbid_external_toolchain.ps1"
-$tmpRoot = Join-Path $repoRoot "artifacts/tmp/policy-gate-smoke"
+$tmpWorkspace = Join-Path $repoRoot "tests/common/test_tmp_workspace.ps1"
+. $tmpWorkspace
+$tmpState = Initialize-TestTmpWorkspace -RepoRoot $repoRoot -Prefix "policy-gate-smoke-"
+$tmpRoot = $tmpState.TmpDir
 $workflows = Join-Path $tmpRoot ".github/workflows"
 $workflowFile = Join-Path $workflows "ci.yml"
-
-if (Test-Path $tmpRoot) {
-    Remove-Item -Recurse -Force $tmpRoot
-}
 New-Item -ItemType Directory -Path $workflows -Force | Out-Null
 
 # Should fail: disallowed toolchain command in workflow.
@@ -46,5 +45,7 @@ jobs:
 "@
 
 & $policy -Root $tmpRoot
+
+Finalize-TestTmpWorkspace -State $tmpState
 
 Write-Host "toolchain policy gate self-check passed."
