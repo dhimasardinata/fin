@@ -148,11 +148,17 @@ function Test-TestTmpWorkspaceOwnerActive {
         try {
             $metadataStatus = Get-TestTmpWorkspaceOwnerMetadataStatus -MetadataPath $metadataPath -ExpectedPid $ownerPid
             if (-not [bool]$metadataStatus.Valid) {
+                if ($pidIsActive) {
+                    Try-BackfillTestTmpWorkspaceOwnerMetadata -Directory $Directory -OwnerPid $ownerPid
+                }
                 return $pidIsActive
             }
             return [bool]$metadataStatus.Active
         }
         catch {
+            if ($pidIsActive) {
+                Try-BackfillTestTmpWorkspaceOwnerMetadata -Directory $Directory -OwnerPid $ownerPid
+            }
             return $pidIsActive
         }
     }
