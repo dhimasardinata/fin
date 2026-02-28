@@ -107,6 +107,23 @@ function Get-TestTmpWorkspaceOwnerMetadataStatus {
     return $status
 }
 
+function Try-BackfillTestTmpWorkspaceOwnerMetadata {
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.IO.DirectoryInfo]$Directory,
+        [Parameter(Mandatory = $true)]
+        [int]$OwnerPid
+    )
+
+    try {
+        $ownerStartUtc = Get-TestTmpWorkspaceProcessStartUtc -OwnerPid $OwnerPid
+        Set-TestTmpWorkspaceOwnerMetadata -TmpDir $Directory.FullName -OwnerPid $OwnerPid -OwnerStartUtc $ownerStartUtc
+    }
+    catch {
+        # Best-effort backfill only; stale-prune safety falls back to PID-active behavior.
+    }
+}
+
 function Test-TestTmpWorkspaceOwnerActive {
     param(
         [Parameter(Mandatory = $true)]
@@ -138,6 +155,10 @@ function Test-TestTmpWorkspaceOwnerActive {
         catch {
             return $pidIsActive
         }
+    }
+
+    if ($pidIsActive) {
+        Try-BackfillTestTmpWorkspaceOwnerMetadata -Directory $Directory -OwnerPid $ownerPid
     }
 
     return $pidIsActive
