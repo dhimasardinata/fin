@@ -5,12 +5,10 @@ $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\\..")
 $fin = Join-Path $repoRoot "cmd/fin/fin.ps1"
 $verifyElf = Join-Path $repoRoot "tests/bootstrap/verify_elf_exit0.ps1"
 $runLinux = Join-Path $repoRoot "tests/integration/run_linux_elf.ps1"
-$tmpDir = Join-Path $repoRoot "artifacts/tmp/build-pipeline-smoke"
-
-if (Test-Path $tmpDir) {
-    Remove-Item -Recurse -Force $tmpDir
-}
-New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
+$tmpWorkspace = Join-Path $repoRoot "tests/common/test_tmp_workspace.ps1"
+. $tmpWorkspace
+$tmpState = Initialize-TestTmpWorkspace -RepoRoot $repoRoot -Prefix "build-pipeline-smoke-"
+$tmpDir = $tmpState.TmpDir
 
 $source = "tests/conformance/fixtures/main_exit7.fn"
 $directOut = Join-Path $tmpDir "main-direct"
@@ -33,6 +31,8 @@ if ($directHash -ne $finobjHash) {
 }
 
 & $fin run --src $source --out $runOut --pipeline finobj --expect-exit 7
+
+Finalize-TestTmpWorkspace -State $tmpState
 
 Write-Host ("pipeline_direct_sha256={0}" -f $directHash)
 Write-Host ("pipeline_finobj_sha256={0}" -f $finobjHash)
