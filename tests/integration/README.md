@@ -22,3 +22,4 @@ The default stale-prune window is 6 hours and is configurable with `FIN_TEST_TMP
 Stale prune skips PID-owned temp dirs when the owning process is still active.
 PID ownership checks also validate owner metadata (`pid` + process start time) when present.
 Malformed owner metadata falls back to PID-active checks to avoid pruning active run directories.
+Legacy PID-only dirs without metadata remain compatible: active PID dirs are preserved and inactive PID dirs are pruned.
