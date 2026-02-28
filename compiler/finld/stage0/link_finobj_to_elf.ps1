@@ -31,6 +31,61 @@ function Get-TextSha256 {
     }
 }
 
+function Get-Stage0CodeLayout {
+    param([string]$LinkTarget)
+
+    if ($LinkTarget -eq "x86_64-linux-elf") {
+        return [pscustomobject]@{
+            CodeOffset = [UInt32](64 + 56)
+            CodeSize = [UInt32]12
+        }
+    }
+    if ($LinkTarget -eq "x86_64-windows-pe") {
+        return [pscustomobject]@{
+            CodeOffset = [UInt32]0x200
+            CodeSize = [UInt32]6
+        }
+    }
+
+    throw ("Unsupported target for stage0 relocation layout: {0}" -f $LinkTarget)
+}
+
+function Resolve-RelocationValue {
+    param(
+        [string]$Kind,
+        [UInt32]$Offset,
+        [int]$SymbolValue
+    )
+
+    if ($Kind -eq "abs32") {
+        [UInt64]$value = [UInt64]$SymbolValue
+        if ($value -gt [UInt64][UInt32]::MaxValue) {
+            throw ("relocation abs32 value overflow at offset {0}" -f $Offset)
+        }
+        return [pscustomobject]@{
+            Kind = "abs32"
+            ValueText = ("u32:{0}" -f $value)
+            SignedValue = [Int64]$value
+            UnsignedValue = [UInt32]$value
+        }
+    }
+
+    if ($Kind -eq "rel32") {
+        [Int64]$delta = [Int64]$SymbolValue - ([Int64]$Offset + 4)
+        if ($delta -lt [Int64][Int32]::MinValue -or $delta -gt [Int64][Int32]::MaxValue) {
+            throw ("relocation rel32 overflow at offset {0}: {1}" -f $Offset, $delta)
+        }
+        return [pscustomobject]@{
+            Kind = "rel32"
+            ValueText = ("i32:{0}" -f $delta)
+            SignedValue = [Int64]$delta
+            UnsignedValue = [UInt32]0
+        }
+    }
+
+    throw ("Unsupported relocation kind in stage0 linker: {0}" -f $Kind)
+}
+
 if ($null -eq $ObjectPath -or $ObjectPath.Count -eq 0) {
     throw "At least one finobj path is required."
 }
@@ -159,17 +214,36 @@ if ($unresolvedRelocations.Count -gt 0) {
     throw ("Unresolved relocations detected: {0}" -f (($unresolvedRelocations.ToArray() | Sort-Object) -join "; "))
 }
 
+$nonEntryRelocations = [System.Collections.Generic.List[string]]::new()
+foreach ($record in @($orderedRecords | Where-Object { $_.EntrySymbol -ne "main" })) {
+    foreach ($reloc in @($record.Relocations)) {
+        $nonEntryRelocations.Add(("{0} (from {1})" -f $reloc.Key, $record.SourcePath))
+    }
+}
+if ($nonEntryRelocations.Count -gt 0) {
+    throw ("Stage0 relocation materialization supports entry object relocations only: {0}" -f (($nonEntryRelocations.ToArray() | Sort-Object) -join "; "))
+}
+
+$relocationPlans = [System.Collections.Generic.List[object]]::new()
 $relocationResolutionLines = [System.Collections.Generic.List[string]]::new()
 foreach ($record in $orderedRecords) {
     foreach ($reloc in @($record.Relocations | Sort-Object @{Expression = { [UInt64]$_.Offset } }, @{Expression = { $_.Symbol } }, @{Expression = { $_.Kind } })) {
         $resolvedProvider = $symbolProviders[$reloc.Symbol]
-        $relocationResolutionLines.Add(("{0}|{1}|{2}|{3}|{4}|{5}" -f `
+        $resolvedValue = Resolve-RelocationValue -Kind $reloc.Kind -Offset ([UInt32]$reloc.Offset) -SymbolValue ([int]$resolvedProvider.ExitCode)
+        $relocationPlans.Add([pscustomobject]@{
+                Record = $record
+                Relocation = $reloc
+                Provider = $resolvedProvider
+                ResolvedValue = $resolvedValue
+            })
+        $relocationResolutionLines.Add(("{0}|{1}|{2}|{3}|{4}|{5}|{6}" -f `
                 $record.SourcePath, `
                 $reloc.Offset, `
                 $reloc.Symbol, `
                 $reloc.Kind, `
                 $resolvedProvider.SourcePath, `
-                $resolvedProvider.EntrySymbol))
+                $resolvedProvider.EntrySymbol, `
+                $resolvedValue.ValueText))
     }
 }
 $relocationResolutionPayload = ($relocationResolutionLines.ToArray() -join "`n") + "`n"
@@ -200,7 +274,50 @@ else {
     throw "Unsupported target: $Target"
 }
 
-if ($Verify) {
+$entryRelocationPlans = @($relocationPlans | Where-Object { [string]$_.Record.ObjectPath -eq [string]$entryRecord.ObjectPath } | Sort-Object `
+        @{Expression = { [UInt64]$_.Relocation.Offset } }, `
+        @{Expression = { $_.Relocation.Symbol } }, `
+        @{Expression = { $_.Relocation.Kind } })
+[int]$relocationAppliedCount = $entryRelocationPlans.Count
+
+if ($entryRelocationPlans.Count -gt 0) {
+    $layout = Get-Stage0CodeLayout -LinkTarget $Target
+    [byte[]]$imageBytes = [System.IO.File]::ReadAllBytes($outFull)
+
+    foreach ($plan in $entryRelocationPlans) {
+        [UInt64]$relocOffset = [UInt64]$plan.Relocation.Offset
+        if ($relocOffset + 4 -gt [UInt64]$layout.CodeSize) {
+            throw ("Relocation offset out of stage0 {0} code bounds ({1} bytes): {2}" -f $Target, $layout.CodeSize, $plan.Relocation.Key)
+        }
+
+        [UInt64]$fileOffset = [UInt64]$layout.CodeOffset + $relocOffset
+        if ($fileOffset + 4 -gt [UInt64]$imageBytes.LongLength) {
+            throw ("Relocation file offset out of bounds: {0}" -f $plan.Relocation.Key)
+        }
+
+        [byte[]]$patchBytes = if ($plan.Relocation.Kind -eq "abs32") {
+            [System.BitConverter]::GetBytes([UInt32]$plan.ResolvedValue.UnsignedValue)
+        }
+        else {
+            [System.BitConverter]::GetBytes([Int32]$plan.ResolvedValue.SignedValue)
+        }
+        if (-not [System.BitConverter]::IsLittleEndian) {
+            [Array]::Reverse($patchBytes)
+        }
+
+        [int]$site = [int]$fileOffset
+        for ($i = 0; $i -lt 4; $i++) {
+            $imageBytes[$site + $i] = $patchBytes[$i]
+        }
+    }
+
+    [System.IO.File]::WriteAllBytes($outFull, $imageBytes)
+}
+
+if ($Verify -and $entryRelocationPlans.Count -gt 0) {
+    Write-Host "verify_skipped=relocation_patched_output"
+}
+elseif ($Verify) {
     if ($Target -eq "x86_64-linux-elf") {
         & $verifyElf -Path $outFull -ExpectedExitCode $exitCode
     }
@@ -216,6 +333,7 @@ $report = [ordered]@{
     LinkedSymbolsDefinedCount = [int]$symbolProviders.Count
     LinkedSymbolsRequiredCount = [int]$requiredCount
     LinkedRelocationCount = [int]$relocationCount
+    LinkedRelocationsAppliedCount = [int]$relocationAppliedCount
     LinkedSymbolResolutionSha256 = [string]$symbolResolutionHash
     LinkedRelocationResolutionSha256 = [string]$relocationResolutionHash
     LinkedObjectSetSha256 = [string]$objectSetHash
@@ -230,6 +348,7 @@ Write-Host ("linked_non_entry_objects_count={0}" -f $report.LinkedNonEntryObject
 Write-Host ("linked_symbols_defined_count={0}" -f $report.LinkedSymbolsDefinedCount)
 Write-Host ("linked_symbols_required_count={0}" -f $report.LinkedSymbolsRequiredCount)
 Write-Host ("linked_relocation_count={0}" -f $report.LinkedRelocationCount)
+Write-Host ("linked_relocations_applied_count={0}" -f $report.LinkedRelocationsAppliedCount)
 Write-Host ("linked_symbol_resolution_sha256={0}" -f $report.LinkedSymbolResolutionSha256)
 Write-Host ("linked_relocation_resolution_sha256={0}" -f $report.LinkedRelocationResolutionSha256)
 Write-Host ("linked_object_set_sha256={0}" -f $report.LinkedObjectSetSha256)

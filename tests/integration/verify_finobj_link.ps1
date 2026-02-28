@@ -21,6 +21,8 @@ $objLinuxMain = Join-Path $tmpDir "main-linux.finobj"
 $objLinuxUnit = Join-Path $tmpDir "unit-linux.finobj"
 $objLinuxMain2 = Join-Path $tmpDir "main2-linux.finobj"
 $objLinuxMainRequiresHelper = Join-Path $tmpDir "main-requires-helper.finobj"
+$objLinuxMainRequiresHelperRel32 = Join-Path $tmpDir "main-requires-helper-rel32.finobj"
+$objLinuxMainRequiresHelperBadOffset = Join-Path $tmpDir "main-requires-helper-bad-offset.finobj"
 $objLinuxMainRequiresMissing = Join-Path $tmpDir "main-requires-missing.finobj"
 $objLinuxUnitHelper = Join-Path $tmpDir "unit-helper.finobj"
 $objLinuxUnitHelper2 = Join-Path $tmpDir "unit-helper-dup.finobj"
@@ -36,8 +38,10 @@ $outBadDuplicatePath = Join-Path $tmpDir "bad-duplicate-path"
 $outBadDuplicateIdentity = Join-Path $tmpDir "bad-duplicate-identity"
 $outBadUnresolvedSymbol = Join-Path $tmpDir "bad-unresolved-symbol"
 $outBadDuplicateSymbol = Join-Path $tmpDir "bad-duplicate-symbol"
+$outBadRelocationBounds = Join-Path $tmpDir "bad-relocation-bounds"
 $outWithResolvedSymbol = Join-Path $tmpDir "ok-resolved-symbol"
 $outWithResolvedSymbolReordered = Join-Path $tmpDir "ok-resolved-symbol-reordered"
+$outWithResolvedSymbolRel32 = Join-Path $tmpDir "ok-resolved-symbol-rel32"
 $objLinuxUnitCopy = Join-Path $tmpDir "unit-linux-copy.finobj"
 
 function Assert-LinkFails {
@@ -91,10 +95,12 @@ function Assert-SameValue {
 & $writer -SourcePath $sourceMain -OutFile $objLinuxMain -Target x86_64-linux-elf -EntrySymbol main
 & $writer -SourcePath $sourceUnit -OutFile $objLinuxUnit -Target x86_64-linux-elf -EntrySymbol unit
 & $writer -SourcePath $sourceUnit -OutFile $objLinuxMain2 -Target x86_64-linux-elf -EntrySymbol main
-& $writer -SourcePath $sourceMain -OutFile $objLinuxMainRequiresHelper -Target x86_64-linux-elf -EntrySymbol main -Requires helper -Relocs helper@16
-& $writer -SourcePath $sourceMain -OutFile $objLinuxMainRequiresMissing -Target x86_64-linux-elf -EntrySymbol main -Requires missing_sym -Relocs missing_sym@16
-& $writer -SourcePath $sourceUnit -OutFile $objLinuxUnitHelper -Target x86_64-linux-elf -EntrySymbol unit -Provides helper
-& $writer -SourcePath $sourceUnit -OutFile $objLinuxUnitHelper2 -Target x86_64-linux-elf -EntrySymbol unit -Provides helper
+& $writer -SourcePath $sourceMain -OutFile $objLinuxMainRequiresHelper -Target x86_64-linux-elf -EntrySymbol main -Requires helper -Relocs helper@6
+& $writer -SourcePath $sourceMain -OutFile $objLinuxMainRequiresHelperRel32 -Target x86_64-linux-elf -EntrySymbol main -Requires helper -Relocs helper@6:rel32
+& $writer -SourcePath $sourceMain -OutFile $objLinuxMainRequiresHelperBadOffset -Target x86_64-linux-elf -EntrySymbol main -Requires helper -Relocs helper@16
+& $writer -SourcePath $sourceMain -OutFile $objLinuxMainRequiresMissing -Target x86_64-linux-elf -EntrySymbol main -Requires missing_sym -Relocs missing_sym@6
+& $writer -SourcePath $sourceMain -OutFile $objLinuxUnitHelper -Target x86_64-linux-elf -EntrySymbol unit -Provides helper
+& $writer -SourcePath $sourceMain -OutFile $objLinuxUnitHelper2 -Target x86_64-linux-elf -EntrySymbol unit -Provides helper
 & $writer -SourcePath $sourceMain -OutFile $objWindowsMain -Target x86_64-windows-pe -EntrySymbol main
 & $writer -SourcePath $sourceUnit -OutFile $objWindowsUnit -Target x86_64-windows-pe -EntrySymbol unit
 Copy-Item -Path $objLinuxUnit -Destination $objLinuxUnitCopy -Force
@@ -143,6 +149,10 @@ Assert-LinkFails -Action {
     & $linker -ObjectPath @($objLinuxMainRequiresHelper, $objLinuxUnitHelper, $objLinuxUnitHelper2) -OutFile $outBadDuplicateSymbol -Target x86_64-linux-elf -Verify | Out-Null
 } -Label "duplicate symbol provider"
 
+Assert-LinkFails -Action {
+    & $linker -ObjectPath @($objLinuxMainRequiresHelperBadOffset, $objLinuxUnitHelper) -OutFile $outBadRelocationBounds -Target x86_64-linux-elf -Verify | Out-Null
+} -Label "relocation offset out of stage0 bounds"
+
 $resolvedRecord = & $linker -ObjectPath @($objLinuxMainRequiresHelper, $objLinuxUnitHelper) -OutFile $outWithResolvedSymbol -Target x86_64-linux-elf -Verify -AsRecord
 & $verifyElf -Path $outWithResolvedSymbol -ExpectedExitCode 8
 & $runElf -Path $outWithResolvedSymbol -ExpectedExitCode 8
@@ -152,5 +162,12 @@ Assert-SameHash -PathA $outWithResolvedSymbol -PathB $outWithResolvedSymbolReord
 Assert-SameValue -ValueA $resolvedRecord.LinkedObjectSetSha256 -ValueB $resolvedRecordReordered.LinkedObjectSetSha256 -Label "resolved symbol object-set witness"
 Assert-SameValue -ValueA $resolvedRecord.LinkedSymbolResolutionSha256 -ValueB $resolvedRecordReordered.LinkedSymbolResolutionSha256 -Label "resolved symbol symbol-resolution witness"
 Assert-SameValue -ValueA $resolvedRecord.LinkedRelocationResolutionSha256 -ValueB $resolvedRecordReordered.LinkedRelocationResolutionSha256 -Label "resolved symbol relocation-resolution witness"
+
+$rel32Record = & $linker -ObjectPath @($objLinuxMainRequiresHelperRel32, $objLinuxUnitHelper) -OutFile $outWithResolvedSymbolRel32 -Target x86_64-linux-elf -AsRecord
+& $runElf -Path $outWithResolvedSymbolRel32 -ExpectedExitCode 254
+if ($rel32Record.LinkedRelocationsAppliedCount -ne 1) {
+    Write-Error ("Expected 1 applied relocation for rel32 case, found {0}" -f $rel32Record.LinkedRelocationsAppliedCount)
+    exit 1
+}
 
 Write-Host "finobj link integration check passed."
