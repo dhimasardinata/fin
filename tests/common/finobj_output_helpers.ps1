@@ -37,3 +37,17 @@ function Invoke-FinCommandCaptureFinobjOutput {
         FinobjPath = [string]$finobjPath
     }
 }
+
+function Assert-FinobjTempArtifactCleaned {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path,
+        [Parameter(Mandatory = $true)]
+        [string]$Label
+    )
+
+    if (Test-Path $Path) {
+        Write-Error ("Expected stage0 finobj temp artifact cleanup after {0}: {1}" -f $Label, $Path)
+        exit 1
+    }
+}
