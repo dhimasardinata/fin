@@ -3,15 +3,14 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\\..")
 $fin = Join-Path $repoRoot "cmd/fin/fin.ps1"
-$tmpDir = Join-Path $repoRoot "artifacts/tmp/pkg-publish-smoke"
+$tmpWorkspace = Join-Path $repoRoot "tests/common/test_tmp_workspace.ps1"
+. $tmpWorkspace
+$tmpState = Initialize-TestTmpWorkspace -RepoRoot $repoRoot -Prefix "pkg-publish-smoke-"
+$tmpDir = $tmpState.TmpDir
 $manifest = Join-Path $tmpDir "fin.toml"
 $sourceDir = Join-Path $tmpDir "src"
 $outDir = Join-Path $tmpDir "publish"
 $artifact = Join-Path $outDir "pkgpub_smoke-0.1.0-dev.fnpkg"
-
-if (Test-Path $tmpDir) {
-    Remove-Item -Recurse -Force $tmpDir
-}
 
 & $fin init --dir $tmpDir --name pkgpub_smoke
 
@@ -74,5 +73,7 @@ if (-not $failed) {
     Write-Error "Expected pkg publish to fail when source directory is missing."
     exit 1
 }
+
+Finalize-TestTmpWorkspace -State $tmpState
 
 Write-Host "pkg publish integration check passed."
