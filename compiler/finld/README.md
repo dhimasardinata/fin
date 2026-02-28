@@ -27,6 +27,7 @@ Stage0 includes minimal multi-object linking flow:
   - supports `-AsRecord` structured diagnostics output (including object-set, symbol-resolution, and relocation-resolution witness hashes)
   - reports `LinkedRelocationsAppliedCount` in `-AsRecord` and stdout diagnostics
   - requires the entry object to provide `main` symbol
+  - when `-Verify` is enabled and relocations were applied, runs verifier in structure-only patched-code mode instead of skipping verification
   - canonicalizes object metadata order for deterministic order-independent linking
 - `fin build --pipeline finobj`: routes stage0 compile flow through `finobj` writer + `finld` link path.
 
