@@ -8,7 +8,7 @@ $verifyElf = Join-Path $repoRoot "tests/bootstrap/verify_elf_exit0.ps1"
 $verifyPe = Join-Path $repoRoot "tests/bootstrap/verify_pe_exit0.ps1"
 $runElf = Join-Path $repoRoot "tests/integration/run_linux_elf.ps1"
 $runPe = Join-Path $repoRoot "tests/integration/run_windows_pe.ps1"
-$tmpDir = Join-Path $repoRoot "artifacts/tmp/finobj-link"
+$tmpDir = Join-Path $repoRoot ("artifacts/tmp/finobj-link-{0}" -f $PID)
 
 if (Test-Path $tmpDir) {
     Remove-Item -Recurse -Force $tmpDir
