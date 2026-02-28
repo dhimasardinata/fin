@@ -34,9 +34,31 @@ $project = Join-Path $tmpDir "manifest_target_proj"
 $manifest = Join-Path $project "fin.toml"
 $source = Join-Path $project "src/main.fn"
 $winOut = Join-Path $tmpDir "main-manifest-win.exe"
+$winFinobjOut = Join-Path $tmpDir "main-manifest-win-finobj.exe"
 $runOut = Join-Path $tmpDir "main-manifest-run.exe"
+$runFinobjOut = Join-Path $tmpDir "main-manifest-run-finobj.exe"
 $linuxOverrideOut = Join-Path $tmpDir "main-target-override"
+$linuxOverrideFinobjOut = Join-Path $tmpDir "main-target-override-finobj"
 $missingManifest = Join-Path $tmpDir "missing-fin.toml"
+
+function Get-FinobjWrittenPath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [object[]]$Lines,
+        [Parameter(Mandatory = $true)]
+        [string]$Label
+    )
+
+    foreach ($line in $Lines) {
+        $text = [string]$line
+        if ($text -match '^finobj_written=(.+)$') {
+            return $Matches[1].Trim()
+        }
+    }
+
+    Write-Error ("Expected finobj_written output for {0}." -f $Label)
+    exit 1
+}
 
 & $fin init --dir $project --name manifest_target_proj
 
@@ -45,13 +67,52 @@ $manifestUpdated = $manifestRaw -replace 'primary = "x86_64-linux-elf"', 'primar
 Set-Content -Path $manifest -Value $manifestUpdated
 
 & $fin build --manifest $manifest --src $source --out $winOut
+$buildWinFinobjOutput = & $fin build --manifest $manifest --src $source --out $winFinobjOut --pipeline finobj *>&1
+$buildWinFinobjOutput | ForEach-Object { Write-Host $_ }
+$buildWinFinobjObj = Get-FinobjWrittenPath -Lines @($buildWinFinobjOutput) -Label "fin build --manifest <win-primary> --pipeline finobj"
 & $verifyPe -Path $winOut -ExpectedExitCode 0
+& $verifyPe -Path $winFinobjOut -ExpectedExitCode 0
 
 & $fin run --manifest $manifest --src $source --out $runOut --expect-exit 0
+$runWinFinobjOutput = & $fin run --manifest $manifest --src $source --out $runFinobjOut --pipeline finobj --expect-exit 0 *>&1
+$runWinFinobjOutput | ForEach-Object { Write-Host $_ }
+$runWinFinobjObj = Get-FinobjWrittenPath -Lines @($runWinFinobjOutput) -Label "fin run --manifest <win-primary> --pipeline finobj"
 & $verifyPe -Path $runOut -ExpectedExitCode 0
+& $verifyPe -Path $runFinobjOut -ExpectedExitCode 0
 
 & $fin build --manifest $manifest --src $source --out $linuxOverrideOut --target x86_64-linux-elf
+$buildLinuxFinobjOutput = & $fin build --manifest $manifest --src $source --out $linuxOverrideFinobjOut --target x86_64-linux-elf --pipeline finobj *>&1
+$buildLinuxFinobjOutput | ForEach-Object { Write-Host $_ }
+$buildLinuxFinobjObj = Get-FinobjWrittenPath -Lines @($buildLinuxFinobjOutput) -Label "fin build --manifest <win-primary> --target x86_64-linux-elf --pipeline finobj"
 & $verifyElf -Path $linuxOverrideOut -ExpectedExitCode 0
+& $verifyElf -Path $linuxOverrideFinobjOut -ExpectedExitCode 0
+
+$winDirectHash = (Get-FileHash -Path $winOut -Algorithm SHA256).Hash.ToLowerInvariant()
+$winFinobjHash = (Get-FileHash -Path $winFinobjOut -Algorithm SHA256).Hash.ToLowerInvariant()
+if ($winDirectHash -ne $winFinobjHash) {
+    Write-Error ("manifest primary windows pipeline mismatch: direct={0} finobj={1}" -f $winDirectHash, $winFinobjHash)
+    exit 1
+}
+
+$linuxDirectHash = (Get-FileHash -Path $linuxOverrideOut -Algorithm SHA256).Hash.ToLowerInvariant()
+$linuxFinobjHash = (Get-FileHash -Path $linuxOverrideFinobjOut -Algorithm SHA256).Hash.ToLowerInvariant()
+if ($linuxDirectHash -ne $linuxFinobjHash) {
+    Write-Error ("manifest target override pipeline mismatch: direct={0} finobj={1}" -f $linuxDirectHash, $linuxFinobjHash)
+    exit 1
+}
+
+if (Test-Path $buildWinFinobjObj) {
+    Write-Error ("Expected stage0 finobj temp artifact cleanup after manifest build (windows primary): {0}" -f $buildWinFinobjObj)
+    exit 1
+}
+if (Test-Path $runWinFinobjObj) {
+    Write-Error ("Expected stage0 finobj temp artifact cleanup after manifest run (windows primary): {0}" -f $runWinFinobjObj)
+    exit 1
+}
+if (Test-Path $buildLinuxFinobjObj) {
+    Write-Error ("Expected stage0 finobj temp artifact cleanup after manifest build (linux override): {0}" -f $buildLinuxFinobjObj)
+    exit 1
+}
 
 Assert-Fails -Action {
     & $fin build --manifest $missingManifest --src $source --out (Join-Path $tmpDir "missing-manifest-out") | Out-Null
