@@ -5,12 +5,10 @@ $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\\..")
 $fin = Join-Path $repoRoot "cmd/fin/fin.ps1"
 $verifyElf = Join-Path $repoRoot "tests/bootstrap/verify_elf_exit0.ps1"
 $verifyPe = Join-Path $repoRoot "tests/bootstrap/verify_pe_exit0.ps1"
-$tmpDir = Join-Path $repoRoot "artifacts/tmp/manifest-target-smoke"
-
-if (Test-Path $tmpDir) {
-    Remove-Item -Recurse -Force $tmpDir
-}
-New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
+$tmpWorkspace = Join-Path $repoRoot "tests/common/test_tmp_workspace.ps1"
+. $tmpWorkspace
+$tmpState = Initialize-TestTmpWorkspace -RepoRoot $repoRoot -Prefix "manifest-target-smoke-"
+$tmpDir = $tmpState.TmpDir
 
 function Assert-Fails {
     param(
@@ -58,5 +56,7 @@ Set-Content -Path $manifest -Value $manifestUpdated
 Assert-Fails -Action {
     & $fin build --manifest $missingManifest --src $source --out (Join-Path $tmpDir "missing-manifest-out") | Out-Null
 } -Label "explicit missing manifest path"
+
+Finalize-TestTmpWorkspace -State $tmpState
 
 Write-Host "manifest target resolution integration check passed."
