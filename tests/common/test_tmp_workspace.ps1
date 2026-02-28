@@ -170,6 +170,47 @@ function Test-TestTmpWorkspaceOwnerActive {
     return $pidIsActive
 }
 
+function Remove-TestTmpWorkspaceDirectory {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$TmpDir,
+        [int]$MaxAttempts = 8,
+        [int]$RetryDelayMs = 150,
+        [switch]$IgnoreFailure
+    )
+
+    if (-not (Test-Path $TmpDir)) {
+        return
+    }
+
+    if ($MaxAttempts -lt 1) {
+        $MaxAttempts = 1
+    }
+
+    $lastError = $null
+    for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
+        try {
+            Remove-Item -Recurse -Force $TmpDir -ErrorAction Stop
+            return
+        }
+        catch {
+            $lastError = $_
+            if ($attempt -lt $MaxAttempts) {
+                Start-Sleep -Milliseconds $RetryDelayMs
+            }
+        }
+    }
+
+    if ($IgnoreFailure) {
+        Write-Warning ("Failed to remove test tmp dir after {0} attempts: {1}" -f $MaxAttempts, $TmpDir)
+        return
+    }
+
+    if ($null -ne $lastError) {
+        throw $lastError
+    }
+}
+
 function Initialize-TestTmpWorkspace {
     param(
         [Parameter(Mandatory = $true)]
@@ -206,12 +247,12 @@ function Initialize-TestTmpWorkspace {
                 -not (Test-TestTmpWorkspaceOwnerActive -Directory $_ -Prefix $Prefix)
             } |
             ForEach-Object {
-                Remove-Item -Recurse -Force $_.FullName -ErrorAction SilentlyContinue
+                Remove-TestTmpWorkspaceDirectory -TmpDir $_.FullName -IgnoreFailure
             }
     }
 
     if (Test-Path $tmpDir) {
-        Remove-Item -Recurse -Force $tmpDir
+        Remove-TestTmpWorkspaceDirectory -TmpDir $tmpDir
     }
     New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
     Set-TestTmpWorkspaceOwnerMetadata -TmpDir $tmpDir -OwnerPid $PID -OwnerStartUtc (Get-TestTmpWorkspaceProcessStartUtc -OwnerPid $PID)
@@ -235,6 +276,6 @@ function Finalize-TestTmpWorkspace {
         Write-Host ("tmp_dir_retained={0}" -f $tmpDir)
     }
     elseif (Test-Path $tmpDir) {
-        Remove-Item -Recurse -Force $tmpDir
+        Remove-TestTmpWorkspaceDirectory -TmpDir $tmpDir
     }
 }
