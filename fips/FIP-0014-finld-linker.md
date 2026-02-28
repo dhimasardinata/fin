@@ -37,9 +37,9 @@ Current stage0 linker path:
 5. Build stage0 symbol provider table from finobj `provides` metadata and reject duplicate symbol providers.
 6. Require entry object to provide `main` symbol and reject entry/provider mismatches.
 7. Validate finobj `requires` metadata and reject unresolved symbols.
-8. Validate stage0 relocation metadata (`relocs`) and reject unresolved relocation targets.
+8. Validate stage0 relocation metadata (`relocs`, including supported kind set from finobj reader) and reject unresolved relocation targets.
 9. Emit deterministic symbol-resolution witness hash for auditability.
-10. Emit deterministic relocation-resolution witness hash for auditability.
+10. Emit deterministic relocation-resolution witness hash for auditability (including relocation kind in witness payload).
 11. Expose deterministic structured linker diagnostics via `-AsRecord` (including object-set, symbol-resolution, and relocation-resolution witness hashes).
 12. Emit final native image through direct emitter path with decoded entry exit code (`x86_64-linux-elf` or `x86_64-windows-pe`).
 13. Expose `fin build/run --pipeline finobj` to route stage0 compilation through finobj+finld.

@@ -19,9 +19,9 @@ Stage0 includes minimal multi-object linking flow:
   - allows additional `entry_symbol=unit` objects
   - rejects duplicate object paths and duplicate object identities
   - validates symbol graph metadata (`provides`/`requires`) for duplicate providers and unresolved symbols
-  - validates relocation metadata (`relocs`) for resolved relocation targets
+  - validates relocation metadata (`relocs`) for resolved relocation targets (with stage0 relocation kinds from finobj)
   - emits symbol-resolution witness hash for deterministic auditability
-  - emits relocation-resolution witness hash for deterministic auditability
+  - emits relocation-resolution witness hash for deterministic auditability (including relocation kind)
   - supports `-AsRecord` structured diagnostics output (including object-set, symbol-resolution, and relocation-resolution witness hashes)
   - requires the entry object to provide `main` symbol
   - canonicalizes object metadata order for deterministic order-independent linking

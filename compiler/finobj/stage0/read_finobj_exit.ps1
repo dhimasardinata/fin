@@ -68,8 +68,8 @@ function Parse-RelocationList {
         if ([string]::IsNullOrWhiteSpace($token)) {
             continue
         }
-        if ($token -notmatch '^([A-Za-z_][A-Za-z0-9_]*)@([0-9]+)$') {
-            throw ("Invalid relocs entry: {0}. Expected <symbol>@<offset>." -f $token)
+        if ($token -notmatch '^([A-Za-z_][A-Za-z0-9_]*)@([0-9]+)(?::([A-Za-z0-9_]+))?$') {
+            throw ("Invalid relocs entry: {0}. Expected <symbol>@<offset>[:<kind>]." -f $token)
         }
 
         $symbol = $Matches[1]
@@ -80,8 +80,12 @@ function Parse-RelocationList {
         if ($offset -gt [UInt32]::MaxValue) {
             throw ("Relocation offset out of stage0 range (0..4294967295): {0}" -f $offset)
         }
+        $kind = if ([string]::IsNullOrWhiteSpace($Matches[3])) { "abs32" } else { $Matches[3].ToLowerInvariant() }
+        if ($kind -ne "abs32" -and $kind -ne "rel32") {
+            throw ("Unsupported relocation kind in stage0: {0}" -f $kind)
+        }
 
-        $normalized = ("{0}@{1}" -f $symbol, $offset)
+        $normalized = ("{0}@{1}:{2}" -f $symbol, $offset, $kind)
         if (-not $seen.Add($normalized)) {
             throw ("Duplicate relocs entry: {0}" -f $normalized)
         }
@@ -93,11 +97,12 @@ function Parse-RelocationList {
         $relocations.Add([pscustomobject]@{
                 Symbol = $symbol
                 Offset = $offset32
+                Kind = $kind
                 Key = $normalized
             })
     }
 
-    $ordered = @($relocations | Sort-Object @{Expression = { [UInt64]$_.Offset } }, @{Expression = { $_.Symbol } })
+    $ordered = @($relocations | Sort-Object @{Expression = { [UInt64]$_.Offset } }, @{Expression = { $_.Symbol } }, @{Expression = { $_.Kind } })
     return @($ordered)
 }
 
