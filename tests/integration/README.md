@@ -11,7 +11,7 @@ Integration checks:
 - `verify_build_target_windows.ps1`: validates `fin build/run --target x86_64-windows-pe` flow for both `direct` and `finobj` pipelines, with PID-scoped temp workspace hygiene.
 - `verify_manifest_target_resolution.ps1`: validates `fin build/run` target selection from `fin.toml` (`[targets].primary`) and explicit target override, with PID-scoped temp workspace hygiene.
 - `verify_finobj_link.ps1`: validates stage0 finobj multi-object link path for Linux ELF and Windows PE runtime behavior, including missing/duplicate entry-object rejection, duplicate path/identity rejection, unresolved/duplicate symbol rejection, relocation-bearing object checks, non-entry relocation rejection, entry relocation materialization semantics (Linux `abs32`/`rel32`, Windows `abs32`), symbol-value override behavior, relocation-bounds/invalid-site rejection, Windows unsupported-kind rejection (`rel32`), verifier patched-code mode checks (`-AllowPatchedCode`), order-independent output, and stable linker diagnostics via `-AsRecord` (object-set/symbol-resolution/relocation-resolution witness hashes + verify mode fields).
-- `verify_build_pipeline_finobj.ps1`: validates `fin build/run --pipeline finobj` path and parity with direct pipeline output, with PID-scoped temp workspace hygiene.
+- `verify_build_pipeline_finobj.ps1`: validates `fin build/run --pipeline finobj` path and parity with direct pipeline output, with PID-scoped temp workspace hygiene and stage0 finobj temp artifact cleanup checks.
 
 On Windows hosts this script uses WSL to execute Linux artifacts.
 It is used by `./fin.ps1 run` and `./fin.ps1 test`.
