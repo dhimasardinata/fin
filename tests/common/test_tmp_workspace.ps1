@@ -29,7 +29,21 @@ function Set-TestTmpWorkspaceOwnerMetadata {
     Set-Content -Path $metadataPath -Value $payload -NoNewline
 }
 
-function Test-TestTmpWorkspaceOwnerMetadataActive {
+function Test-TestTmpWorkspacePidActive {
+    param(
+        [Parameter(Mandatory = $true)]
+        [int]$OwnerPid
+    )
+
+    try {
+        return $null -ne (Get-Process -Id $OwnerPid -ErrorAction Stop)
+    }
+    catch {
+        return $false
+    }
+}
+
+function Get-TestTmpWorkspaceOwnerMetadataStatus {
     param(
         [Parameter(Mandatory = $true)]
         [string]$MetadataPath,
@@ -37,8 +51,9 @@ function Test-TestTmpWorkspaceOwnerMetadataActive {
         [int]$ExpectedPid
     )
 
-    if (-not (Test-Path $MetadataPath)) {
-        return $false
+    $status = [pscustomobject]@{
+        Valid = $false
+        Active = $false
     }
 
     $raw = Get-Content -Path $MetadataPath -Raw -ErrorAction Stop
@@ -52,7 +67,7 @@ function Test-TestTmpWorkspaceOwnerMetadataActive {
         $startRaw = $root.GetProperty("start_utc").GetString()
     }
     catch {
-        return $false
+        return $status
     }
     finally {
         if ($null -ne $doc) {
@@ -61,29 +76,35 @@ function Test-TestTmpWorkspaceOwnerMetadataActive {
     }
 
     [int]$metadataPid = 0
-    if (-not [int]::TryParse([string]$pidRaw, [ref]$metadataPid) -or $metadataPid -lt 1 -or $metadataPid -ne $ExpectedPid) {
-        return $false
+    if (-not [int]::TryParse([string]$pidRaw, [ref]$metadataPid) -or $metadataPid -lt 1) {
+        return $status
     }
 
     if ([string]::IsNullOrWhiteSpace($startRaw)) {
-        return $false
+        return $status
     }
 
     try {
         $metadataStartUtc = [datetime]::Parse($startRaw, [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::RoundtripKind).ToUniversalTime()
     }
     catch {
-        return $false
+        return $status
+    }
+
+    $status.Valid = $true
+    if ($metadataPid -ne $ExpectedPid) {
+        return $status
     }
 
     try {
         $processStartUtc = Get-TestTmpWorkspaceProcessStartUtc -OwnerPid $metadataPid
     }
     catch {
-        return $false
+        return $status
     }
 
-    return [math]::Abs(($processStartUtc - $metadataStartUtc).TotalSeconds) -lt 2
+    $status.Active = ([math]::Abs(($processStartUtc - $metadataStartUtc).TotalSeconds) -lt 2)
+    return $status
 }
 
 function Test-TestTmpWorkspaceOwnerActive {
@@ -104,22 +125,22 @@ function Test-TestTmpWorkspaceOwnerActive {
         return $false
     }
 
+    $pidIsActive = Test-TestTmpWorkspacePidActive -OwnerPid $ownerPid
     $metadataPath = Join-Path $Directory.FullName ".fin-tmp-owner.json"
     if (Test-Path $metadataPath) {
         try {
-            return Test-TestTmpWorkspaceOwnerMetadataActive -MetadataPath $metadataPath -ExpectedPid $ownerPid
+            $metadataStatus = Get-TestTmpWorkspaceOwnerMetadataStatus -MetadataPath $metadataPath -ExpectedPid $ownerPid
+            if (-not [bool]$metadataStatus.Valid) {
+                return $pidIsActive
+            }
+            return [bool]$metadataStatus.Active
         }
         catch {
-            return $false
+            return $pidIsActive
         }
     }
 
-    try {
-        return $null -ne (Get-Process -Id $ownerPid -ErrorAction Stop)
-    }
-    catch {
-        return $false
-    }
+    return $pidIsActive
 }
 
 function Initialize-TestTmpWorkspace {
