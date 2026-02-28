@@ -3,12 +3,11 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\\..")
 $fin = Join-Path $repoRoot "cmd/fin/fin.ps1"
-$tmpDir = Join-Path $repoRoot "artifacts/tmp/fmt-smoke"
+$tmpWorkspace = Join-Path $repoRoot "tests/common/test_tmp_workspace.ps1"
+. $tmpWorkspace
+$tmpState = Initialize-TestTmpWorkspace -RepoRoot $repoRoot -Prefix "fmt-smoke-"
+$tmpDir = $tmpState.TmpDir
 $target = Join-Path $tmpDir "main.fn"
-
-if (-not (Test-Path $tmpDir)) {
-    New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
-}
 
 Set-Content -Path $target -Value "fn    main( ) {   exit( 7 ) ; }"
 
@@ -47,5 +46,7 @@ if ((Normalize-Text ($stdout | Out-String)) -notmatch [regex]::Escape("fn main()
     Write-Error "--stdout did not return expected formatted output."
     exit 1
 }
+
+Finalize-TestTmpWorkspace -State $tmpState
 
 Write-Host "fmt integration check passed."
