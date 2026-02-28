@@ -11,6 +11,47 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+function Remove-Stage0TempPath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path,
+        [int]$MaxAttempts = 8,
+        [int]$RetryDelayMs = 150,
+        [switch]$IgnoreFailure
+    )
+
+    if (-not (Test-Path $Path)) {
+        return
+    }
+
+    if ($MaxAttempts -lt 1) {
+        $MaxAttempts = 1
+    }
+
+    $lastError = $null
+    for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
+        try {
+            Remove-Item -Force $Path -ErrorAction Stop
+            return
+        }
+        catch {
+            $lastError = $_
+            if ($attempt -lt $MaxAttempts) {
+                Start-Sleep -Milliseconds $RetryDelayMs
+            }
+        }
+    }
+
+    if ($IgnoreFailure) {
+        Write-Warning ("Failed to remove stage0 temp path after {0} attempts: {1}" -f $MaxAttempts, $Path)
+        return
+    }
+
+    if ($null -ne $lastError) {
+        throw $lastError
+    }
+}
+
 $scriptDir = Split-Path -Parent $PSCommandPath
 $repoRoot = Resolve-Path (Join-Path $scriptDir "..\\..\\..")
 
@@ -60,14 +101,22 @@ else {
         throw "Unable to derive output file name from: $outPath"
     }
     $objPath = Join-Path $tmpDir ("{0}.finobj" -f $outName)
-
-    & $writeFinobj -SourcePath $sourcePath -OutFile $objPath -Target $Target
-    $exitCode = [int](& $readFinobj -ObjectPath $objPath -ExpectedTarget $Target)
-    if ($Verify) {
-        & $linkFinobj -ObjectPath $objPath -OutFile $outPath -Target $Target -Verify
+    if (Test-Path $objPath) {
+        Remove-Stage0TempPath -Path $objPath
     }
-    else {
-        & $linkFinobj -ObjectPath $objPath -OutFile $outPath -Target $Target
+
+    try {
+        & $writeFinobj -SourcePath $sourcePath -OutFile $objPath -Target $Target
+        $exitCode = [int](& $readFinobj -ObjectPath $objPath -ExpectedTarget $Target)
+        if ($Verify) {
+            & $linkFinobj -ObjectPath $objPath -OutFile $outPath -Target $Target -Verify
+        }
+        else {
+            & $linkFinobj -ObjectPath $objPath -OutFile $outPath -Target $Target
+        }
+    }
+    finally {
+        Remove-Stage0TempPath -Path $objPath -IgnoreFailure
     }
 }
 
