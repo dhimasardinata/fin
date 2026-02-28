@@ -64,7 +64,10 @@ function Get-NormalizedSymbolList {
         }
     }
 
-    return @($symbols.ToArray())
+    $ordered = @($symbols | Sort-Object `
+            @{Expression = { if ($_ -eq "main") { 0 } else { 1 } } }, `
+            @{Expression = { $_ } })
+    return @($ordered)
 }
 
 function Get-NormalizedRelocationList {

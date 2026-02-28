@@ -17,6 +17,7 @@ $objB = Join-Path $tmpDir "b.finobj"
 $objWin = Join-Path $tmpDir "win.finobj"
 $objUnit = Join-Path $tmpDir "unit.finobj"
 $objSymbols = Join-Path $tmpDir "symbols.finobj"
+$objSymbolsManualOrder = Join-Path $tmpDir "symbols-manual-order.finobj"
 $objRelocs = Join-Path $tmpDir "relocs.finobj"
 
 function Assert-ReaderFails {
@@ -42,7 +43,7 @@ function Assert-ReaderFails {
 & $writer -SourcePath $source -OutFile $objB
 & $writer -SourcePath $source -OutFile $objWin -Target x86_64-windows-pe
 & $writer -SourcePath $source -OutFile $objUnit -EntrySymbol unit
-& $writer -SourcePath $source -OutFile $objSymbols -Provides @("main", "helper") -Requires @("dep_a", "dep_b")
+& $writer -SourcePath $source -OutFile $objSymbols -Provides @("helper", "main") -Requires @("dep_b", "dep_a")
 & $writer -SourcePath $source -OutFile $objRelocs -Provides @("main", "helper") -Requires @("dep_a", "dep_b") -Relocs @("dep_b@32", "dep_a@16")
 
 $hashA = (Get-FileHash -Path $objA -Algorithm SHA256).Hash
@@ -99,6 +100,27 @@ if ((@($symbolsRecord.ProvidedSymbols) -join ",") -ne "main,helper") {
 }
 if ((@($symbolsRecord.RequiredSymbols) -join ",") -ne "dep_a,dep_b") {
     Write-Error "Expected required symbols 'dep_a,dep_b' from custom finobj."
+    exit 1
+}
+
+Set-Content -Path $objSymbolsManualOrder -Value @"
+finobj_format=finobj-stage0
+finobj_version=1
+target=x86_64-linux-elf
+entry_symbol=main
+exit_code=7
+source_path=tests/conformance/fixtures/main_exit7.fn
+source_sha256=1111111111111111111111111111111111111111111111111111111111111111
+provides=helper,main
+requires=dep_b,dep_a
+"@
+$manualOrderRecord = & $reader -ObjectPath $objSymbolsManualOrder -ExpectedTarget x86_64-linux-elf -AsRecord
+if ((@($manualOrderRecord.ProvidedSymbols) -join ",") -ne "main,helper") {
+    Write-Error "Expected reader canonical provided order 'main,helper' from manual finobj."
+    exit 1
+}
+if ((@($manualOrderRecord.RequiredSymbols) -join ",") -ne "dep_a,dep_b") {
+    Write-Error "Expected reader canonical required order 'dep_a,dep_b' from manual finobj."
     exit 1
 }
 
