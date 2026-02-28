@@ -194,6 +194,24 @@ try {
         }
     )
     Assert-True -Condition ($forbiddenMatches.Count -eq 0) -Message ("Found forbidden fixed test tmp roots:`n{0}" -f ($forbiddenMatches -join "`n"))
+
+    # Case 10: finobj output parser helper must remain centralized.
+    $helperPath = Join-Path $repoRoot "tests/common/finobj_output_helpers.ps1"
+    $finobjHelperPattern = '^\s*function\s+Get-FinobjWrittenPath\b'
+    $duplicatedFinobjHelpers = @(
+        foreach ($scriptFile in $scriptFiles) {
+            if ($scriptFile.FullName -eq $helperPath) {
+                continue
+            }
+
+            $relativePath = [System.IO.Path]::GetRelativePath($repoRoot, $scriptFile.FullName)
+            Select-String -Path $scriptFile.FullName -Pattern $finobjHelperPattern |
+                ForEach-Object {
+                    "{0}:{1}: {2}" -f $relativePath, $_.LineNumber, $_.Line.Trim()
+                }
+        }
+    )
+    Assert-True -Condition ($duplicatedFinobjHelpers.Count -eq 0) -Message ("Found duplicated finobj parser helpers; use tests/common/finobj_output_helpers.ps1:`n{0}" -f ($duplicatedFinobjHelpers -join "`n"))
 }
 finally {
     if ($null -eq $savedKeep) {
