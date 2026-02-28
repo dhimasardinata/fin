@@ -25,3 +25,4 @@ Temporary workspace policy:
 - `verify_finobj_link.ps1` and `verify_stage0_reproducibility.ps1` use PID-scoped temp roots under `artifacts/tmp` and prune stale temp dirs from prior runs.
 - Set `FIN_KEEP_TEST_TMP=1` to retain per-run temp artifacts for local debugging.
 - Stale pruning keeps recent temp dirs to avoid interfering with concurrent runs; default staleness window is 6 hours and can be tuned via `FIN_TEST_TMP_STALE_HOURS`.
+- Shared helper implementation: `tests/common/test_tmp_workspace.ps1`.
