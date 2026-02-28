@@ -176,6 +176,24 @@ try {
     $env:FIN_TEST_TMP_STALE_HOURS = "0"
     Assert-Throws -Action { Initialize-TestTmpWorkspace -RepoRoot $repoRoot -Prefix $prefix } -Message "Expected invalid FIN_TEST_TMP_STALE_HOURS to fail."
     Remove-Item Env:FIN_TEST_TMP_STALE_HOURS -ErrorAction SilentlyContinue
+
+    # Case 9: Test scripts must not reintroduce fixed artifacts/tmp/<prefix> roots.
+    $testScriptRoot = Join-Path $repoRoot "tests"
+    $forbiddenPattern = 'artifacts[\\/]+tmp[\\/]+[A-Za-z0-9_-]+'
+    $scriptFiles = Get-ChildItem -Path $testScriptRoot -Recurse -File -Filter "*.ps1" |
+        Where-Object {
+            $_.FullName -notlike "*\tests\common\test_tmp_workspace.ps1"
+        }
+    $forbiddenMatches = @(
+        foreach ($scriptFile in $scriptFiles) {
+            $relativePath = [System.IO.Path]::GetRelativePath($repoRoot, $scriptFile.FullName)
+            Select-String -Path $scriptFile.FullName -Pattern $forbiddenPattern |
+                ForEach-Object {
+                    "{0}:{1}: {2}" -f $relativePath, $_.LineNumber, $_.Line.Trim()
+                }
+        }
+    )
+    Assert-True -Condition ($forbiddenMatches.Count -eq 0) -Message ("Found forbidden fixed test tmp roots:`n{0}" -f ($forbiddenMatches -join "`n"))
 }
 finally {
     if ($null -eq $savedKeep) {
