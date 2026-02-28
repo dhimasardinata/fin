@@ -23,6 +23,7 @@ $objLinuxMain2 = Join-Path $tmpDir "main2-linux.finobj"
 $objLinuxMainRequiresHelper = Join-Path $tmpDir "main-requires-helper.finobj"
 $objLinuxMainRequiresHelperRel32 = Join-Path $tmpDir "main-requires-helper-rel32.finobj"
 $objLinuxMainRequiresHelperBadOffset = Join-Path $tmpDir "main-requires-helper-bad-offset.finobj"
+$objLinuxMainRequiresHelperBadSite = Join-Path $tmpDir "main-requires-helper-bad-site.finobj"
 $objLinuxMainRequiresMissing = Join-Path $tmpDir "main-requires-missing.finobj"
 $objLinuxUnitHelper = Join-Path $tmpDir "unit-helper.finobj"
 $objLinuxUnitHelper2 = Join-Path $tmpDir "unit-helper-dup.finobj"
@@ -40,6 +41,7 @@ $outBadDuplicateIdentity = Join-Path $tmpDir "bad-duplicate-identity"
 $outBadUnresolvedSymbol = Join-Path $tmpDir "bad-unresolved-symbol"
 $outBadDuplicateSymbol = Join-Path $tmpDir "bad-duplicate-symbol"
 $outBadRelocationBounds = Join-Path $tmpDir "bad-relocation-bounds"
+$outBadRelocationSite = Join-Path $tmpDir "bad-relocation-site"
 $outWithResolvedSymbol = Join-Path $tmpDir "ok-resolved-symbol"
 $outWithResolvedSymbolReordered = Join-Path $tmpDir "ok-resolved-symbol-reordered"
 $outWithResolvedSymbolRel32 = Join-Path $tmpDir "ok-resolved-symbol-rel32"
@@ -100,6 +102,7 @@ function Assert-SameValue {
 & $writer -SourcePath $sourceMain -OutFile $objLinuxMainRequiresHelper -Target x86_64-linux-elf -EntrySymbol main -Requires helper -Relocs helper@6
 & $writer -SourcePath $sourceMain -OutFile $objLinuxMainRequiresHelperRel32 -Target x86_64-linux-elf -EntrySymbol main -Requires helper -Relocs helper@6:rel32
 & $writer -SourcePath $sourceMain -OutFile $objLinuxMainRequiresHelperBadOffset -Target x86_64-linux-elf -EntrySymbol main -Requires helper -Relocs helper@16
+& $writer -SourcePath $sourceMain -OutFile $objLinuxMainRequiresHelperBadSite -Target x86_64-linux-elf -EntrySymbol main -Requires helper -Relocs helper@0
 & $writer -SourcePath $sourceMain -OutFile $objLinuxMainRequiresMissing -Target x86_64-linux-elf -EntrySymbol main -Requires missing_sym -Relocs missing_sym@6
 & $writer -SourcePath $sourceMain -OutFile $objLinuxUnitHelper -Target x86_64-linux-elf -EntrySymbol unit -Provides helper
 & $writer -SourcePath $sourceMain -OutFile $objLinuxUnitHelper2 -Target x86_64-linux-elf -EntrySymbol unit -Provides helper
@@ -155,6 +158,10 @@ Assert-LinkFails -Action {
 Assert-LinkFails -Action {
     & $linker -ObjectPath @($objLinuxMainRequiresHelperBadOffset, $objLinuxUnitHelper) -OutFile $outBadRelocationBounds -Target x86_64-linux-elf -Verify | Out-Null
 } -Label "relocation offset out of stage0 bounds"
+
+Assert-LinkFails -Action {
+    & $linker -ObjectPath @($objLinuxMainRequiresHelperBadSite, $objLinuxUnitHelper) -OutFile $outBadRelocationSite -Target x86_64-linux-elf -Verify | Out-Null
+} -Label "relocation offset not supported by stage0 code layout"
 
 $resolvedRecord = & $linker -ObjectPath @($objLinuxMainRequiresHelper, $objLinuxUnitHelper) -OutFile $outWithResolvedSymbol -Target x86_64-linux-elf -Verify -AsRecord
 & $verifyElf -Path $outWithResolvedSymbol -ExpectedExitCode 8
