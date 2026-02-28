@@ -73,19 +73,8 @@ $buildLinuxFinobjObj = $buildLinuxFinobjResult.FinobjPath
 & $verifyElf -Path $linuxOverrideOut -ExpectedExitCode 0
 & $verifyElf -Path $linuxOverrideFinobjOut -ExpectedExitCode 0
 
-$winDirectHash = (Get-FileHash -Path $winOut -Algorithm SHA256).Hash.ToLowerInvariant()
-$winFinobjHash = (Get-FileHash -Path $winFinobjOut -Algorithm SHA256).Hash.ToLowerInvariant()
-if ($winDirectHash -ne $winFinobjHash) {
-    Write-Error ("manifest primary windows pipeline mismatch: direct={0} finobj={1}" -f $winDirectHash, $winFinobjHash)
-    exit 1
-}
-
-$linuxDirectHash = (Get-FileHash -Path $linuxOverrideOut -Algorithm SHA256).Hash.ToLowerInvariant()
-$linuxFinobjHash = (Get-FileHash -Path $linuxOverrideFinobjOut -Algorithm SHA256).Hash.ToLowerInvariant()
-if ($linuxDirectHash -ne $linuxFinobjHash) {
-    Write-Error ("manifest target override pipeline mismatch: direct={0} finobj={1}" -f $linuxDirectHash, $linuxFinobjHash)
-    exit 1
-}
+$null = Assert-FileSha256Equal -LeftPath $winOut -RightPath $winFinobjOut -Label "manifest primary windows pipeline"
+$null = Assert-FileSha256Equal -LeftPath $linuxOverrideOut -RightPath $linuxOverrideFinobjOut -Label "manifest target override pipeline"
 
 Assert-FinobjTempArtifactCleaned -Path $buildWinFinobjObj -Label "manifest build (windows primary)"
 Assert-FinobjTempArtifactCleaned -Path $runWinFinobjObj -Label "manifest run (windows primary)"
