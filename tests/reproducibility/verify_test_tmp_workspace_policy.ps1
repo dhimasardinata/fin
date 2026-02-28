@@ -129,6 +129,11 @@ try {
     (Get-Item $activePidDir).LastWriteTimeUtc = (Get-Date).ToUniversalTime().AddHours(-3)
     $stateInvalidMetadata = Initialize-TestTmpWorkspace -RepoRoot $repoRoot -Prefix $prefix
     Assert-True -Condition (Test-Path $activePidDir) -Message "Expected active PID dir with invalid metadata to be preserved via PID fallback."
+    $repairedMetadataPath = Join-Path $activePidDir ".fin-tmp-owner.json"
+    Assert-True -Condition (Test-Path $repairedMetadataPath) -Message "Expected invalid active PID metadata to be repaired via backfill."
+    $repairedStatus = Get-TestTmpWorkspaceOwnerMetadataStatus -MetadataPath $repairedMetadataPath -ExpectedPid $activeProc.Id
+    Assert-True -Condition ([bool]$repairedStatus.Valid) -Message "Expected repaired owner metadata to be valid."
+    Assert-True -Condition ([bool]$repairedStatus.Active) -Message "Expected repaired owner metadata to resolve active owner."
     Finalize-TestTmpWorkspace -State $stateInvalidMetadata
     Remove-Item -Recurse -Force $activePidDir
     Remove-Item Env:FIN_TEST_TMP_STALE_HOURS -ErrorAction SilentlyContinue
