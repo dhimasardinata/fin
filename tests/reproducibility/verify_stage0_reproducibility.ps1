@@ -8,6 +8,20 @@ $emitWriteExit = Join-Path $repoRoot "compiler/finc/stage0/emit_elf_write_exit.p
 $writeFinobj = Join-Path $repoRoot "compiler/finobj/stage0/write_finobj_exit.ps1"
 $linkFinobj = Join-Path $repoRoot "compiler/finld/stage0/link_finobj_to_elf.ps1"
 $tmpDir = Join-Path $repoRoot ("artifacts/tmp/repro-smoke-{0}" -f $PID)
+$tmpRoot = Join-Path $repoRoot "artifacts/tmp"
+$tmpPrefix = "repro-smoke-"
+$keepTmp = ($env:FIN_KEEP_TEST_TMP -eq "1")
+
+if (-not (Test-Path $tmpRoot)) {
+    New-Item -ItemType Directory -Path $tmpRoot -Force | Out-Null
+}
+if (-not $keepTmp) {
+    Get-ChildItem -Path $tmpRoot -Directory -Filter ("{0}*" -f $tmpPrefix) -ErrorAction SilentlyContinue |
+        Where-Object { $_.FullName -ne $tmpDir } |
+        ForEach-Object {
+            Remove-Item -Recurse -Force $_.FullName -ErrorAction SilentlyContinue
+        }
+}
 
 if (Test-Path $tmpDir) {
     Remove-Item -Recurse -Force $tmpDir
@@ -198,5 +212,12 @@ Assert-SameValue -ValueA ([string]$patchedRecordA.LinkedVerifyEnabled).ToLowerIn
 Assert-SameValue -ValueA ([string]$patchedRecordA.LinkedVerifyMode) -ValueB ([string]$patchedRecordB.LinkedVerifyMode) -Label "link_finobj_to_elf patched verify-mode"
 Assert-ExpectedValue -Actual ([string]$patchedRecordA.LinkedVerifyEnabled).ToLowerInvariant() -Expected "true" -Label "link_finobj_to_elf patched verify-enabled expected true"
 Assert-ExpectedValue -Actual ([string]$patchedRecordA.LinkedVerifyMode) -Expected "structure_only_relocation_patched" -Label "link_finobj_to_elf patched verify-mode expected patched"
+
+if ($keepTmp) {
+    Write-Host ("tmp_dir_retained={0}" -f $tmpDir)
+}
+elseif (Test-Path $tmpDir) {
+    Remove-Item -Recurse -Force $tmpDir
+}
 
 Write-Host "stage0 reproducibility check passed."

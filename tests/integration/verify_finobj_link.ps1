@@ -9,6 +9,20 @@ $verifyPe = Join-Path $repoRoot "tests/bootstrap/verify_pe_exit0.ps1"
 $runElf = Join-Path $repoRoot "tests/integration/run_linux_elf.ps1"
 $runPe = Join-Path $repoRoot "tests/integration/run_windows_pe.ps1"
 $tmpDir = Join-Path $repoRoot ("artifacts/tmp/finobj-link-{0}" -f $PID)
+$tmpRoot = Join-Path $repoRoot "artifacts/tmp"
+$tmpPrefix = "finobj-link-"
+$keepTmp = ($env:FIN_KEEP_TEST_TMP -eq "1")
+
+if (-not (Test-Path $tmpRoot)) {
+    New-Item -ItemType Directory -Path $tmpRoot -Force | Out-Null
+}
+if (-not $keepTmp) {
+    Get-ChildItem -Path $tmpRoot -Directory -Filter ("{0}*" -f $tmpPrefix) -ErrorAction SilentlyContinue |
+        Where-Object { $_.FullName -ne $tmpDir } |
+        ForEach-Object {
+            Remove-Item -Recurse -Force $_.FullName -ErrorAction SilentlyContinue
+        }
+}
 
 if (Test-Path $tmpDir) {
     Remove-Item -Recurse -Force $tmpDir
@@ -289,5 +303,12 @@ Assert-LinkFails -Action {
     & $verifyPe -Path $outWithResolvedSymbolValueWindows -ExpectedExitCode 8 | Out-Null
 } -Label "strict PE verifier should fail for relocation-patched immediate mismatch"
 & $verifyPe -Path $outWithResolvedSymbolValueWindows -ExpectedExitCode 8 -AllowPatchedCode
+
+if ($keepTmp) {
+    Write-Host ("tmp_dir_retained={0}" -f $tmpDir)
+}
+elseif (Test-Path $tmpDir) {
+    Remove-Item -Recurse -Force $tmpDir
+}
 
 Write-Host "finobj link integration check passed."
