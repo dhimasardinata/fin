@@ -19,3 +19,8 @@ Entry points:
 - `tests/integration/verify_manifest_target_resolution.ps1`: stage0 target resolution from manifest primary gate.
 - `tests/integration/verify_build_pipeline_finobj.ps1`: stage0 `fin build/run --pipeline finobj` integration gate.
 - `tests/reproducibility/verify_manifest_policy_gate.ps1`: manifest policy gate self-check coverage.
+
+Temporary workspace policy:
+
+- `verify_finobj_link.ps1` and `verify_stage0_reproducibility.ps1` use PID-scoped temp roots under `artifacts/tmp` and prune stale temp dirs from prior runs.
+- Set `FIN_KEEP_TEST_TMP=1` to retain per-run temp artifacts for local debugging.
