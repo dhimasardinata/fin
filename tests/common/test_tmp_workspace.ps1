@@ -71,7 +71,7 @@ function Test-TestTmpWorkspaceOwnerMetadataActive {
         return $false
     }
 
-    return [math]::Abs(($processStartUtc - $metadataStartUtc).TotalMilliseconds) -lt 1
+    return [math]::Abs(($processStartUtc - $metadataStartUtc).TotalSeconds) -lt 2
 }
 
 function Test-TestTmpWorkspaceOwnerActive {
