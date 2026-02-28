@@ -38,12 +38,14 @@ function Get-Stage0CodeLayout {
         return [pscustomobject]@{
             CodeOffset = [UInt32](64 + 56)
             CodeSize = [UInt32]12
+            AllowedRelocationOffsets = @([UInt32]6)
         }
     }
     if ($LinkTarget -eq "x86_64-windows-pe") {
         return [pscustomobject]@{
             CodeOffset = [UInt32]0x200
             CodeSize = [UInt32]6
+            AllowedRelocationOffsets = @([UInt32]1)
         }
     }
 
@@ -319,6 +321,20 @@ if ($entryRelocationPlans.Count -gt 0) {
         [UInt64]$relocOffset = [UInt64]$plan.Relocation.Offset
         if ($relocOffset + 4 -gt [UInt64]$layout.CodeSize) {
             throw ("Relocation offset out of stage0 {0} code bounds ({1} bytes): {2}" -f $Target, $layout.CodeSize, $plan.Relocation.Key)
+        }
+        $allowedOffsets = @($layout.AllowedRelocationOffsets)
+        $siteSupported = $false
+        foreach ($allowed in $allowedOffsets) {
+            if ([UInt32]$allowed -eq [UInt32]$plan.Relocation.Offset) {
+                $siteSupported = $true
+                break
+            }
+        }
+        if (-not $siteSupported) {
+            throw ("Relocation offset not supported for stage0 {0}: {1} (allowed: {2})" -f `
+                    $Target, `
+                    $plan.Relocation.Key, `
+                    (($allowedOffsets | ForEach-Object { [string]$_ }) -join ","))
         }
 
         [UInt64]$fileOffset = [UInt64]$layout.CodeOffset + $relocOffset

@@ -21,7 +21,7 @@ Stage0 includes minimal multi-object linking flow:
   - validates symbol graph metadata (`provides`/`requires`/`symbol_values`) for duplicate providers and unresolved symbols
   - validates relocation metadata (`relocs`) for resolved relocation targets (with stage0 relocation kinds from finobj)
   - materializes entry-object relocations into emitted stage0 code bytes (`abs32`/`rel32`) using resolved provider symbol values
-  - rejects non-entry relocation materialization and relocation offsets outside stage0 target code bounds
+  - rejects non-entry relocation materialization, relocation offsets outside stage0 target code bounds, and relocation sites that are not valid stage0 immediate patch offsets for the selected target
   - emits symbol-resolution witness hash for deterministic auditability
   - emits relocation-resolution witness hash for deterministic auditability (including relocation kind + resolved value)
   - supports `-AsRecord` structured diagnostics output (including object-set, symbol-resolution, and relocation-resolution witness hashes)
