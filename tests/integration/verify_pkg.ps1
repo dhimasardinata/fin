@@ -3,13 +3,12 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\\..")
 $fin = Join-Path $repoRoot "cmd/fin/fin.ps1"
-$tmpDir = Join-Path $repoRoot "artifacts/tmp/pkg-smoke"
+$tmpWorkspace = Join-Path $repoRoot "tests/common/test_tmp_workspace.ps1"
+. $tmpWorkspace
+$tmpState = Initialize-TestTmpWorkspace -RepoRoot $repoRoot -Prefix "pkg-smoke-"
+$tmpDir = $tmpState.TmpDir
 $manifest = Join-Path $tmpDir "fin.toml"
 $lock = Join-Path $tmpDir "fin.lock"
-
-if (Test-Path $tmpDir) {
-    Remove-Item -Recurse -Force $tmpDir
-}
 
 & $fin init --dir $tmpDir --name pkg_smoke
 
@@ -85,5 +84,7 @@ if (-not $failed) {
     Write-Error "Expected pkg add to fail for invalid package name."
     exit 1
 }
+
+Finalize-TestTmpWorkspace -State $tmpState
 
 Write-Host "pkg integration check passed."
