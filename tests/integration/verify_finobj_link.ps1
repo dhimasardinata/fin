@@ -25,6 +25,7 @@ $objLinuxMainRequiresHelperRel32 = Join-Path $tmpDir "main-requires-helper-rel32
 $objLinuxMainRequiresHelperBadOffset = Join-Path $tmpDir "main-requires-helper-bad-offset.finobj"
 $objLinuxMainRequiresHelperBadSite = Join-Path $tmpDir "main-requires-helper-bad-site.finobj"
 $objLinuxMainRequiresMissing = Join-Path $tmpDir "main-requires-missing.finobj"
+$objLinuxUnitRelocNonEntry = Join-Path $tmpDir "unit-reloc-nonentry.finobj"
 $objLinuxUnitHelper = Join-Path $tmpDir "unit-helper.finobj"
 $objLinuxUnitHelper2 = Join-Path $tmpDir "unit-helper-dup.finobj"
 $objLinuxUnitHelperValue = Join-Path $tmpDir "unit-helper-value.finobj"
@@ -34,6 +35,7 @@ $objWindowsMainRequiresHelper = Join-Path $tmpDir "main-requires-helper-windows.
 $objWindowsMainRequiresHelperBadOffset = Join-Path $tmpDir "main-requires-helper-windows-bad-offset.finobj"
 $objWindowsMainRequiresHelperBadSite = Join-Path $tmpDir "main-requires-helper-windows-bad-site.finobj"
 $objWindowsMainRequiresHelperRel32 = Join-Path $tmpDir "main-requires-helper-windows-rel32.finobj"
+$objWindowsUnitRelocNonEntry = Join-Path $tmpDir "unit-reloc-nonentry-windows.finobj"
 $objWindowsUnitHelper = Join-Path $tmpDir "unit-helper-windows.finobj"
 $objWindowsUnitHelperValue = Join-Path $tmpDir "unit-helper-value-windows.finobj"
 $outLinux = Join-Path $tmpDir "main-linked"
@@ -46,8 +48,10 @@ $outBadDuplicatePath = Join-Path $tmpDir "bad-duplicate-path"
 $outBadDuplicateIdentity = Join-Path $tmpDir "bad-duplicate-identity"
 $outBadUnresolvedSymbol = Join-Path $tmpDir "bad-unresolved-symbol"
 $outBadDuplicateSymbol = Join-Path $tmpDir "bad-duplicate-symbol"
+$outBadNonEntryRelocation = Join-Path $tmpDir "bad-non-entry-relocation"
 $outBadRelocationBounds = Join-Path $tmpDir "bad-relocation-bounds"
 $outBadRelocationSite = Join-Path $tmpDir "bad-relocation-site"
+$outBadNonEntryRelocationWindows = Join-Path $tmpDir "bad-non-entry-relocation-windows.exe"
 $outBadRelocationBoundsWindows = Join-Path $tmpDir "bad-relocation-bounds-windows.exe"
 $outBadRelocationSiteWindows = Join-Path $tmpDir "bad-relocation-site-windows.exe"
 $outBadRelocationKindWindows = Join-Path $tmpDir "bad-relocation-kind-windows.exe"
@@ -134,6 +138,7 @@ function Assert-VerifyRecord {
 & $writer -SourcePath $sourceMain -OutFile $objLinuxMainRequiresHelperBadOffset -Target x86_64-linux-elf -EntrySymbol main -Requires helper -Relocs helper@16
 & $writer -SourcePath $sourceMain -OutFile $objLinuxMainRequiresHelperBadSite -Target x86_64-linux-elf -EntrySymbol main -Requires helper -Relocs helper@0
 & $writer -SourcePath $sourceMain -OutFile $objLinuxMainRequiresMissing -Target x86_64-linux-elf -EntrySymbol main -Requires missing_sym -Relocs missing_sym@6
+& $writer -SourcePath $sourceUnit -OutFile $objLinuxUnitRelocNonEntry -Target x86_64-linux-elf -EntrySymbol unit -Requires main -Relocs main@6
 & $writer -SourcePath $sourceMain -OutFile $objLinuxUnitHelper -Target x86_64-linux-elf -EntrySymbol unit -Provides helper
 & $writer -SourcePath $sourceMain -OutFile $objLinuxUnitHelper2 -Target x86_64-linux-elf -EntrySymbol unit -Provides helper
 & $writer -SourcePath $sourceUnit -OutFile $objLinuxUnitHelperValue -Target x86_64-linux-elf -EntrySymbol unit -Provides helper -ProvideValues helper=42
@@ -143,6 +148,7 @@ function Assert-VerifyRecord {
 & $writer -SourcePath $sourceMain -OutFile $objWindowsMainRequiresHelperBadOffset -Target x86_64-windows-pe -EntrySymbol main -Requires helper -Relocs helper@16
 & $writer -SourcePath $sourceMain -OutFile $objWindowsMainRequiresHelperBadSite -Target x86_64-windows-pe -EntrySymbol main -Requires helper -Relocs helper@0
 & $writer -SourcePath $sourceMain -OutFile $objWindowsMainRequiresHelperRel32 -Target x86_64-windows-pe -EntrySymbol main -Requires helper -Relocs helper@1:rel32
+& $writer -SourcePath $sourceUnit -OutFile $objWindowsUnitRelocNonEntry -Target x86_64-windows-pe -EntrySymbol unit -Requires main -Relocs main@1
 & $writer -SourcePath $sourceMain -OutFile $objWindowsUnitHelper -Target x86_64-windows-pe -EntrySymbol unit -Provides helper
 & $writer -SourcePath $sourceUnit -OutFile $objWindowsUnitHelperValue -Target x86_64-windows-pe -EntrySymbol unit -Provides helper -ProvideValues helper=42
 Copy-Item -Path $objLinuxUnit -Destination $objLinuxUnitCopy -Force
@@ -196,6 +202,10 @@ Assert-LinkFails -Action {
 } -Label "duplicate symbol provider"
 
 Assert-LinkFails -Action {
+    & $linker -ObjectPath @($objLinuxMain, $objLinuxUnitRelocNonEntry) -OutFile $outBadNonEntryRelocation -Target x86_64-linux-elf -Verify | Out-Null
+} -Label "non-entry relocation materialization not supported in stage0"
+
+Assert-LinkFails -Action {
     & $linker -ObjectPath @($objLinuxMainRequiresHelperBadOffset, $objLinuxUnitHelper) -OutFile $outBadRelocationBounds -Target x86_64-linux-elf -Verify | Out-Null
 } -Label "relocation offset out of stage0 bounds"
 
@@ -210,6 +220,10 @@ Assert-LinkFails -Action {
 Assert-LinkFails -Action {
     & $linker -ObjectPath @($objWindowsMainRequiresHelperBadSite, $objWindowsUnitHelper) -OutFile $outBadRelocationSiteWindows -Target x86_64-windows-pe -Verify | Out-Null
 } -Label "windows relocation offset not supported by stage0 code layout"
+
+Assert-LinkFails -Action {
+    & $linker -ObjectPath @($objWindowsMain, $objWindowsUnitRelocNonEntry) -OutFile $outBadNonEntryRelocationWindows -Target x86_64-windows-pe -Verify | Out-Null
+} -Label "windows non-entry relocation materialization not supported in stage0"
 
 Assert-LinkFails -Action {
     & $linker -ObjectPath @($objWindowsMainRequiresHelperRel32, $objWindowsUnitHelper) -OutFile $outBadRelocationKindWindows -Target x86_64-windows-pe -Verify | Out-Null
