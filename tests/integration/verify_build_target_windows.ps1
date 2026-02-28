@@ -5,12 +5,10 @@ $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\\..")
 $fin = Join-Path $repoRoot "cmd/fin/fin.ps1"
 $verifyPe = Join-Path $repoRoot "tests/bootstrap/verify_pe_exit0.ps1"
 $runPe = Join-Path $repoRoot "tests/integration/run_windows_pe.ps1"
-$tmpDir = Join-Path $repoRoot "artifacts/tmp/build-target-windows-smoke"
-
-if (Test-Path $tmpDir) {
-    Remove-Item -Recurse -Force $tmpDir
-}
-New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
+$tmpWorkspace = Join-Path $repoRoot "tests/common/test_tmp_workspace.ps1"
+. $tmpWorkspace
+$tmpState = Initialize-TestTmpWorkspace -RepoRoot $repoRoot -Prefix "build-target-windows-smoke-"
+$tmpDir = $tmpState.TmpDir
 
 $source = "tests/conformance/fixtures/main_exit7.fn"
 $buildOut = Join-Path $tmpDir "main-build.exe"
@@ -36,5 +34,7 @@ if ($directHash -ne $finobjHash) {
     Write-Error ("windows pipeline mismatch: direct={0} finobj={1}" -f $directHash, $finobjHash)
     exit 1
 }
+
+Finalize-TestTmpWorkspace -State $tmpState
 
 Write-Host "build target windows integration check passed."
