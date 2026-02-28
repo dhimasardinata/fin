@@ -120,10 +120,12 @@ $linkedRecordA = & $linkFinobj -ObjectPath @($finobjA, $finobjUnitLinux) -OutFil
 $linkedRecordB = & $linkFinobj -ObjectPath @($finobjA, $finobjUnitLinux) -OutFile $linkedB -Target x86_64-linux-elf -AsRecord
 Assert-SameHash -PathA $linkedA -PathB $linkedB -Label "link_finobj_to_elf"
 Assert-SameValue -ValueA $linkedRecordA.LinkedObjectSetSha256 -ValueB $linkedRecordB.LinkedObjectSetSha256 -Label "link_finobj_to_elf object-set witness"
+Assert-SameValue -ValueA $linkedRecordA.LinkedSymbolResolutionSha256 -ValueB $linkedRecordB.LinkedSymbolResolutionSha256 -Label "link_finobj_to_elf symbol-resolution witness"
 Assert-SameValue -ValueA $linkedRecordA.LinkedRelocationResolutionSha256 -ValueB $linkedRecordB.LinkedRelocationResolutionSha256 -Label "link_finobj_to_elf relocation-resolution witness"
 $linkedRecordReordered = & $linkFinobj -ObjectPath @($finobjUnitLinux, $finobjA) -OutFile $linkedReordered -Target x86_64-linux-elf -AsRecord
 Assert-SameHash -PathA $linkedA -PathB $linkedReordered -Label "link_finobj_to_elf order-independent"
 Assert-SameValue -ValueA $linkedRecordA.LinkedObjectSetSha256 -ValueB $linkedRecordReordered.LinkedObjectSetSha256 -Label "link_finobj_to_elf object-set witness order-independent"
+Assert-SameValue -ValueA $linkedRecordA.LinkedSymbolResolutionSha256 -ValueB $linkedRecordReordered.LinkedSymbolResolutionSha256 -Label "link_finobj_to_elf symbol-resolution witness order-independent"
 Assert-SameValue -ValueA $linkedRecordA.LinkedRelocationResolutionSha256 -ValueB $linkedRecordReordered.LinkedRelocationResolutionSha256 -Label "link_finobj_to_elf relocation-resolution witness order-independent"
 
 # 10) finld linker determinism on fixed Windows finobj input.
@@ -138,10 +140,12 @@ $linkedWinRecordA = & $linkFinobj -ObjectPath @($finobjWinA, $finobjWinUnit) -Ou
 $linkedWinRecordB = & $linkFinobj -ObjectPath @($finobjWinA, $finobjWinUnit) -OutFile $linkedWinB -Target x86_64-windows-pe -AsRecord
 Assert-SameHash -PathA $linkedWinA -PathB $linkedWinB -Label "link_finobj_to_elf --target x86_64-windows-pe"
 Assert-SameValue -ValueA $linkedWinRecordA.LinkedObjectSetSha256 -ValueB $linkedWinRecordB.LinkedObjectSetSha256 -Label "link_finobj_to_elf --target x86_64-windows-pe object-set witness"
+Assert-SameValue -ValueA $linkedWinRecordA.LinkedSymbolResolutionSha256 -ValueB $linkedWinRecordB.LinkedSymbolResolutionSha256 -Label "link_finobj_to_elf --target x86_64-windows-pe symbol-resolution witness"
 Assert-SameValue -ValueA $linkedWinRecordA.LinkedRelocationResolutionSha256 -ValueB $linkedWinRecordB.LinkedRelocationResolutionSha256 -Label "link_finobj_to_elf --target x86_64-windows-pe relocation-resolution witness"
 $linkedWinRecordReordered = & $linkFinobj -ObjectPath @($finobjWinUnit, $finobjWinA) -OutFile $linkedWinReordered -Target x86_64-windows-pe -AsRecord
 Assert-SameHash -PathA $linkedWinA -PathB $linkedWinReordered -Label "link_finobj_to_elf --target x86_64-windows-pe order-independent"
 Assert-SameValue -ValueA $linkedWinRecordA.LinkedObjectSetSha256 -ValueB $linkedWinRecordReordered.LinkedObjectSetSha256 -Label "link_finobj_to_elf --target x86_64-windows-pe object-set witness order-independent"
+Assert-SameValue -ValueA $linkedWinRecordA.LinkedSymbolResolutionSha256 -ValueB $linkedWinRecordReordered.LinkedSymbolResolutionSha256 -Label "link_finobj_to_elf --target x86_64-windows-pe symbol-resolution witness order-independent"
 Assert-SameValue -ValueA $linkedWinRecordA.LinkedRelocationResolutionSha256 -ValueB $linkedWinRecordReordered.LinkedRelocationResolutionSha256 -Label "link_finobj_to_elf --target x86_64-windows-pe relocation-resolution witness order-independent"
 
 Write-Host "stage0 reproducibility check passed."
