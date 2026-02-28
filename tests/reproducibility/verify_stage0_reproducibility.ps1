@@ -7,7 +7,7 @@ $emitExit = Join-Path $repoRoot "compiler/finc/stage0/emit_elf_exit0.ps1"
 $emitWriteExit = Join-Path $repoRoot "compiler/finc/stage0/emit_elf_write_exit.ps1"
 $writeFinobj = Join-Path $repoRoot "compiler/finobj/stage0/write_finobj_exit.ps1"
 $linkFinobj = Join-Path $repoRoot "compiler/finld/stage0/link_finobj_to_elf.ps1"
-$tmpDir = Join-Path $repoRoot "artifacts/tmp/repro-smoke"
+$tmpDir = Join-Path $repoRoot ("artifacts/tmp/repro-smoke-{0}" -f $PID)
 
 if (Test-Path $tmpDir) {
     Remove-Item -Recurse -Force $tmpDir
