@@ -43,14 +43,8 @@ if ($directHash -ne $finobjHash) {
     exit 1
 }
 
-if (Test-Path $buildFinobjObj) {
-    Write-Error ("Expected stage0 finobj temp artifact cleanup after build: {0}" -f $buildFinobjObj)
-    exit 1
-}
-if (Test-Path $runFinobjObj) {
-    Write-Error ("Expected stage0 finobj temp artifact cleanup after run: {0}" -f $runFinobjObj)
-    exit 1
-}
+Assert-FinobjTempArtifactCleaned -Path $buildFinobjObj -Label "build"
+Assert-FinobjTempArtifactCleaned -Path $runFinobjObj -Label "run"
 
 Finalize-TestTmpWorkspace -State $tmpState
 

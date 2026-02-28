@@ -87,18 +87,9 @@ if ($linuxDirectHash -ne $linuxFinobjHash) {
     exit 1
 }
 
-if (Test-Path $buildWinFinobjObj) {
-    Write-Error ("Expected stage0 finobj temp artifact cleanup after manifest build (windows primary): {0}" -f $buildWinFinobjObj)
-    exit 1
-}
-if (Test-Path $runWinFinobjObj) {
-    Write-Error ("Expected stage0 finobj temp artifact cleanup after manifest run (windows primary): {0}" -f $runWinFinobjObj)
-    exit 1
-}
-if (Test-Path $buildLinuxFinobjObj) {
-    Write-Error ("Expected stage0 finobj temp artifact cleanup after manifest build (linux override): {0}" -f $buildLinuxFinobjObj)
-    exit 1
-}
+Assert-FinobjTempArtifactCleaned -Path $buildWinFinobjObj -Label "manifest build (windows primary)"
+Assert-FinobjTempArtifactCleaned -Path $runWinFinobjObj -Label "manifest run (windows primary)"
+Assert-FinobjTempArtifactCleaned -Path $buildLinuxFinobjObj -Label "manifest build (linux override)"
 
 Assert-Fails -Action {
     & $fin build --manifest $missingManifest --src $source --out (Join-Path $tmpDir "missing-manifest-out") | Out-Null

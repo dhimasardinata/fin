@@ -34,4 +34,4 @@ Temporary workspace policy:
 - Stale pruning keeps recent temp dirs and skips stale dirs whose PID owner is still active with matching owner metadata (`pid` + process start time); malformed metadata falls back to PID-active checks and active dirs are backfilled with repaired metadata.
 - Legacy PID-only dirs without owner metadata are still supported: active PID dirs are preserved and backfilled with owner metadata; inactive PID dirs are pruned.
 - Default staleness window is 6 hours and can be tuned via `FIN_TEST_TMP_STALE_HOURS`.
-- Shared helper implementations: `tests/common/test_tmp_workspace.ps1` (PID-scoped temp-workspace lifecycle + bounded cleanup retries) and `tests/common/finobj_output_helpers.ps1` (`finobj_written` output capture/parsing helpers).
+- Shared helper implementations: `tests/common/test_tmp_workspace.ps1` (PID-scoped temp-workspace lifecycle + bounded cleanup retries) and `tests/common/finobj_output_helpers.ps1` (`finobj_written` output capture/parsing + finobj temp-artifact cleanup assertion helpers).
