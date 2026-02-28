@@ -1,6 +1,32 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+function Test-TestTmpWorkspaceOwnerActive {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$DirectoryName,
+        [Parameter(Mandatory = $true)]
+        [string]$Prefix
+    )
+
+    $pidMatch = [regex]::Match($DirectoryName, ("^{0}(?<pid>[0-9]+)$" -f [regex]::Escape($Prefix)))
+    if (-not $pidMatch.Success) {
+        return $false
+    }
+
+    [int]$ownerPid = 0
+    if (-not [int]::TryParse($pidMatch.Groups["pid"].Value, [ref]$ownerPid) -or $ownerPid -lt 1) {
+        return $false
+    }
+
+    try {
+        return $null -ne (Get-Process -Id $ownerPid -ErrorAction Stop)
+    }
+    catch {
+        return $false
+    }
+}
+
 function Initialize-TestTmpWorkspace {
     param(
         [Parameter(Mandatory = $true)]
@@ -31,7 +57,11 @@ function Initialize-TestTmpWorkspace {
     }
     if (-not $keepTmp) {
         Get-ChildItem -Path $tmpRoot -Directory -Filter ("{0}*" -f $Prefix) -ErrorAction SilentlyContinue |
-            Where-Object { $_.FullName -ne $tmpDir -and $_.LastWriteTimeUtc -lt $staleCutoffUtc } |
+            Where-Object {
+                $_.FullName -ne $tmpDir -and
+                $_.LastWriteTimeUtc -lt $staleCutoffUtc -and
+                -not (Test-TestTmpWorkspaceOwnerActive -DirectoryName $_.Name -Prefix $Prefix)
+            } |
             ForEach-Object {
                 Remove-Item -Recurse -Force $_.FullName -ErrorAction SilentlyContinue
             }

@@ -9,6 +9,9 @@ $tmpRoot = Join-Path $repoRoot "artifacts/tmp"
 $prefix = "tmp-policy-"
 $savedKeep = $env:FIN_KEEP_TEST_TMP
 $savedStale = $env:FIN_TEST_TMP_STALE_HOURS
+$pwshPath = (Get-Command pwsh).Source
+$activeProc = $null
+$activePidDir = $null
 
 function Assert-True {
     param(
@@ -76,7 +79,7 @@ try {
     Remove-Item -Recurse -Force $stateKeep.TmpDir
     Remove-Item Env:FIN_KEEP_TEST_TMP -ErrorAction SilentlyContinue
 
-    # Case 3: Stale pruning removes stale dirs but keeps recent dirs.
+    # Case 3: Stale pruning removes stale dirs, keeps recent dirs, and keeps active PID-owned dirs.
     $env:FIN_TEST_TMP_STALE_HOURS = "1"
     $staleDir = Join-Path $tmpRoot ("{0}stale-manual" -f $prefix)
     $recentDir = Join-Path $tmpRoot ("{0}recent-manual" -f $prefix)
@@ -86,12 +89,19 @@ try {
     if (-not (Test-Path $recentDir)) {
         New-Item -ItemType Directory -Path $recentDir -Force | Out-Null
     }
+    $activeProc = Start-Process -FilePath $pwshPath -ArgumentList "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Seconds 30" -PassThru
+    $activePidDir = Join-Path $tmpRoot ("{0}{1}" -f $prefix, $activeProc.Id)
+    if (-not (Test-Path $activePidDir)) {
+        New-Item -ItemType Directory -Path $activePidDir -Force | Out-Null
+    }
     (Get-Item $staleDir).LastWriteTimeUtc = (Get-Date).ToUniversalTime().AddHours(-3)
     (Get-Item $recentDir).LastWriteTimeUtc = (Get-Date).ToUniversalTime()
+    (Get-Item $activePidDir).LastWriteTimeUtc = (Get-Date).ToUniversalTime().AddHours(-3)
 
     $statePrune = Initialize-TestTmpWorkspace -RepoRoot $repoRoot -Prefix $prefix
     Assert-False -Condition (Test-Path $staleDir) -Message "Expected stale temp dir to be pruned."
     Assert-True -Condition (Test-Path $recentDir) -Message "Expected recent temp dir to be preserved."
+    Assert-True -Condition (Test-Path $activePidDir) -Message "Expected active PID temp dir to be preserved."
     Finalize-TestTmpWorkspace -State $statePrune
     Remove-Item -Recurse -Force $recentDir
     Remove-Item Env:FIN_TEST_TMP_STALE_HOURS -ErrorAction SilentlyContinue
@@ -114,6 +124,13 @@ finally {
     }
     else {
         $env:FIN_TEST_TMP_STALE_HOURS = $savedStale
+    }
+
+    if ($null -ne $activeProc -and -not $activeProc.HasExited) {
+        Stop-Process -Id $activeProc.Id -Force -ErrorAction SilentlyContinue
+    }
+    if ($null -ne $activePidDir -and (Test-Path $activePidDir)) {
+        Remove-Item -Recurse -Force $activePidDir -ErrorAction SilentlyContinue
     }
 
     Get-ChildItem -Path $tmpRoot -Directory -Filter ("{0}*" -f $prefix) -ErrorAction SilentlyContinue |
