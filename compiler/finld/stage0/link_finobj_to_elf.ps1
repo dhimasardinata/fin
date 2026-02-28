@@ -371,9 +371,12 @@ if ($entryRelocationPlans.Count -gt 0) {
     [System.IO.File]::WriteAllBytes($outFull, $imageBytes)
 }
 
+$verifyEnabled = [bool]$Verify
+$verifyMode = "disabled"
 if ($Verify) {
     if ($entryRelocationPlans.Count -gt 0) {
-        Write-Host "verify_mode=structure_only_relocation_patched"
+        $verifyMode = "structure_only_relocation_patched"
+        Write-Host ("verify_mode={0}" -f $verifyMode)
         if ($Target -eq "x86_64-linux-elf") {
             & $verifyElf -Path $outFull -ExpectedExitCode $exitCode -AllowPatchedCode
         }
@@ -382,6 +385,8 @@ if ($Verify) {
         }
     }
     else {
+        $verifyMode = "strict"
+        Write-Host ("verify_mode={0}" -f $verifyMode)
         if ($Target -eq "x86_64-linux-elf") {
             & $verifyElf -Path $outFull -ExpectedExitCode $exitCode
         }
@@ -402,6 +407,8 @@ $report = [ordered]@{
     LinkedSymbolResolutionSha256 = [string]$symbolResolutionHash
     LinkedRelocationResolutionSha256 = [string]$relocationResolutionHash
     LinkedObjectSetSha256 = [string]$objectSetHash
+    LinkedVerifyEnabled = [bool]$verifyEnabled
+    LinkedVerifyMode = [string]$verifyMode
     LinkedOutput = [string]$outFull
     LinkedTarget = [string]$Target
     ProgramExitCode = [int]$exitCode
@@ -417,6 +424,8 @@ Write-Host ("linked_relocations_applied_count={0}" -f $report.LinkedRelocationsA
 Write-Host ("linked_symbol_resolution_sha256={0}" -f $report.LinkedSymbolResolutionSha256)
 Write-Host ("linked_relocation_resolution_sha256={0}" -f $report.LinkedRelocationResolutionSha256)
 Write-Host ("linked_object_set_sha256={0}" -f $report.LinkedObjectSetSha256)
+Write-Host ("linked_verify_enabled={0}" -f $report.LinkedVerifyEnabled)
+Write-Host ("linked_verify_mode={0}" -f $report.LinkedVerifyMode)
 Write-Host ("linked_output={0}" -f $report.LinkedOutput)
 Write-Host ("linked_target={0}" -f $report.LinkedTarget)
 Write-Host ("program_exit_code={0}" -f $report.ProgramExitCode)

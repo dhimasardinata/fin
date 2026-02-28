@@ -108,6 +108,24 @@ function Assert-SameValue {
     }
 }
 
+function Assert-VerifyRecord {
+    param(
+        [object]$Record,
+        [bool]$ExpectedEnabled,
+        [string]$ExpectedMode,
+        [string]$Label
+    )
+
+    if ([bool]$Record.LinkedVerifyEnabled -ne [bool]$ExpectedEnabled) {
+        Write-Error ("Expected verify enabled={0} ({1}), found {2}" -f $ExpectedEnabled, $Label, $Record.LinkedVerifyEnabled)
+        exit 1
+    }
+    if ([string]$Record.LinkedVerifyMode -ne [string]$ExpectedMode) {
+        Write-Error ("Expected verify mode={0} ({1}), found {2}" -f $ExpectedMode, $Label, $Record.LinkedVerifyMode)
+        exit 1
+    }
+}
+
 & $writer -SourcePath $sourceMain -OutFile $objLinuxMain -Target x86_64-linux-elf -EntrySymbol main
 & $writer -SourcePath $sourceUnit -OutFile $objLinuxUnit -Target x86_64-linux-elf -EntrySymbol unit
 & $writer -SourcePath $sourceUnit -OutFile $objLinuxMain2 -Target x86_64-linux-elf -EntrySymbol main
@@ -130,20 +148,24 @@ function Assert-SameValue {
 Copy-Item -Path $objLinuxUnit -Destination $objLinuxUnitCopy -Force
 
 $linuxRecord = & $linker -ObjectPath @($objLinuxMain, $objLinuxUnit) -OutFile $outLinux -Target x86_64-linux-elf -Verify -AsRecord
+Assert-VerifyRecord -Record $linuxRecord -ExpectedEnabled $true -ExpectedMode "strict" -Label "linux strict verification"
 & $verifyElf -Path $outLinux -ExpectedExitCode 8
 & $runElf -Path $outLinux -ExpectedExitCode 8
 
 $linuxRecordReordered = & $linker -ObjectPath @($objLinuxUnit, $objLinuxMain) -OutFile $outLinuxReordered -Target x86_64-linux-elf -Verify -AsRecord
+Assert-VerifyRecord -Record $linuxRecordReordered -ExpectedEnabled $true -ExpectedMode "strict" -Label "linux reordered strict verification"
 Assert-SameHash -PathA $outLinux -PathB $outLinuxReordered -Label "linux object order"
 Assert-SameValue -ValueA $linuxRecord.LinkedObjectSetSha256 -ValueB $linuxRecordReordered.LinkedObjectSetSha256 -Label "linux object-set witness"
 Assert-SameValue -ValueA $linuxRecord.LinkedSymbolResolutionSha256 -ValueB $linuxRecordReordered.LinkedSymbolResolutionSha256 -Label "linux symbol-resolution witness"
 Assert-SameValue -ValueA $linuxRecord.LinkedRelocationResolutionSha256 -ValueB $linuxRecordReordered.LinkedRelocationResolutionSha256 -Label "linux relocation-resolution witness"
 
 $windowsRecord = & $linker -ObjectPath @($objWindowsMain, $objWindowsUnit) -OutFile $outWindows -Target x86_64-windows-pe -Verify -AsRecord
+Assert-VerifyRecord -Record $windowsRecord -ExpectedEnabled $true -ExpectedMode "strict" -Label "windows strict verification"
 & $verifyPe -Path $outWindows -ExpectedExitCode 8
 & $runPe -Path $outWindows -ExpectedExitCode 8
 
 $windowsRecordReordered = & $linker -ObjectPath @($objWindowsUnit, $objWindowsMain) -OutFile $outWindowsReordered -Target x86_64-windows-pe -Verify -AsRecord
+Assert-VerifyRecord -Record $windowsRecordReordered -ExpectedEnabled $true -ExpectedMode "strict" -Label "windows reordered strict verification"
 Assert-SameHash -PathA $outWindows -PathB $outWindowsReordered -Label "windows object order"
 Assert-SameValue -ValueA $windowsRecord.LinkedObjectSetSha256 -ValueB $windowsRecordReordered.LinkedObjectSetSha256 -Label "windows object-set witness"
 Assert-SameValue -ValueA $windowsRecord.LinkedSymbolResolutionSha256 -ValueB $windowsRecordReordered.LinkedSymbolResolutionSha256 -Label "windows symbol-resolution witness"
@@ -194,16 +216,19 @@ Assert-LinkFails -Action {
 } -Label "windows rel32 relocation kind not supported in stage0"
 
 $resolvedRecord = & $linker -ObjectPath @($objLinuxMainRequiresHelper, $objLinuxUnitHelper) -OutFile $outWithResolvedSymbol -Target x86_64-linux-elf -Verify -AsRecord
+Assert-VerifyRecord -Record $resolvedRecord -ExpectedEnabled $true -ExpectedMode "structure_only_relocation_patched" -Label "linux relocation-patched verification"
 & $verifyElf -Path $outWithResolvedSymbol -ExpectedExitCode 8
 & $runElf -Path $outWithResolvedSymbol -ExpectedExitCode 8
 
 $resolvedRecordReordered = & $linker -ObjectPath @($objLinuxUnitHelper, $objLinuxMainRequiresHelper) -OutFile $outWithResolvedSymbolReordered -Target x86_64-linux-elf -Verify -AsRecord
+Assert-VerifyRecord -Record $resolvedRecordReordered -ExpectedEnabled $true -ExpectedMode "structure_only_relocation_patched" -Label "linux reordered relocation-patched verification"
 Assert-SameHash -PathA $outWithResolvedSymbol -PathB $outWithResolvedSymbolReordered -Label "resolved symbol relocation object order"
 Assert-SameValue -ValueA $resolvedRecord.LinkedObjectSetSha256 -ValueB $resolvedRecordReordered.LinkedObjectSetSha256 -Label "resolved symbol object-set witness"
 Assert-SameValue -ValueA $resolvedRecord.LinkedSymbolResolutionSha256 -ValueB $resolvedRecordReordered.LinkedSymbolResolutionSha256 -Label "resolved symbol symbol-resolution witness"
 Assert-SameValue -ValueA $resolvedRecord.LinkedRelocationResolutionSha256 -ValueB $resolvedRecordReordered.LinkedRelocationResolutionSha256 -Label "resolved symbol relocation-resolution witness"
 
 $rel32Record = & $linker -ObjectPath @($objLinuxMainRequiresHelperRel32, $objLinuxUnitHelper) -OutFile $outWithResolvedSymbolRel32 -Target x86_64-linux-elf -AsRecord
+Assert-VerifyRecord -Record $rel32Record -ExpectedEnabled $false -ExpectedMode "disabled" -Label "linux rel32 no-verify mode"
 & $runElf -Path $outWithResolvedSymbolRel32 -ExpectedExitCode 254
 if ($rel32Record.LinkedRelocationsAppliedCount -ne 1) {
     Write-Error ("Expected 1 applied relocation for rel32 case, found {0}" -f $rel32Record.LinkedRelocationsAppliedCount)
@@ -211,6 +236,7 @@ if ($rel32Record.LinkedRelocationsAppliedCount -ne 1) {
 }
 
 $symbolValueRecord = & $linker -ObjectPath @($objLinuxMainRequiresHelper, $objLinuxUnitHelperValue) -OutFile $outWithResolvedSymbolValue -Target x86_64-linux-elf -Verify -AsRecord
+Assert-VerifyRecord -Record $symbolValueRecord -ExpectedEnabled $true -ExpectedMode "structure_only_relocation_patched" -Label "linux symbol-value relocation-patched verification"
 & $runElf -Path $outWithResolvedSymbolValue -ExpectedExitCode 42
 if ($symbolValueRecord.LinkedRelocationsAppliedCount -ne 1) {
     Write-Error ("Expected 1 applied relocation for symbol value case, found {0}" -f $symbolValueRecord.LinkedRelocationsAppliedCount)
@@ -222,6 +248,7 @@ Assert-LinkFails -Action {
 & $verifyElf -Path $outWithResolvedSymbolValue -ExpectedExitCode 8 -AllowPatchedCode
 
 $windowsResolvedRecord = & $linker -ObjectPath @($objWindowsMainRequiresHelper, $objWindowsUnitHelper) -OutFile $outWithResolvedSymbolWindows -Target x86_64-windows-pe -AsRecord
+Assert-VerifyRecord -Record $windowsResolvedRecord -ExpectedEnabled $false -ExpectedMode "disabled" -Label "windows resolved abs32 no-verify mode"
 & $verifyPe -Path $outWithResolvedSymbolWindows -ExpectedExitCode 8
 & $runPe -Path $outWithResolvedSymbolWindows -ExpectedExitCode 8
 if ($windowsResolvedRecord.LinkedRelocationsAppliedCount -ne 1) {
@@ -230,12 +257,14 @@ if ($windowsResolvedRecord.LinkedRelocationsAppliedCount -ne 1) {
 }
 
 $windowsResolvedRecordReordered = & $linker -ObjectPath @($objWindowsUnitHelper, $objWindowsMainRequiresHelper) -OutFile $outWithResolvedSymbolWindowsReordered -Target x86_64-windows-pe -AsRecord
+Assert-VerifyRecord -Record $windowsResolvedRecordReordered -ExpectedEnabled $false -ExpectedMode "disabled" -Label "windows reordered abs32 no-verify mode"
 Assert-SameHash -PathA $outWithResolvedSymbolWindows -PathB $outWithResolvedSymbolWindowsReordered -Label "windows resolved symbol relocation object order"
 Assert-SameValue -ValueA $windowsResolvedRecord.LinkedObjectSetSha256 -ValueB $windowsResolvedRecordReordered.LinkedObjectSetSha256 -Label "windows resolved symbol object-set witness"
 Assert-SameValue -ValueA $windowsResolvedRecord.LinkedSymbolResolutionSha256 -ValueB $windowsResolvedRecordReordered.LinkedSymbolResolutionSha256 -Label "windows resolved symbol symbol-resolution witness"
 Assert-SameValue -ValueA $windowsResolvedRecord.LinkedRelocationResolutionSha256 -ValueB $windowsResolvedRecordReordered.LinkedRelocationResolutionSha256 -Label "windows resolved symbol relocation-resolution witness"
 
 $windowsSymbolValueRecord = & $linker -ObjectPath @($objWindowsMainRequiresHelper, $objWindowsUnitHelperValue) -OutFile $outWithResolvedSymbolValueWindows -Target x86_64-windows-pe -Verify -AsRecord
+Assert-VerifyRecord -Record $windowsSymbolValueRecord -ExpectedEnabled $true -ExpectedMode "structure_only_relocation_patched" -Label "windows symbol-value relocation-patched verification"
 & $verifyPe -Path $outWithResolvedSymbolValueWindows -ExpectedExitCode 42
 & $runPe -Path $outWithResolvedSymbolValueWindows -ExpectedExitCode 42
 if ($windowsSymbolValueRecord.LinkedRelocationsAppliedCount -ne 1) {
