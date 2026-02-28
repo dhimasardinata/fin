@@ -4,12 +4,10 @@ $ErrorActionPreference = "Stop"
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\\..")
 $writer = Join-Path $repoRoot "compiler/finobj/stage0/write_finobj_exit.ps1"
 $reader = Join-Path $repoRoot "compiler/finobj/stage0/read_finobj_exit.ps1"
-$tmpDir = Join-Path $repoRoot "artifacts/tmp/finobj-roundtrip"
-
-if (Test-Path $tmpDir) {
-    Remove-Item -Recurse -Force $tmpDir
-}
-New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
+$tmpWorkspace = Join-Path $repoRoot "tests/common/test_tmp_workspace.ps1"
+. $tmpWorkspace
+$tmpState = Initialize-TestTmpWorkspace -RepoRoot $repoRoot -Prefix "finobj-roundtrip-"
+$tmpDir = $tmpState.TmpDir
 
 $source = Join-Path $repoRoot "tests/conformance/fixtures/main_exit7.fn"
 $objA = Join-Path $tmpDir "a.finobj"
@@ -415,5 +413,7 @@ requires=dep
 relocs=helper@1
 "@
 Assert-ReaderFails -Path $relocProvidedObj -Label "relocation symbol locally provided"
+
+Finalize-TestTmpWorkspace -State $tmpState
 
 Write-Host "finobj roundtrip conformance check passed."
