@@ -26,6 +26,7 @@ $objLinuxMainRequiresHelperBadOffset = Join-Path $tmpDir "main-requires-helper-b
 $objLinuxMainRequiresMissing = Join-Path $tmpDir "main-requires-missing.finobj"
 $objLinuxUnitHelper = Join-Path $tmpDir "unit-helper.finobj"
 $objLinuxUnitHelper2 = Join-Path $tmpDir "unit-helper-dup.finobj"
+$objLinuxUnitHelperValue = Join-Path $tmpDir "unit-helper-value.finobj"
 $objWindowsMain = Join-Path $tmpDir "main-windows.finobj"
 $objWindowsUnit = Join-Path $tmpDir "unit-windows.finobj"
 $outLinux = Join-Path $tmpDir "main-linked"
@@ -42,6 +43,7 @@ $outBadRelocationBounds = Join-Path $tmpDir "bad-relocation-bounds"
 $outWithResolvedSymbol = Join-Path $tmpDir "ok-resolved-symbol"
 $outWithResolvedSymbolReordered = Join-Path $tmpDir "ok-resolved-symbol-reordered"
 $outWithResolvedSymbolRel32 = Join-Path $tmpDir "ok-resolved-symbol-rel32"
+$outWithResolvedSymbolValue = Join-Path $tmpDir "ok-resolved-symbol-value"
 $objLinuxUnitCopy = Join-Path $tmpDir "unit-linux-copy.finobj"
 
 function Assert-LinkFails {
@@ -101,6 +103,7 @@ function Assert-SameValue {
 & $writer -SourcePath $sourceMain -OutFile $objLinuxMainRequiresMissing -Target x86_64-linux-elf -EntrySymbol main -Requires missing_sym -Relocs missing_sym@6
 & $writer -SourcePath $sourceMain -OutFile $objLinuxUnitHelper -Target x86_64-linux-elf -EntrySymbol unit -Provides helper
 & $writer -SourcePath $sourceMain -OutFile $objLinuxUnitHelper2 -Target x86_64-linux-elf -EntrySymbol unit -Provides helper
+& $writer -SourcePath $sourceUnit -OutFile $objLinuxUnitHelperValue -Target x86_64-linux-elf -EntrySymbol unit -Provides helper -ProvideValues helper=42
 & $writer -SourcePath $sourceMain -OutFile $objWindowsMain -Target x86_64-windows-pe -EntrySymbol main
 & $writer -SourcePath $sourceUnit -OutFile $objWindowsUnit -Target x86_64-windows-pe -EntrySymbol unit
 Copy-Item -Path $objLinuxUnit -Destination $objLinuxUnitCopy -Force
@@ -167,6 +170,13 @@ $rel32Record = & $linker -ObjectPath @($objLinuxMainRequiresHelperRel32, $objLin
 & $runElf -Path $outWithResolvedSymbolRel32 -ExpectedExitCode 254
 if ($rel32Record.LinkedRelocationsAppliedCount -ne 1) {
     Write-Error ("Expected 1 applied relocation for rel32 case, found {0}" -f $rel32Record.LinkedRelocationsAppliedCount)
+    exit 1
+}
+
+$symbolValueRecord = & $linker -ObjectPath @($objLinuxMainRequiresHelper, $objLinuxUnitHelperValue) -OutFile $outWithResolvedSymbolValue -Target x86_64-linux-elf -AsRecord
+& $runElf -Path $outWithResolvedSymbolValue -ExpectedExitCode 42
+if ($symbolValueRecord.LinkedRelocationsAppliedCount -ne 1) {
+    Write-Error ("Expected 1 applied relocation for symbol value case, found {0}" -f $symbolValueRecord.LinkedRelocationsAppliedCount)
     exit 1
 }
 

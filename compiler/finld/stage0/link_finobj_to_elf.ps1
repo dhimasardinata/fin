@@ -54,7 +54,7 @@ function Resolve-RelocationValue {
     param(
         [string]$Kind,
         [UInt32]$Offset,
-        [int]$SymbolValue
+        [UInt32]$SymbolValue
     )
 
     if ($Kind -eq "abs32") {
@@ -84,6 +84,31 @@ function Resolve-RelocationValue {
     }
 
     throw ("Unsupported relocation kind in stage0 linker: {0}" -f $Kind)
+}
+
+function Get-RecordSymbolValue {
+    param(
+        [object]$Record,
+        [string]$Symbol
+    )
+
+    $valuesProperty = $Record.PSObject.Properties["ProvidedSymbolValues"]
+    if ($null -eq $valuesProperty -or $null -eq $valuesProperty.Value) {
+        return [UInt32]$Record.ExitCode
+    }
+
+    $values = $valuesProperty.Value
+    if ($values -is [System.Collections.IDictionary]) {
+        if ($values.Contains($Symbol)) {
+            return [UInt32]$values[$Symbol]
+        }
+    }
+
+    if (@($Record.ProvidedSymbols) -contains $Symbol) {
+        return [UInt32]$Record.ExitCode
+    }
+
+    throw ("Missing symbol value metadata for '{0}' in object '{1}'." -f $Symbol, $Record.SourcePath)
 }
 
 if ($null -eq $ObjectPath -or $ObjectPath.Count -eq 0) {
@@ -159,9 +184,13 @@ foreach ($record in $orderedRecords) {
     foreach ($symbol in @($record.ProvidedSymbols)) {
         if ($symbolProviders.ContainsKey($symbol)) {
             $existing = $symbolProviders[$symbol]
-            throw ("Duplicate symbol provider detected for '{0}': {1} and {2}" -f $symbol, $existing.SourcePath, $record.SourcePath)
+            throw ("Duplicate symbol provider detected for '{0}': {1} and {2}" -f $symbol, $existing.Record.SourcePath, $record.SourcePath)
         }
-        $symbolProviders[$symbol] = $record
+        $symbolProviders[$symbol] = [pscustomobject]@{
+            Record = $record
+            Symbol = $symbol
+            SymbolValue = (Get-RecordSymbolValue -Record $record -Symbol $symbol)
+        }
     }
     $requiredCount += @($record.RequiredSymbols).Count
     $relocationCount += @($record.Relocations).Count
@@ -172,8 +201,8 @@ if (-not $symbolProviders.ContainsKey("main")) {
 }
 
 $mainProvider = $symbolProviders["main"]
-if ([string]$mainProvider.ObjectPath -ne [string]$entryRecord.ObjectPath) {
-    throw ("Entry object mismatch: entry_symbol=main object '{0}' does not provide symbol 'main' (provided by '{1}')." -f $entryRecord.SourcePath, $mainProvider.SourcePath)
+if ([string]$mainProvider.Record.ObjectPath -ne [string]$entryRecord.ObjectPath) {
+    throw ("Entry object mismatch: entry_symbol=main object '{0}' does not provide symbol 'main' (provided by '{1}')." -f $entryRecord.SourcePath, $mainProvider.Record.SourcePath)
 }
 
 $unresolved = [System.Collections.Generic.List[string]]::new()
@@ -195,8 +224,8 @@ foreach ($record in $orderedRecords) {
         $symbolResolutionLines.Add(("{0}|{1}|{2}|{3}" -f `
                 $record.SourcePath, `
                 $symbol, `
-                $resolvedProvider.SourcePath, `
-                $resolvedProvider.EntrySymbol))
+                $resolvedProvider.Record.SourcePath, `
+                $resolvedProvider.Record.EntrySymbol))
     }
 }
 $symbolResolutionPayload = ($symbolResolutionLines.ToArray() -join "`n") + "`n"
@@ -229,7 +258,7 @@ $relocationResolutionLines = [System.Collections.Generic.List[string]]::new()
 foreach ($record in $orderedRecords) {
     foreach ($reloc in @($record.Relocations | Sort-Object @{Expression = { [UInt64]$_.Offset } }, @{Expression = { $_.Symbol } }, @{Expression = { $_.Kind } })) {
         $resolvedProvider = $symbolProviders[$reloc.Symbol]
-        $resolvedValue = Resolve-RelocationValue -Kind $reloc.Kind -Offset ([UInt32]$reloc.Offset) -SymbolValue ([int]$resolvedProvider.ExitCode)
+        $resolvedValue = Resolve-RelocationValue -Kind $reloc.Kind -Offset ([UInt32]$reloc.Offset) -SymbolValue ([UInt32]$resolvedProvider.SymbolValue)
         $relocationPlans.Add([pscustomobject]@{
                 Record = $record
                 Relocation = $reloc
@@ -241,8 +270,8 @@ foreach ($record in $orderedRecords) {
                 $reloc.Offset, `
                 $reloc.Symbol, `
                 $reloc.Kind, `
-                $resolvedProvider.SourcePath, `
-                $resolvedProvider.EntrySymbol, `
+                $resolvedProvider.Record.SourcePath, `
+                $resolvedProvider.Record.EntrySymbol, `
                 $resolvedValue.ValueText))
     }
 }
@@ -252,14 +281,16 @@ $relocationResolutionHash = Get-TextSha256 -Text $relocationResolutionPayload
 $objectSetLines = [System.Collections.Generic.List[string]]::new()
 foreach ($record in $orderedRecords) {
     $relocationKeys = @($record.Relocations | Sort-Object @{Expression = { [UInt64]$_.Offset } }, @{Expression = { $_.Symbol } }, @{Expression = { $_.Kind } } | ForEach-Object { $_.Key })
-    $objectSetLines.Add(("{0}|{1}|{2}|{3}|{4}|{5}|{6}" -f `
+    $symbolValueKeys = @($record.ProvidedSymbols | ForEach-Object { "{0}={1}" -f $_, (Get-RecordSymbolValue -Record $record -Symbol $_) })
+    $objectSetLines.Add(("{0}|{1}|{2}|{3}|{4}|{5}|{6}|{7}" -f `
             $record.EntrySymbol, `
             $record.SourcePath, `
             $record.SourceSha256, `
             $record.ExitCode, `
             (@($record.ProvidedSymbols) -join ","), `
             (@($record.RequiredSymbols) -join ","), `
-            ($relocationKeys -join ",")))
+            ($relocationKeys -join ","), `
+            ($symbolValueKeys -join ",")))
 }
 $objectSetPayload = ($objectSetLines.ToArray() -join "`n") + "`n"
 $objectSetHash = Get-TextSha256 -Text $objectSetPayload

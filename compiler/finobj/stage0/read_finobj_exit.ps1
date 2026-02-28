@@ -106,6 +106,69 @@ function Parse-RelocationList {
     return @($ordered)
 }
 
+function Parse-SymbolValueMap {
+    param(
+        [string]$RawValue,
+        [string[]]$ProvidedSymbols,
+        [int]$ExitCode
+    )
+
+    if ([string]::IsNullOrWhiteSpace($RawValue)) {
+        $defaults = [ordered]@{}
+        foreach ($symbol in $ProvidedSymbols) {
+            $defaults[$symbol] = [UInt32]$ExitCode
+        }
+        return $defaults
+    }
+
+    $map = [ordered]@{}
+    $seen = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    foreach ($part in ($RawValue -split ",")) {
+        $token = $part.Trim()
+        if ([string]::IsNullOrWhiteSpace($token)) {
+            continue
+        }
+        if ($token -notmatch '^([A-Za-z_][A-Za-z0-9_]*)=([0-9]+)$') {
+            throw ("Invalid symbol_values entry: {0}. Expected <symbol>=<u32>." -f $token)
+        }
+
+        $symbol = $Matches[1]
+        [UInt64]$value = 0
+        if (-not [UInt64]::TryParse($Matches[2], [ref]$value)) {
+            throw ("Invalid symbol value for {0}: {1}" -f $symbol, $Matches[2])
+        }
+        if ($value -gt [UInt32]::MaxValue) {
+            throw ("Symbol value out of stage0 range (0..4294967295): {0}={1}" -f $symbol, $value)
+        }
+        if (-not $seen.Add($symbol)) {
+            throw ("Duplicate symbol_values entry: {0}" -f $symbol)
+        }
+
+        $map[$symbol] = [UInt32]$value
+    }
+
+    $providedSet = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    foreach ($symbol in $ProvidedSymbols) {
+        [void]$providedSet.Add($symbol)
+    }
+    foreach ($symbol in $map.Keys) {
+        if (-not $providedSet.Contains([string]$symbol)) {
+            throw ("symbol_values entry references non-provided symbol: {0}" -f $symbol)
+        }
+    }
+    foreach ($symbol in $ProvidedSymbols) {
+        if (-not $map.Contains($symbol)) {
+            throw ("symbol_values missing value for provided symbol: {0}" -f $symbol)
+        }
+    }
+
+    $ordered = [ordered]@{}
+    foreach ($symbol in $ProvidedSymbols) {
+        $ordered[$symbol] = [UInt32]$map[$symbol]
+    }
+    return $ordered
+}
+
 $raw = Get-Content -Path $objFull -Raw
 $map = @{}
 foreach ($line in ([regex]::Split($raw, "`r?`n"))) {
@@ -190,6 +253,23 @@ $requiredSymbols = @(if ($map.ContainsKey("requires")) {
         Parse-SymbolList -RawValue $map["requires"] -Key "requires"
     })
 
+[int]$exitCode = 0
+if (-not [int]::TryParse($map["exit_code"], [ref]$exitCode)) {
+    throw "Invalid exit_code value: $($map["exit_code"])"
+}
+if ($exitCode -lt 0 -or $exitCode -gt 255) {
+    throw "finobj exit_code out of range 0..255: $exitCode"
+}
+
+$symbolValuesRaw = ""
+if ($map.ContainsKey("symbol_values")) {
+    $symbolValuesRaw = $map["symbol_values"]
+}
+$providedSymbolValues = Parse-SymbolValueMap `
+    -RawValue $symbolValuesRaw `
+    -ProvidedSymbols $providedSymbols `
+    -ExitCode $exitCode
+
 $relocations = @(if ($map.ContainsKey("relocs")) {
         Parse-RelocationList -RawValue $map["relocs"]
     })
@@ -217,19 +297,12 @@ foreach ($reloc in $relocations) {
     }
 }
 
-[int]$exitCode = 0
-if (-not [int]::TryParse($map["exit_code"], [ref]$exitCode)) {
-    throw "Invalid exit_code value: $($map["exit_code"])"
-}
-if ($exitCode -lt 0 -or $exitCode -gt 255) {
-    throw "finobj exit_code out of range 0..255: $exitCode"
-}
-
 Write-Host ("finobj_read={0}" -f $objFull)
 Write-Host ("target={0}" -f $map["target"])
 Write-Host ("entry_symbol={0}" -f $entrySymbol)
 Write-Host ("provides={0}" -f ($providedSymbols -join ","))
 Write-Host ("requires={0}" -f ($requiredSymbols -join ","))
+Write-Host ("symbol_values={0}" -f ((@($providedSymbols | ForEach-Object { "{0}={1}" -f $_, [UInt32]$providedSymbolValues[$_] }) -join ",")))
 Write-Host ("relocs={0}" -f ((@($relocations | ForEach-Object { $_.Key }) -join ",")))
 if ($AsRecord) {
     Write-Output ([pscustomobject]@{
@@ -240,6 +313,7 @@ if ($AsRecord) {
             SourcePath = $sourcePath
             SourceSha256 = $sourceHash
             ProvidedSymbols = $providedSymbols
+            ProvidedSymbolValues = $providedSymbolValues
             RequiredSymbols = $requiredSymbols
             Relocations = $relocations
         })
