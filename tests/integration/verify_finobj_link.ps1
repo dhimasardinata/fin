@@ -12,13 +12,23 @@ $tmpDir = Join-Path $repoRoot ("artifacts/tmp/finobj-link-{0}" -f $PID)
 $tmpRoot = Join-Path $repoRoot "artifacts/tmp"
 $tmpPrefix = "finobj-link-"
 $keepTmp = ($env:FIN_KEEP_TEST_TMP -eq "1")
+[int]$tmpStaleHours = 6
+if (-not [string]::IsNullOrWhiteSpace($env:FIN_TEST_TMP_STALE_HOURS)) {
+    [int]$parsedStaleHours = 0
+    if (-not [int]::TryParse($env:FIN_TEST_TMP_STALE_HOURS, [ref]$parsedStaleHours) -or $parsedStaleHours -lt 1) {
+        Write-Error ("FIN_TEST_TMP_STALE_HOURS must be a positive integer, found: {0}" -f $env:FIN_TEST_TMP_STALE_HOURS)
+        exit 1
+    }
+    $tmpStaleHours = $parsedStaleHours
+}
+$staleCutoffUtc = (Get-Date).ToUniversalTime().AddHours(-1 * $tmpStaleHours)
 
 if (-not (Test-Path $tmpRoot)) {
     New-Item -ItemType Directory -Path $tmpRoot -Force | Out-Null
 }
 if (-not $keepTmp) {
     Get-ChildItem -Path $tmpRoot -Directory -Filter ("{0}*" -f $tmpPrefix) -ErrorAction SilentlyContinue |
-        Where-Object { $_.FullName -ne $tmpDir } |
+        Where-Object { $_.FullName -ne $tmpDir -and $_.LastWriteTimeUtc -lt $staleCutoffUtc } |
         ForEach-Object {
             Remove-Item -Recurse -Force $_.FullName -ErrorAction SilentlyContinue
         }

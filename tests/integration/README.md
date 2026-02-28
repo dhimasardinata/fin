@@ -18,3 +18,4 @@ It is used by `./fin.ps1 run` and `./fin.ps1 test`.
 
 `verify_finobj_link.ps1` uses a PID-scoped temp directory under `artifacts/tmp` and prunes stale `finobj-link-*` temp dirs by default.
 Set `FIN_KEEP_TEST_TMP=1` to retain those temp artifacts for local debugging.
+The default stale-prune window is 6 hours and is configurable with `FIN_TEST_TMP_STALE_HOURS`.
