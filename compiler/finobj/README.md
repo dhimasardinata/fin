@@ -14,6 +14,7 @@ Stage0 symbol metadata:
 
 - `provides`: symbols defined by the object (defaults to `main` for `entry_symbol=main`).
 - `requires`: symbols required from other objects (defaults to empty).
+- `symbol_values`: provided-symbol numeric values (`<symbol>=<u32>`), canonicalized to `provides` order. Writer emits this key deterministically; reader defaults missing values to `exit_code` for backward compatibility.
 - `relocs`: relocation references (`<symbol>@<offset>[:<kind>]`, kind in `abs32|rel32`, default `abs32`) validated against `requires` in stage0.
 - symbol lists are canonicalized deterministically (`main` first, then lexical order).
 

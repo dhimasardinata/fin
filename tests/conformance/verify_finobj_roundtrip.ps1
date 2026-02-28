@@ -39,12 +39,34 @@ function Assert-ReaderFails {
     }
 }
 
+function Assert-WriterFails {
+    param(
+        [scriptblock]$Action,
+        [string]$Label
+    )
+
+    $failed = $false
+    try {
+        & $Action
+    }
+    catch {
+        $failed = $true
+    }
+    if (-not $failed) {
+        Write-Error ("Expected finobj writer failure: {0}" -f $Label)
+        exit 1
+    }
+}
+
 & $writer -SourcePath $source -OutFile $objA
 & $writer -SourcePath $source -OutFile $objB
 & $writer -SourcePath $source -OutFile $objWin -Target x86_64-windows-pe
 & $writer -SourcePath $source -OutFile $objUnit -EntrySymbol unit
-& $writer -SourcePath $source -OutFile $objSymbols -Provides @("helper", "main") -Requires @("dep_b", "dep_a")
+& $writer -SourcePath $source -OutFile $objSymbols -Provides @("helper", "main") -ProvideValues @("helper=11", "main=7") -Requires @("dep_b", "dep_a")
 & $writer -SourcePath $source -OutFile $objRelocs -Provides @("main", "helper") -Requires @("dep_a", "dep_b") -Relocs @("dep_b@32:rel32", "dep_a@16")
+Assert-WriterFails -Action {
+    & $writer -SourcePath $source -OutFile (Join-Path $tmpDir "invalid-writer-symbol-values.finobj") -ProvideValues ghost=1 | Out-Null
+} -Label "symbol value override for non-provided symbol"
 
 $hashA = (Get-FileHash -Path $objA -Algorithm SHA256).Hash
 $hashB = (Get-FileHash -Path $objB -Algorithm SHA256).Hash
@@ -66,6 +88,10 @@ if (@($mainRecord.ProvidedSymbols).Count -ne 1 -or $mainRecord.ProvidedSymbols[0
 }
 if (@($mainRecord.RequiredSymbols).Count -ne 0) {
     Write-Error "Expected main object to have no required symbols by default."
+    exit 1
+}
+if (-not $mainRecord.ProvidedSymbolValues.Contains("main") -or [UInt32]$mainRecord.ProvidedSymbolValues["main"] -ne 7) {
+    Write-Error "Expected main object symbol value 'main=7' by default."
     exit 1
 }
 
@@ -92,6 +118,10 @@ if (@($unitRecord.RequiredSymbols).Count -ne 0) {
     Write-Error "Expected unit object to require no symbols by default."
     exit 1
 }
+if (@($unitRecord.ProvidedSymbolValues.Keys).Count -ne 0) {
+    Write-Error "Expected unit object to expose no symbol values by default."
+    exit 1
+}
 
 $symbolsRecord = & $reader -ObjectPath $objSymbols -ExpectedTarget x86_64-linux-elf -AsRecord
 if ((@($symbolsRecord.ProvidedSymbols) -join ",") -ne "main,helper") {
@@ -100,6 +130,10 @@ if ((@($symbolsRecord.ProvidedSymbols) -join ",") -ne "main,helper") {
 }
 if ((@($symbolsRecord.RequiredSymbols) -join ",") -ne "dep_a,dep_b") {
     Write-Error "Expected required symbols 'dep_a,dep_b' from custom finobj."
+    exit 1
+}
+if ((@($symbolsRecord.ProvidedSymbols | ForEach-Object { "{0}={1}" -f $_, [UInt32]$symbolsRecord.ProvidedSymbolValues[$_] }) -join ",") -ne "main=7,helper=11") {
+    Write-Error "Expected symbol values 'main=7,helper=11' from custom finobj."
     exit 1
 }
 
@@ -113,6 +147,7 @@ source_path=tests/conformance/fixtures/main_exit7.fn
 source_sha256=1111111111111111111111111111111111111111111111111111111111111111
 provides=helper,main
 requires=dep_b,dep_a
+symbol_values=helper=5,main=7
 "@
 $manualOrderRecord = & $reader -ObjectPath $objSymbolsManualOrder -ExpectedTarget x86_64-linux-elf -AsRecord
 if ((@($manualOrderRecord.ProvidedSymbols) -join ",") -ne "main,helper") {
@@ -121,6 +156,10 @@ if ((@($manualOrderRecord.ProvidedSymbols) -join ",") -ne "main,helper") {
 }
 if ((@($manualOrderRecord.RequiredSymbols) -join ",") -ne "dep_a,dep_b") {
     Write-Error "Expected reader canonical required order 'dep_a,dep_b' from manual finobj."
+    exit 1
+}
+if ((@($manualOrderRecord.ProvidedSymbols | ForEach-Object { "{0}={1}" -f $_, [UInt32]$manualOrderRecord.ProvidedSymbolValues[$_] }) -join ",") -ne "main=7,helper=5") {
+    Write-Error "Expected reader canonical symbol value order 'main=7,helper=5' from manual finobj."
     exit 1
 }
 
@@ -235,6 +274,62 @@ provides=main,dep
 requires=dep
 "@
 Assert-ReaderFails -Path $overlapObj -Label "provides/requires overlap"
+
+$badSymbolValuesUnknownObj = Join-Path $tmpDir "invalid-symbol-values-unknown.finobj"
+Set-Content -Path $badSymbolValuesUnknownObj -Value @"
+finobj_format=finobj-stage0
+finobj_version=1
+target=x86_64-linux-elf
+entry_symbol=main
+exit_code=7
+source_path=tests/conformance/fixtures/main_exit7.fn
+source_sha256=1111111111111111111111111111111111111111111111111111111111111111
+provides=main
+symbol_values=helper=1
+"@
+Assert-ReaderFails -Path $badSymbolValuesUnknownObj -Label "symbol_values unknown provided symbol"
+
+$badSymbolValuesMissingObj = Join-Path $tmpDir "invalid-symbol-values-missing.finobj"
+Set-Content -Path $badSymbolValuesMissingObj -Value @"
+finobj_format=finobj-stage0
+finobj_version=1
+target=x86_64-linux-elf
+entry_symbol=main
+exit_code=7
+source_path=tests/conformance/fixtures/main_exit7.fn
+source_sha256=1111111111111111111111111111111111111111111111111111111111111111
+provides=main,helper
+symbol_values=main=7
+"@
+Assert-ReaderFails -Path $badSymbolValuesMissingObj -Label "symbol_values missing provided symbol"
+
+$badSymbolValuesDupObj = Join-Path $tmpDir "invalid-symbol-values-duplicate.finobj"
+Set-Content -Path $badSymbolValuesDupObj -Value @"
+finobj_format=finobj-stage0
+finobj_version=1
+target=x86_64-linux-elf
+entry_symbol=main
+exit_code=7
+source_path=tests/conformance/fixtures/main_exit7.fn
+source_sha256=1111111111111111111111111111111111111111111111111111111111111111
+provides=main
+symbol_values=main=7,main=8
+"@
+Assert-ReaderFails -Path $badSymbolValuesDupObj -Label "duplicate symbol_values entry"
+
+$badSymbolValuesRangeObj = Join-Path $tmpDir "invalid-symbol-values-range.finobj"
+Set-Content -Path $badSymbolValuesRangeObj -Value @"
+finobj_format=finobj-stage0
+finobj_version=1
+target=x86_64-linux-elf
+entry_symbol=main
+exit_code=7
+source_path=tests/conformance/fixtures/main_exit7.fn
+source_sha256=1111111111111111111111111111111111111111111111111111111111111111
+provides=main
+symbol_values=main=5000000000
+"@
+Assert-ReaderFails -Path $badSymbolValuesRangeObj -Label "symbol_values out of u32 range"
 
 $badRelocObj = Join-Path $tmpDir "invalid-reloc-format.finobj"
 Set-Content -Path $badRelocObj -Value @"

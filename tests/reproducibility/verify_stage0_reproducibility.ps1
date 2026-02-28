@@ -115,7 +115,7 @@ $linkedB = Join-Path $tmpDir "linked-b"
 $linkedReordered = Join-Path $tmpDir "linked-reordered"
 $finobjUnitLinux = Join-Path $tmpDir "main-unit-linux.finobj"
 & $writeFinobj -SourcePath $finobjSrc -OutFile $finobjA -Target x86_64-linux-elf -Requires helper -Relocs helper@6
-& $writeFinobj -SourcePath "tests/conformance/fixtures/main_exit0.fn" -OutFile $finobjUnitLinux -Target x86_64-linux-elf -EntrySymbol unit -Provides helper
+& $writeFinobj -SourcePath "tests/conformance/fixtures/main_exit0.fn" -OutFile $finobjUnitLinux -Target x86_64-linux-elf -EntrySymbol unit -Provides helper -ProvideValues helper=8
 $linkedRecordA = & $linkFinobj -ObjectPath @($finobjA, $finobjUnitLinux) -OutFile $linkedA -Target x86_64-linux-elf -AsRecord
 $linkedRecordB = & $linkFinobj -ObjectPath @($finobjA, $finobjUnitLinux) -OutFile $linkedB -Target x86_64-linux-elf -AsRecord
 Assert-SameHash -PathA $linkedA -PathB $linkedB -Label "link_finobj_to_elf"
@@ -137,7 +137,7 @@ $linkedWinA = Join-Path $tmpDir "linked-win-a.exe"
 $linkedWinB = Join-Path $tmpDir "linked-win-b.exe"
 $linkedWinReordered = Join-Path $tmpDir "linked-win-reordered.exe"
 & $writeFinobj -SourcePath $finobjSrc -OutFile $finobjWinA -Target x86_64-windows-pe -Requires helper -Relocs helper@1
-& $writeFinobj -SourcePath "tests/conformance/fixtures/main_exit0.fn" -OutFile $finobjWinUnit -Target x86_64-windows-pe -EntrySymbol unit -Provides helper
+& $writeFinobj -SourcePath "tests/conformance/fixtures/main_exit0.fn" -OutFile $finobjWinUnit -Target x86_64-windows-pe -EntrySymbol unit -Provides helper -ProvideValues helper=8
 $linkedWinRecordA = & $linkFinobj -ObjectPath @($finobjWinA, $finobjWinUnit) -OutFile $linkedWinA -Target x86_64-windows-pe -AsRecord
 $linkedWinRecordB = & $linkFinobj -ObjectPath @($finobjWinA, $finobjWinUnit) -OutFile $linkedWinB -Target x86_64-windows-pe -AsRecord
 Assert-SameHash -PathA $linkedWinA -PathB $linkedWinB -Label "link_finobj_to_elf --target x86_64-windows-pe"

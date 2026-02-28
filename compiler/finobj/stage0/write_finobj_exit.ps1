@@ -6,6 +6,7 @@ param(
     [ValidateSet("main", "unit")]
     [string]$EntrySymbol = "main",
     [string[]]$Provides = @(),
+    [string[]]$ProvideValues = @(),
     [string[]]$Requires = @(),
     [string[]]$Relocs = @()
 )
@@ -127,6 +128,45 @@ function Get-NormalizedRelocationList {
     return @($ordered)
 }
 
+function Get-NormalizedSymbolValueMap {
+    param([string[]]$Items)
+
+    $map = [ordered]@{}
+    $seen = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+
+    foreach ($item in $Items) {
+        if ([string]::IsNullOrWhiteSpace($item)) {
+            continue
+        }
+
+        foreach ($part in ($item -split '[,;]')) {
+            $token = $part.Trim()
+            if ([string]::IsNullOrWhiteSpace($token)) {
+                continue
+            }
+            if ($token -notmatch '^([A-Za-z_][A-Za-z0-9_]*)=([0-9]+)$') {
+                throw ("Invalid symbol value entry: {0}. Expected <symbol>=<u32>." -f $token)
+            }
+
+            $symbol = $Matches[1]
+            [UInt64]$value = 0
+            if (-not [UInt64]::TryParse($Matches[2], [ref]$value)) {
+                throw ("Invalid symbol value for {0}: {1}" -f $symbol, $Matches[2])
+            }
+            if ($value -gt [UInt32]::MaxValue) {
+                throw ("Symbol value out of stage0 range (0..4294967295): {0}={1}" -f $symbol, $value)
+            }
+            if (-not $seen.Add($symbol)) {
+                throw ("Duplicate symbol value entry: {0}" -f $symbol)
+            }
+
+            $map[$symbol] = [UInt32]$value
+        }
+    }
+
+    return $map
+}
+
 function Get-RelativePathNormalized {
     param(
         [string]$BasePath,
@@ -183,6 +223,7 @@ $sourceRel = Get-RelativePathNormalized -BasePath $repoRoot -FullPath $sourceFul
 $providedSymbols = @(Get-NormalizedSymbolList -Items $Provides -Label "provides")
 $requiredSymbols = @(Get-NormalizedSymbolList -Items $Requires -Label "requires")
 $relocations = @(Get-NormalizedRelocationList -Items $Relocs)
+$providedValueOverrides = Get-NormalizedSymbolValueMap -Items $ProvideValues
 
 if ($providedSymbols.Count -eq 0 -and $EntrySymbol -eq "main") {
     $providedSymbols = @("main")
@@ -196,6 +237,20 @@ foreach ($symbol in $requiredSymbols) {
     if ($providedSet.Contains($symbol)) {
         throw ("Symbol cannot appear in both provides and requires: {0}" -f $symbol)
     }
+}
+foreach ($symbol in $providedValueOverrides.Keys) {
+    if (-not $providedSet.Contains([string]$symbol)) {
+        throw ("Symbol value override provided for non-provided symbol: {0}" -f $symbol)
+    }
+}
+
+$providedSymbolValues = [ordered]@{}
+foreach ($symbol in $providedSymbols) {
+    [UInt32]$value = [UInt32]$exitCode
+    if ($providedValueOverrides.Contains($symbol)) {
+        $value = [UInt32]$providedValueOverrides[$symbol]
+    }
+    $providedSymbolValues[$symbol] = $value
 }
 
 $requiredSet = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
@@ -221,6 +276,11 @@ $lines.Add(("source_path={0}" -f $sourceRel))
 $lines.Add(("source_sha256={0}" -f $sourceHash))
 $lines.Add(("provides={0}" -f ($providedSymbols -join ",")))
 $lines.Add(("requires={0}" -f ($requiredSymbols -join ",")))
+$symbolValueEntries = [System.Collections.Generic.List[string]]::new()
+foreach ($symbol in $providedSymbols) {
+    $symbolValueEntries.Add(("{0}={1}" -f $symbol, [UInt32]$providedSymbolValues[$symbol]))
+}
+$lines.Add(("symbol_values={0}" -f ($symbolValueEntries.ToArray() -join ",")))
 $lines.Add(("relocs={0}" -f ((@($relocations | ForEach-Object { $_.Key }) -join ","))))
 
 $content = ($lines.ToArray() -join "`n") + "`n"
