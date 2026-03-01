@@ -58,6 +58,7 @@ Stage0 conformance checks:
 - `fixtures/invalid_borrow_reference_expr.fn`: invalid source, parser must reject stage0 borrow/reference expression syntax (`&x`).
 - `fixtures/invalid_dereference_expr.fn`: invalid source, parser must reject stage0 dereference expression syntax (`*x`).
 - `fixtures/invalid_borrow_type_annotation.fn`: invalid source, parser must reject ownership/borrowing type annotations in stage0 (`&u8`).
+- Borrow/operator invalid fixtures above are also assertion-checked for deterministic diagnostic message text in `verify_stage0_grammar.ps1`.
 - `fixtures/invalid_use_after_drop.fn`: invalid source, parser must reject identifier usage after `drop(<ident>)`.
 - `fixtures/invalid_use_after_redrop.fn`: invalid source, parser must reject identifier usage after a second drop in repeated lifecycle cycles.
 - `fixtures/invalid_double_drop.fn`: invalid source, parser must reject repeated `drop(<ident>)` on the same binding.
