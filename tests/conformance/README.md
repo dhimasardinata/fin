@@ -39,3 +39,4 @@ Stage0 conformance checks:
 - `fixtures/invalid_drop_after_move.fn`: invalid source, parser must reject `drop(<ident>)` after the binding has already been moved.
 - `fixtures/invalid_move_after_drop.fn`: invalid source, parser must reject `move(<ident>)` after the binding has already been dropped.
 - `fixtures/invalid_self_move_assignment.fn`: invalid source, parser must reject assignment targets moved by their own assignment expression.
+- Ownership/lifecycle invalid fixtures above are also assertion-checked for deterministic diagnostic message text in `verify_stage0_grammar.ps1`.

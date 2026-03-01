@@ -56,7 +56,8 @@ Current stage0 implementation delta:
 11. Expression parser rejects borrow/reference syntax (`&expr`) with deterministic diagnostics.
 12. Expression parser rejects dereference syntax (`*expr`) with deterministic diagnostics.
 13. Type-annotation parser rejects ownership/borrowing-prefixed type annotations in stage0 bootstrap.
-14. This slice creates explicit parser/test safety gates while ownership inference and borrow-check semantics are still evolving.
+14. Conformance suite now asserts deterministic ownership/lifecycle diagnostics by message substring for use-after-drop/move and invalid transition cases.
+15. This slice creates explicit parser/test safety gates while ownership inference and borrow-check semantics are still evolving.
 
 ## Alternatives
 
@@ -74,7 +75,7 @@ Compatibility impact must be documented before Implemented status.
 
 Current checks:
 
-1. `tests/conformance/verify_stage0_grammar.ps1` validates `main_drop_unused.fn`, `main_move_binding.fn`, and `main_move_reinit_var.fn`; it asserts parse failures for use-after-drop/move, double-drop/move, drop-after-move, move-after-drop, assign-after-drop, undefined-drop/move, self-move assignment, borrow-reference, dereference, and borrow-type fixtures.
+1. `tests/conformance/verify_stage0_grammar.ps1` validates `main_drop_unused.fn`, `main_move_binding.fn`, and `main_move_reinit_var.fn`; it asserts parse failures for use-after-drop/move, double-drop/move, drop-after-move, move-after-drop, assign-after-drop, undefined-drop/move, self-move assignment, borrow-reference, dereference, and borrow-type fixtures, with message-substring checks for ownership/lifecycle diagnostics.
 2. `tests/run_stage0_suite.ps1` invokes `tests/conformance/verify_stage0_grammar.ps1` in the stage0 aggregate suite.
 
 Acceptance criteria listed above remain normative for Implemented status.
