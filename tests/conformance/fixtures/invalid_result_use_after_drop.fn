@@ -1,0 +1,6 @@
+fn main() -> u8 {
+  var value: Result<u8,u8> = ok(1)
+  drop(value)
+  let leaked = try(value)
+  exit(leaked)
+}
