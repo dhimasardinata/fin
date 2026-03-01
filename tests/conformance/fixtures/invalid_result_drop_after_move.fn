@@ -1,0 +1,6 @@
+fn main() -> u8 {
+  let value: Result<u8,u8> = ok(1)
+  let taken = move(value)
+  drop(value)
+  exit(try(taken))
+}

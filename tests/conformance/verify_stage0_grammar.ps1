@@ -115,5 +115,11 @@ Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_move_
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_drop_after_move.fn" -ExpectedMessagePart "drop after move for identifier 'value'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_move_after_drop.fn" -ExpectedMessagePart "move after drop for identifier 'value'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_self_move_assignment.fn" -ExpectedMessagePart "assignment target 'value' moved or dropped during expression evaluation"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_result_use_after_drop.fn" -ExpectedMessagePart "use after drop for identifier 'value'"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_result_use_after_move.fn" -ExpectedMessagePart "use after move for identifier 'value'"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_result_assign_after_drop_immutable.fn" -ExpectedMessagePart "cannot reinitialize dropped immutable binding 'value'"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_result_assign_after_move_immutable.fn" -ExpectedMessagePart "cannot reinitialize moved immutable binding 'value'"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_result_drop_after_move.fn" -ExpectedMessagePart "drop after move for identifier 'value'"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_result_move_after_drop.fn" -ExpectedMessagePart "move after drop for identifier 'value'"
 
 Write-Host "Stage0 grammar conformance check passed."

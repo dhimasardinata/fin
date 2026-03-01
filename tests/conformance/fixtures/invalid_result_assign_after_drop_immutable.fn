@@ -1,0 +1,6 @@
+fn main() -> u8 {
+  let value: Result<u8,u8> = ok(1)
+  drop(value)
+  value = ok(2)
+  exit(0)
+}
