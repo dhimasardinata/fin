@@ -173,8 +173,9 @@ function Invoke-ClosureCase {
 
     $isWindowsTarget = ($Target -eq "x86_64-windows-pe")
     $ext = if ($isWindowsTarget) { ".exe" } else { "" }
-    $gen1 = Join-Path $runWorkspace ("gen1-{0}{1}" -f $CaseId, $ext)
-    $gen2 = Join-Path $runWorkspace ("gen2-{0}{1}" -f $CaseId, $ext)
+    $caseToken = "{0}-{1}" -f $runToken, $CaseId
+    $gen1 = Join-Path $runWorkspace ("gen1-{0}{1}" -f $caseToken, $ext)
+    $gen2 = Join-Path $runWorkspace ("gen2-{0}{1}" -f $caseToken, $ext)
 
     & $fin build --src $sourceForFin --out $gen1 --target $Target --pipeline $Pipeline
     & $fin build --src $sourceForFin --out $gen2 --target $Target --pipeline $Pipeline
