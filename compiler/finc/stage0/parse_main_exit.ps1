@@ -206,7 +206,7 @@ function Parse-Expr {
 # <expr> := <u8-literal> | <ident> | move(<ident>) | ok(<expr>) | err(<expr>) | try(<expr>)
 # <type> := u8 | Result<u8,u8>
 # with optional semicolons and line comments (# or //).
-$programPattern = '(?s)^\s*fn\s+main\s*\(\s*\)\s*(?:->\s*([A-Za-z_][A-Za-z0-9_]*))?\s*\{\s*(.*?)\s*\}\s*$'
+$programPattern = '(?s)^\s*fn\s+main\s*\(\s*\)\s*(?:->\s*([^\{]+?))?\s*\{\s*(.*?)\s*\}\s*$'
 $programMatch = [regex]::Match($raw, $programPattern)
 if (-not $programMatch.Success) {
     Fail-Parse "expected entrypoint pattern fn main() [-> <type>] { ... }"
@@ -218,6 +218,9 @@ $declaredMainReturnType = if ([string]::IsNullOrWhiteSpace($declaredMainReturnTy
 }
 else {
     Parse-TypeAnnotation -TypeText $declaredMainReturnTypeRaw
+}
+if (-not [string]::IsNullOrWhiteSpace($declaredMainReturnType) -and [string]$declaredMainReturnType -ne "u8") {
+    Fail-Parse ("entrypoint return type must be u8 in stage0 bootstrap, found {0}" -f $declaredMainReturnType)
 }
 
 $body = $programMatch.Groups[2].Value

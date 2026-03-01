@@ -97,6 +97,7 @@ Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_undef
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_assign_immutable.fn" -ExpectedMessagePart "cannot assign to immutable binding 'code'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_unsupported_type_annotation.fn" -ExpectedMessagePart "unsupported type annotation 'i32'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_unsupported_return_annotation.fn" -ExpectedMessagePart "unsupported type annotation 'i32'"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_result_return_annotation.fn" -ExpectedMessagePart "entrypoint return type must be u8 in stage0 bootstrap, found Result<u8,u8>"
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_try_missing_expression.fn"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_missing_expression.fn" -ExpectedMessagePart "try(...) requires an inner expression"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_ok_missing_expression.fn" -ExpectedMessagePart "ok(...) requires an inner expression"

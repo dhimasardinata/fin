@@ -1,0 +1,3 @@
+fn main() -> Result<u8,u8> {
+  exit(ok(1))
+}
