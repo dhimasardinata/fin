@@ -150,7 +150,7 @@ try {
     Assert-True -Condition ([bool]$invalidStatus.Valid) -Message "Expected repaired closure metadata to be valid."
     Assert-True -Condition ([bool]$invalidStatus.Active) -Message "Expected repaired closure metadata to resolve active owner."
 
-    # Case 3: keep mode bypasses stale-prune cleanup.
+    # Case 3: keep mode bypasses stale-prune cleanup across consecutive runs.
     $keepBypassStaleDir = Join-Path $closureRoot "run-999999-keep-bypass-stale"
     New-Item -ItemType Directory -Path $keepBypassStaleDir -Force | Out-Null
     Set-WorkspaceStale -Path $keepBypassStaleDir
@@ -159,6 +159,11 @@ try {
     $env:FIN_KEEP_CLOSURE_RUNS = "1"
     & $closureCheck -OutDir $closureRoot | Out-Null
     Assert-True -Condition (Test-Path $keepBypassStaleDir) -Message "Expected stale closure dir to be retained when FIN_KEEP_CLOSURE_RUNS=1."
+
+    # Keep-mode bypass must remain stable across repeated invocations.
+    Set-WorkspaceStale -Path $keepBypassStaleDir
+    & $closureCheck -OutDir $closureRoot | Out-Null
+    Assert-True -Condition (Test-Path $keepBypassStaleDir) -Message "Expected stale closure dir to remain retained across consecutive runs when FIN_KEEP_CLOSURE_RUNS=1."
 
     Remove-Item Env:FIN_KEEP_CLOSURE_RUNS -ErrorAction SilentlyContinue
     Remove-Item -Recurse -Force $keepBypassStaleDir -ErrorAction SilentlyContinue
