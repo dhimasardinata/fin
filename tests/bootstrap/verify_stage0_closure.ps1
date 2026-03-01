@@ -356,14 +356,6 @@ function Invoke-ClosureWorkspacePrune {
         [string]$ClosureRoot
     )
 
-    $keepClosureRuns = [string]$env:FIN_KEEP_CLOSURE_RUNS
-    if (-not [string]::IsNullOrWhiteSpace($keepClosureRuns)) {
-        if ($keepClosureRuns -ne "1") {
-            throw ("FIN_KEEP_CLOSURE_RUNS must be 1 when set, found: {0}" -f $keepClosureRuns)
-        }
-        return
-    }
-
     [int]$staleHours = 24
     if (-not [string]::IsNullOrWhiteSpace($env:FIN_CLOSURE_STALE_HOURS)) {
         [int]$parsedHours = 0
@@ -371,6 +363,14 @@ function Invoke-ClosureWorkspacePrune {
             throw ("FIN_CLOSURE_STALE_HOURS must be a positive integer, found: {0}" -f $env:FIN_CLOSURE_STALE_HOURS)
         }
         $staleHours = $parsedHours
+    }
+
+    $keepClosureRuns = [string]$env:FIN_KEEP_CLOSURE_RUNS
+    if (-not [string]::IsNullOrWhiteSpace($keepClosureRuns)) {
+        if ($keepClosureRuns -ne "1") {
+            throw ("FIN_KEEP_CLOSURE_RUNS must be 1 when set, found: {0}" -f $keepClosureRuns)
+        }
+        return
     }
 
     $staleCutoffUtc = (Get-Date).ToUniversalTime().AddHours(-1 * $staleHours)
