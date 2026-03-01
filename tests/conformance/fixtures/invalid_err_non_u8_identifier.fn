@@ -1,0 +1,5 @@
+fn main() {
+  let value: Result<u8,u8> = ok(1)
+  let wrapped = err(value)
+  exit(0)
+}
