@@ -1,0 +1,6 @@
+fn main() {
+    let value = 1
+    let taken = move(value)
+    drop(value)
+    exit(taken)
+}

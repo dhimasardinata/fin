@@ -73,6 +73,7 @@ if (-not $SkipDoctor) {
 & $fin build --src tests/conformance/fixtures/main_exit_result_typed_binding.fn --out artifacts/test-exit14
 & $fin build --src tests/conformance/fixtures/main_drop_unused.fn --out artifacts/test-exit15
 & $fin build --src tests/conformance/fixtures/main_move_binding.fn --out artifacts/test-exit16
+& $fin build --src tests/conformance/fixtures/main_move_reinit_var.fn --out artifacts/test-exit17
 
 if (-not $SkipRun) {
     & $fin run --no-build --out artifacts/test-exit0 --expect-exit 0
@@ -87,6 +88,7 @@ if (-not $SkipRun) {
         & $fin run --no-build --out artifacts/test-exit14 --expect-exit 14
         & $fin run --no-build --out artifacts/test-exit15 --expect-exit 15
         & $fin run --no-build --out artifacts/test-exit16 --expect-exit 16
+        & $fin run --no-build --out artifacts/test-exit17 --expect-exit 17
     }
 }
 
