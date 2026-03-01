@@ -14,6 +14,7 @@
   - tests/conformance/fixtures/main_exit_typed_u8.fn
   - tests/conformance/fixtures/main_exit_signature_u8.fn
   - tests/conformance/fixtures/main_exit_result_typed_binding.fn
+  - tests/conformance/fixtures/invalid_result_return_annotation.fn
   - tests/conformance/fixtures/invalid_result_annotation_mismatch.fn
   - tests/conformance/fixtures/invalid_unsupported_result_annotation.fn
   - tests/conformance/fixtures/invalid_unsupported_type_annotation.fn
@@ -46,7 +47,8 @@ Current stage0 implementation delta:
 6. Optional entrypoint boundary annotation is accepted on stage0 signature:
    - `fn main() -> u8 { ... }`
 7. Unsupported entrypoint return annotations are rejected with deterministic parse diagnostics.
-8. Conformance now asserts deterministic message substrings for type mismatch and unsupported type/return annotations.
+8. `fn main() -> Result<u8,u8>` is explicitly rejected in stage0 with deterministic boundary diagnostic; entrypoint return remains `u8` only.
+9. Conformance now asserts deterministic message substrings for type mismatch and unsupported type/return annotations.
 
 ## Alternatives
 
@@ -64,7 +66,7 @@ Compatibility impact must be documented before Implemented status.
 
 Current checks:
 
-1. `tests/conformance/verify_stage0_grammar.ps1` validates typed binding/signature success, `Result<u8,u8>` typed binding success, annotation mismatch failure, and unsupported annotation rejection with deterministic message-substring assertions.
+1. `tests/conformance/verify_stage0_grammar.ps1` validates typed binding/signature success, `Result<u8,u8>` typed binding success, `Result<u8,u8>` entrypoint return rejection, annotation mismatch failure, and unsupported annotation rejection with deterministic message-substring assertions.
 2. `tests/run_stage0_suite.ps1` compiles typed fixtures (`main_exit_typed_u8.fn`, `main_exit_signature_u8.fn`, `main_exit_result_typed_binding.fn`) in aggregated stage0 flow.
 
 Acceptance criteria listed above remain normative for Implemented status.

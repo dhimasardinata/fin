@@ -33,6 +33,7 @@ Stage0 conformance checks:
 - Core grammar invalid fixtures above are also assertion-checked for deterministic diagnostic message text in `verify_stage0_grammar.ps1`.
 - `fixtures/invalid_unsupported_type_annotation.fn`: invalid source, parser must reject unsupported type annotations.
 - `fixtures/invalid_unsupported_return_annotation.fn`: invalid source, parser must reject unsupported entrypoint return annotations.
+- `fixtures/invalid_result_return_annotation.fn`: invalid source, parser must reject `fn main() -> Result<u8,u8>` in stage0 (entrypoint return boundary remains `u8` only).
 - `fixtures/invalid_try_missing_expression.fn`: invalid source, parser must reject empty `try()` usage.
 - `fixtures/invalid_ok_missing_expression.fn`: invalid source, parser must reject empty `ok()` usage.
 - `fixtures/invalid_err_missing_expression.fn`: invalid source, parser must reject empty `err()` usage.
