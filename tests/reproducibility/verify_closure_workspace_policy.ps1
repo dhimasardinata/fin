@@ -100,6 +100,12 @@ try {
     Assert-Throws -Action { & $closureCheck -OutDir $closureRoot } -Message "Expected invalid FIN_CLOSURE_STALE_HOURS to fail."
     Remove-Item Env:FIN_CLOSURE_STALE_HOURS -ErrorAction SilentlyContinue
 
+    $env:FIN_KEEP_CLOSURE_RUNS = "1"
+    $env:FIN_CLOSURE_STALE_HOURS = "0"
+    Assert-Throws -Action { & $closureCheck -OutDir $closureRoot } -Message "Expected invalid FIN_CLOSURE_STALE_HOURS to fail even when FIN_KEEP_CLOSURE_RUNS=1."
+    Remove-Item Env:FIN_KEEP_CLOSURE_RUNS -ErrorAction SilentlyContinue
+    Remove-Item Env:FIN_CLOSURE_STALE_HOURS -ErrorAction SilentlyContinue
+
     # Case 2: stale pruning with owner metadata safety and legacy fallback/backfill.
     $activeProc = Start-Process -FilePath $pwshPath -ArgumentList "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Seconds 40" -PassThru
     $activePid = $activeProc.Id
