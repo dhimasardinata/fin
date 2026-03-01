@@ -8,7 +8,9 @@ Stage0 conformance checks:
 - `fixtures/main_exit_var_assign.fn`: valid source with `var` mutation before exit.
 - `fixtures/main_exit_comments.fn`: valid source with `#` and `//` comments.
 - `fixtures/main_exit_typed_u8.fn`: valid source with explicit `: u8` binding annotations.
+- `fixtures/main_exit_signature_u8.fn`: valid source with explicit `fn main() -> u8` boundary annotation.
 - `fixtures/invalid_missing_main.fn`: invalid source, parser must reject.
 - `fixtures/invalid_undefined_identifier.fn`: invalid source, parser must reject undefined identifier use.
 - `fixtures/invalid_assign_immutable.fn`: invalid source, parser must reject assignment to `let`.
 - `fixtures/invalid_unsupported_type_annotation.fn`: invalid source, parser must reject unsupported type annotations.
+- `fixtures/invalid_unsupported_return_annotation.fn`: invalid source, parser must reject unsupported entrypoint return annotations.

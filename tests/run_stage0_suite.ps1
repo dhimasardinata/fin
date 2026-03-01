@@ -66,6 +66,7 @@ if (-not $SkipDoctor) {
 & $fin build --src tests/conformance/fixtures/main_exit7.fn --out artifacts/test-exit7
 & $fin build --src tests/conformance/fixtures/main_exit_var_assign.fn --out artifacts/test-exit8
 & $fin build --src tests/conformance/fixtures/main_exit_typed_u8.fn --out artifacts/test-exit9
+& $fin build --src tests/conformance/fixtures/main_exit_signature_u8.fn --out artifacts/test-exit10
 
 if (-not $SkipRun) {
     & $fin run --no-build --out artifacts/test-exit0 --expect-exit 0
@@ -73,6 +74,7 @@ if (-not $SkipRun) {
         & $fin run --no-build --out artifacts/test-exit7 --expect-exit 7
         & $fin run --no-build --out artifacts/test-exit8 --expect-exit 8
         & $fin run --no-build --out artifacts/test-exit9 --expect-exit 9
+        & $fin run --no-build --out artifacts/test-exit10 --expect-exit 10
     }
 }
 

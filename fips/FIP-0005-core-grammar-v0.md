@@ -26,7 +26,7 @@ This proposal is part of the Fin independent-toolchain baseline and is required 
 
 Current stage0 subset grammar:
 
-`fn main() { <stmt>* }`
+`fn main() [-> u8] { <stmt>* }`
 
 `<stmt>` (stage0):
 
@@ -45,11 +45,11 @@ Accepted stage0 tolerances:
 1. Arbitrary whitespace/newlines.
 2. Optional semicolon statement separators.
 3. Line comments using `#` and `//`.
-4. Entry point restricted to `fn main()`.
+4. Entry point restricted to `fn main()` with optional `-> u8` annotation.
 
 This subset is intentionally minimal and acts as the first executable parser checkpoint.
 
-Note: stage0 optional binding type-annotation forms (`let/var <ident>: u8 = <expr>`) are introduced under `FIP-0006`.
+Note: stage0 optional binding type-annotation forms (`let/var <ident>: u8 = <expr>`) and optional entrypoint return annotation (`fn main() -> u8`) are introduced under `FIP-0006`.
 
 ## Alternatives
 

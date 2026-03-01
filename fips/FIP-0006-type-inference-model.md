@@ -12,7 +12,9 @@
   - compiler/finc/stage0/parse_main_exit.ps1
   - tests/conformance/verify_stage0_grammar.ps1
   - tests/conformance/fixtures/main_exit_typed_u8.fn
+  - tests/conformance/fixtures/main_exit_signature_u8.fn
   - tests/conformance/fixtures/invalid_unsupported_type_annotation.fn
+  - tests/conformance/fixtures/invalid_unsupported_return_annotation.fn
   - tests/run_stage0_suite.ps1
 - acceptance:
   - Inference test corpus passes with stable diagnostics.
@@ -36,6 +38,9 @@ Current stage0 implementation delta:
 3. Stage0 parser validates annotation set and currently accepts only `u8`.
 4. Unsupported annotations are rejected with deterministic parse diagnostics.
 5. Assignment and `exit(...)` expression validation uses inferred/declared type metadata (stage0 currently `u8` only).
+6. Optional entrypoint boundary annotation is accepted on stage0 signature:
+   - `fn main() -> u8 { ... }`
+7. Unsupported entrypoint return annotations are rejected with deterministic parse diagnostics.
 
 ## Alternatives
 
@@ -53,7 +58,7 @@ Compatibility impact must be documented before Implemented status.
 
 Current checks:
 
-1. `tests/conformance/verify_stage0_grammar.ps1` validates typed binding success and unsupported annotation rejection.
-2. `tests/run_stage0_suite.ps1` compiles and executes typed fixture (`main_exit_typed_u8.fn`) in aggregated stage0 flow.
+1. `tests/conformance/verify_stage0_grammar.ps1` validates typed binding/signature success and unsupported annotation rejection.
+2. `tests/run_stage0_suite.ps1` compiles typed fixtures (`main_exit_typed_u8.fn`, `main_exit_signature_u8.fn`) in aggregated stage0 flow.
 
 Acceptance criteria listed above remain normative for Implemented status.
