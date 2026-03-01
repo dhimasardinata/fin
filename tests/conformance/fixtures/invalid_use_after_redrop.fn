@@ -1,0 +1,7 @@
+fn main() {
+  var value = 1
+  drop(value)
+  value = 21
+  drop(value)
+  exit(value)
+}

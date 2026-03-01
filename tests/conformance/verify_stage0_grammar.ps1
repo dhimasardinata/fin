@@ -83,6 +83,7 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_move_reinit_var.
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_drop_reinit_var.fn" -ExpectedExit 18
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_move_reinit_move_again.fn" -ExpectedExit 19
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_drop_reinit_move.fn" -ExpectedExit 20
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_drop_reinit_drop_reinit.fn" -ExpectedExit 22
 
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_missing_main.fn"
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_undefined_identifier.fn"
@@ -98,6 +99,7 @@ Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_borrow_refere
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_dereference_expr.fn"
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_borrow_type_annotation.fn"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_use_after_drop.fn" -ExpectedMessagePart "use after drop for identifier 'value'"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_use_after_redrop.fn" -ExpectedMessagePart "use after drop for identifier 'value'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_double_drop.fn" -ExpectedMessagePart "double drop for identifier 'value'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_assign_after_drop.fn" -ExpectedMessagePart "cannot reinitialize dropped immutable binding 'value'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_assign_after_move_immutable.fn" -ExpectedMessagePart "cannot reinitialize moved immutable binding 'value'"
