@@ -19,6 +19,7 @@ Stage0 conformance checks:
 - `fixtures/main_drop_reinit_var.fn`: valid source with stage0 `drop(<ident>)` followed by mutable binding re-initialization.
 - `fixtures/main_move_reinit_move_again.fn`: valid source showing `move -> mutable re-init -> move` lifecycle transition chain.
 - `fixtures/main_drop_reinit_move.fn`: valid source showing `drop -> mutable re-init -> move` lifecycle transition chain.
+- `fixtures/main_drop_reinit_drop_reinit.fn`: valid source showing repeated `drop -> mutable re-init` cycles.
 - `fixtures/invalid_missing_main.fn`: invalid source, parser must reject.
 - `fixtures/invalid_undefined_identifier.fn`: invalid source, parser must reject undefined identifier use.
 - `fixtures/invalid_assign_immutable.fn`: invalid source, parser must reject assignment to `let`.
@@ -33,6 +34,7 @@ Stage0 conformance checks:
 - `fixtures/invalid_dereference_expr.fn`: invalid source, parser must reject stage0 dereference expression syntax (`*x`).
 - `fixtures/invalid_borrow_type_annotation.fn`: invalid source, parser must reject ownership/borrowing type annotations in stage0 (`&u8`).
 - `fixtures/invalid_use_after_drop.fn`: invalid source, parser must reject identifier usage after `drop(<ident>)`.
+- `fixtures/invalid_use_after_redrop.fn`: invalid source, parser must reject identifier usage after a second drop in repeated lifecycle cycles.
 - `fixtures/invalid_double_drop.fn`: invalid source, parser must reject repeated `drop(<ident>)` on the same binding.
 - `fixtures/invalid_assign_after_drop.fn`: invalid source, parser must reject re-initialization assignment to a dropped immutable binding.
 - `fixtures/invalid_assign_after_move_immutable.fn`: invalid source, parser must reject re-initialization assignment to an immutable binding after `move(<ident>)`.
