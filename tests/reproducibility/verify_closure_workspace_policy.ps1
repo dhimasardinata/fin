@@ -149,6 +149,19 @@ try {
     Assert-True -Condition ([bool]$legacyStatus.Active) -Message "Expected backfilled legacy closure metadata to resolve active owner."
     Assert-True -Condition ([bool]$invalidStatus.Valid) -Message "Expected repaired closure metadata to be valid."
     Assert-True -Condition ([bool]$invalidStatus.Active) -Message "Expected repaired closure metadata to resolve active owner."
+
+    # Case 3: keep mode bypasses stale-prune cleanup.
+    $keepBypassStaleDir = Join-Path $closureRoot "run-999999-keep-bypass-stale"
+    New-Item -ItemType Directory -Path $keepBypassStaleDir -Force | Out-Null
+    Set-WorkspaceStale -Path $keepBypassStaleDir
+
+    $env:FIN_CLOSURE_STALE_HOURS = "1"
+    $env:FIN_KEEP_CLOSURE_RUNS = "1"
+    & $closureCheck -OutDir $closureRoot | Out-Null
+    Assert-True -Condition (Test-Path $keepBypassStaleDir) -Message "Expected stale closure dir to be retained when FIN_KEEP_CLOSURE_RUNS=1."
+
+    Remove-Item Env:FIN_KEEP_CLOSURE_RUNS -ErrorAction SilentlyContinue
+    Remove-Item -Recurse -Force $keepBypassStaleDir -ErrorAction SilentlyContinue
 }
 finally {
     if ($null -eq $savedKeep) {
