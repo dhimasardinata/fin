@@ -102,6 +102,7 @@ function Parse-KeyValueFile {
     }
 
     $map = @{}
+    $orderedKeys = [System.Collections.Generic.List[string]]::new()
     foreach ($line in ([regex]::Split((Get-Content -Path $Path -Raw), "`r?`n"))) {
         $trimmed = $line.Trim()
         if ([string]::IsNullOrWhiteSpace($trimmed)) { continue }
@@ -109,9 +110,17 @@ function Parse-KeyValueFile {
         if ($trimmed -notmatch '^([A-Za-z0-9_.-]+)\s*=\s*(.+)$') {
             throw "Invalid key-value line in ${Path}: $trimmed"
         }
-        $map[$Matches[1]] = $Matches[2].Trim()
+        $key = $Matches[1]
+        if ($map.ContainsKey($key)) {
+            throw "Duplicate key in ${Path}: $key"
+        }
+        $map[$key] = $Matches[2].Trim()
+        $orderedKeys.Add($key)
     }
-    return $map
+    return [pscustomobject]@{
+        Map = $map
+        OrderedKeys = $orderedKeys.ToArray()
+    }
 }
 
 if ($RequireSeedSet) {
@@ -254,7 +263,9 @@ if ($VerifyBaseline) {
         $baselinePath = [System.IO.Path]::GetFullPath((Join-Path $repoRoot $baselinePath))
     }
 
-    $expected = Parse-KeyValueFile -Path $baselinePath
+    $expectedParsed = Parse-KeyValueFile -Path $baselinePath
+    $expected = $expectedParsed.Map
+    $expectedKeyOrder = @($expectedParsed.OrderedKeys)
     $requiredKeys = @(
         "closure_mode",
         "source",
@@ -290,6 +301,9 @@ if ($VerifyBaseline) {
     $missing = @()
     $mismatch = @()
     $unexpected = @()
+    $orderMismatch = $false
+    $requiredOrder = ($requiredKeys -join ",")
+    $actualOrder = ($expectedKeyOrder -join ",")
     foreach ($k in $requiredKeys) {
         if (-not $expected.ContainsKey($k)) {
             $missing += $k
@@ -306,7 +320,11 @@ if ($VerifyBaseline) {
         }
     }
 
-    if ($missing.Count -gt 0 -or $mismatch.Count -gt 0 -or $unexpected.Count -gt 0) {
+    if ($missing.Count -eq 0 -and $unexpected.Count -eq 0 -and $actualOrder -ne $requiredOrder) {
+        $orderMismatch = $true
+    }
+
+    if ($missing.Count -gt 0 -or $mismatch.Count -gt 0 -or $unexpected.Count -gt 0 -or $orderMismatch) {
         $issues = @()
         if ($missing.Count -gt 0) {
             $issues += ("missing_keys={0}" -f ($missing -join ","))
@@ -316,6 +334,9 @@ if ($VerifyBaseline) {
         }
         if ($unexpected.Count -gt 0) {
             $issues += ("unexpected_keys={0}" -f ($unexpected -join ","))
+        }
+        if ($orderMismatch) {
+            $issues += ("key_order_expected={0} actual={1}" -f $requiredOrder, $actualOrder)
         }
         Write-Error ("Closure baseline mismatch in {0}: {1}" -f $baselinePath, ($issues -join " | "))
         exit 1
