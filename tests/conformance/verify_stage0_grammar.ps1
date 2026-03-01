@@ -58,5 +58,8 @@ Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_try_err_resul
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_try_non_result_literal.fn"
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_result_annotation_mismatch.fn"
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_unsupported_result_annotation.fn"
+Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_borrow_reference_expr.fn"
+Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_dereference_expr.fn"
+Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_borrow_type_annotation.fn"
 
 Write-Host "Stage0 grammar conformance check passed."
