@@ -31,7 +31,7 @@ Proxy rule:
 5. Self-validate emitted witness contract before baseline checks (strict keyset matching, duplicate-key rejection, canonical key-order validation, and deterministic value checks).
 6. Verify witness keys/values against committed baseline `seed/stage0-closure-baseline.txt` with strict keyset matching, duplicate-key rejection, and canonical key-order validation.
 7. Use a run-scoped closure workspace under `artifacts/closure` with run-tokenized output basenames so concurrent closure runs do not collide on output filenames or stage0 intermediate finobj temp names.
-8. Prune stale `run-*` closure workspaces with age gating (default 24h; override via `FIN_CLOSURE_STALE_HOURS`; disable only via `FIN_KEEP_CLOSURE_RUNS=1`; invalid keep values fail fast; invalid stale-hours values fail fast even when keep mode is set) while protecting active-owner directories via owner metadata (`pid` + `start_utc`) and legacy PID fallback/backfill; malformed run names are treated as inactive and pruned when stale.
+8. Prune stale `run-*` closure workspaces with age gating (default 24h; override via `FIN_CLOSURE_STALE_HOURS`; disable only via `FIN_KEEP_CLOSURE_RUNS=1`; invalid keep values fail fast; invalid stale-hours values fail fast even when keep mode is set) while protecting active-owner directories via owner metadata (`pid` + `start_utc`) and legacy PID fallback/backfill; malformed run names are treated as inactive and pruned when stale. Non-`run-*` directories are out of prune scope.
 
 ## Constraints
 
