@@ -49,6 +49,8 @@ Accepted stage0 tolerances:
 
 This subset is intentionally minimal and acts as the first executable parser checkpoint.
 
+Note: stage0 optional binding type-annotation forms (`let/var <ident>: u8 = <expr>`) are introduced under `FIP-0006`.
+
 ## Alternatives
 
 Alternatives are considered in milestone planning and linked PR discussions. Rejected alternatives must be listed here when status moves beyond Review.

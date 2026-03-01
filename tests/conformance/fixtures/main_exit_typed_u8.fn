@@ -1,0 +1,6 @@
+fn main() {
+  let base: u8 = 7
+  var out: u8 = base
+  out = 9
+  exit(out)
+}
