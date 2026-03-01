@@ -1,0 +1,7 @@
+fn main() -> u8 {
+  var value: Result<u8,u8> = ok(1)
+  let first = move(value)
+  value = ok(26)
+  let second = move(value)
+  exit(try(second))
+}
