@@ -310,15 +310,15 @@ foreach ($stmt in $statements) {
             Fail-Parse "assignment to undefined identifier '$name'"
         }
         $targetState = [string]$lifecycleStates[$name]
-        if ($targetState -eq "dropped") {
-            Fail-Parse "cannot assign to dropped binding '$name'"
-        }
-        if (($targetState -ne "alive") -and ($targetState -ne "moved")) {
+        if (($targetState -ne "alive") -and ($targetState -ne "moved") -and ($targetState -ne "dropped")) {
             Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $targetState, $name)
         }
         if (-not [bool]$mutable[$name]) {
             if ($targetState -eq "moved") {
                 Fail-Parse "cannot reinitialize moved immutable binding '$name'"
+            }
+            if ($targetState -eq "dropped") {
+                Fail-Parse "cannot reinitialize dropped immutable binding '$name'"
             }
             Fail-Parse "cannot assign to immutable binding '$name'"
         }
@@ -328,8 +328,20 @@ foreach ($stmt in $statements) {
         if (($targetState -eq "alive") -and (($postExprTargetState -eq "dropped") -or ($postExprTargetState -eq "moved"))) {
             Fail-Parse ("assignment target '{0}' moved or dropped during expression evaluation" -f $name)
         }
-        if (($postExprTargetState -ne "alive") -and ($postExprTargetState -ne "moved")) {
-            Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $postExprTargetState, $name)
+        if ($targetState -eq "alive") {
+            if ($postExprTargetState -ne "alive") {
+                Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $postExprTargetState, $name)
+            }
+        }
+        elseif ($targetState -eq "moved") {
+            if (($postExprTargetState -ne "moved") -and ($postExprTargetState -ne "alive")) {
+                Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $postExprTargetState, $name)
+            }
+        }
+        else {
+            if (($postExprTargetState -ne "dropped") -and ($postExprTargetState -ne "alive")) {
+                Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $postExprTargetState, $name)
+            }
         }
         $targetType = [string]$types[$name]
         if ([string]$exprValue.Type -ne $targetType) {

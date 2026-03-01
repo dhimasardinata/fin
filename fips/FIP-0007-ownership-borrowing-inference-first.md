@@ -15,6 +15,7 @@
   - tests/conformance/fixtures/main_drop_unused.fn
   - tests/conformance/fixtures/main_move_binding.fn
   - tests/conformance/fixtures/main_move_reinit_var.fn
+  - tests/conformance/fixtures/main_drop_reinit_var.fn
   - tests/conformance/fixtures/invalid_borrow_reference_expr.fn
   - tests/conformance/fixtures/invalid_dereference_expr.fn
   - tests/conformance/fixtures/invalid_borrow_type_annotation.fn
@@ -51,14 +52,15 @@ Current stage0 implementation delta:
 5. Identifier use after `drop(<ident>)` or `move(<ident>)` is rejected deterministically with distinct diagnostics.
 6. Double-drop and double-move are rejected deterministically.
 7. `drop(<ident>)` after move and `move(<ident>)` after drop are rejected deterministically.
-8. Assignment-to-dropped-binding and self-move assignment hazards are rejected deterministically.
-9. Moved mutable bindings can be re-initialized by assignment (lifecycle returns to `alive` after assignment), while moved immutable bindings are rejected with explicit diagnostics.
-10. Drop/move on undefined identifiers are rejected deterministically.
-11. Expression parser rejects borrow/reference syntax (`&expr`) with deterministic diagnostics.
-12. Expression parser rejects dereference syntax (`*expr`) with deterministic diagnostics.
-13. Type-annotation parser rejects ownership/borrowing-prefixed type annotations in stage0 bootstrap.
-14. Conformance suite now asserts deterministic ownership/lifecycle diagnostics by message substring for use-after-drop/move and invalid transition cases.
-15. This slice creates explicit parser/test safety gates while ownership inference and borrow-check semantics are still evolving.
+8. Self-move assignment hazards are rejected deterministically.
+9. Moved and dropped mutable bindings can be re-initialized by assignment (lifecycle returns to `alive` after assignment).
+10. Moved and dropped immutable bindings reject re-initialization with explicit deterministic diagnostics.
+11. Drop/move on undefined identifiers are rejected deterministically.
+12. Expression parser rejects borrow/reference syntax (`&expr`) with deterministic diagnostics.
+13. Expression parser rejects dereference syntax (`*expr`) with deterministic diagnostics.
+14. Type-annotation parser rejects ownership/borrowing-prefixed type annotations in stage0 bootstrap.
+15. Conformance suite now asserts deterministic ownership/lifecycle diagnostics by message substring for use-after-drop/move and invalid transition cases.
+16. This slice creates explicit parser/test safety gates while ownership inference and borrow-check semantics are still evolving.
 
 ## Alternatives
 
@@ -76,7 +78,7 @@ Compatibility impact must be documented before Implemented status.
 
 Current checks:
 
-1. `tests/conformance/verify_stage0_grammar.ps1` validates `main_drop_unused.fn`, `main_move_binding.fn`, and `main_move_reinit_var.fn`; it asserts parse failures for use-after-drop/move, double-drop/move, drop-after-move, move-after-drop, assign-after-drop, assign-after-move-immutable, undefined-drop/move, self-move assignment, borrow-reference, dereference, and borrow-type fixtures, with message-substring checks for ownership/lifecycle diagnostics.
+1. `tests/conformance/verify_stage0_grammar.ps1` validates `main_drop_unused.fn`, `main_move_binding.fn`, `main_move_reinit_var.fn`, and `main_drop_reinit_var.fn`; it asserts parse failures for use-after-drop/move, double-drop/move, drop-after-move, move-after-drop, assign-after-drop-immutable, assign-after-move-immutable, undefined-drop/move, self-move assignment, borrow-reference, dereference, and borrow-type fixtures, with message-substring checks for ownership/lifecycle diagnostics.
 2. `tests/run_stage0_suite.ps1` invokes `tests/conformance/verify_stage0_grammar.ps1` in the stage0 aggregate suite.
 
 Acceptance criteria listed above remain normative for Implemented status.
