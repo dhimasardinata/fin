@@ -1,0 +1,5 @@
+fn main() {
+  let value: Result<u8,u8> = ok(30)
+  let unwrapped = try(move(value))
+  exit(unwrapped)
+}

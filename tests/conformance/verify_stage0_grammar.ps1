@@ -77,6 +77,7 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_literal
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_identifier.fn" -ExpectedExit 12
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_ok_result.fn" -ExpectedExit 13
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_result_typed_binding.fn" -ExpectedExit 14
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_move_ok_result.fn" -ExpectedExit 30
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_drop_unused.fn" -ExpectedExit 15
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_move_binding.fn" -ExpectedExit 16
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_move_reinit_var.fn" -ExpectedExit 17
@@ -106,6 +107,7 @@ Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_try_err_resul
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_try_non_result_literal.fn"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_err_result.fn" -ExpectedMessagePart "try(err(...)) is not supported in stage0 bootstrap (would require hidden control flow)"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_err_identifier.fn" -ExpectedMessagePart "try(err(...)) is not supported in stage0 bootstrap (would require hidden control flow)"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_move_err_identifier.fn" -ExpectedMessagePart "try(err(...)) is not supported in stage0 bootstrap (would require hidden control flow)"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_non_result_literal.fn" -ExpectedMessagePart "try(...) expects Result<u8,u8> in stage0 bootstrap, found u8"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_non_result_identifier.fn" -ExpectedMessagePart "try(...) expects Result<u8,u8> in stage0 bootstrap, found u8"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_result_annotation_mismatch.fn" -ExpectedMessagePart "type mismatch for binding 'value': expected Result<u8,u8>, found u8"

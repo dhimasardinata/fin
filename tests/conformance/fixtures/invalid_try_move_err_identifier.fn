@@ -1,0 +1,4 @@
+fn main() {
+  let value: Result<u8,u8> = err(31)
+  exit(try(move(value)))
+}
