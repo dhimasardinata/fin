@@ -21,6 +21,7 @@
   - tests/conformance/fixtures/invalid_use_after_drop.fn
   - tests/conformance/fixtures/invalid_double_drop.fn
   - tests/conformance/fixtures/invalid_assign_after_drop.fn
+  - tests/conformance/fixtures/invalid_assign_after_move_immutable.fn
   - tests/conformance/fixtures/invalid_drop_undefined.fn
   - tests/conformance/fixtures/invalid_use_after_move.fn
   - tests/conformance/fixtures/invalid_double_move.fn
@@ -51,7 +52,7 @@ Current stage0 implementation delta:
 6. Double-drop and double-move are rejected deterministically.
 7. `drop(<ident>)` after move and `move(<ident>)` after drop are rejected deterministically.
 8. Assignment-to-dropped-binding and self-move assignment hazards are rejected deterministically.
-9. Moved mutable bindings can be re-initialized by assignment (lifecycle returns to `alive` after assignment).
+9. Moved mutable bindings can be re-initialized by assignment (lifecycle returns to `alive` after assignment), while moved immutable bindings are rejected with explicit diagnostics.
 10. Drop/move on undefined identifiers are rejected deterministically.
 11. Expression parser rejects borrow/reference syntax (`&expr`) with deterministic diagnostics.
 12. Expression parser rejects dereference syntax (`*expr`) with deterministic diagnostics.
@@ -75,7 +76,7 @@ Compatibility impact must be documented before Implemented status.
 
 Current checks:
 
-1. `tests/conformance/verify_stage0_grammar.ps1` validates `main_drop_unused.fn`, `main_move_binding.fn`, and `main_move_reinit_var.fn`; it asserts parse failures for use-after-drop/move, double-drop/move, drop-after-move, move-after-drop, assign-after-drop, undefined-drop/move, self-move assignment, borrow-reference, dereference, and borrow-type fixtures, with message-substring checks for ownership/lifecycle diagnostics.
+1. `tests/conformance/verify_stage0_grammar.ps1` validates `main_drop_unused.fn`, `main_move_binding.fn`, and `main_move_reinit_var.fn`; it asserts parse failures for use-after-drop/move, double-drop/move, drop-after-move, move-after-drop, assign-after-drop, assign-after-move-immutable, undefined-drop/move, self-move assignment, borrow-reference, dereference, and borrow-type fixtures, with message-substring checks for ownership/lifecycle diagnostics.
 2. `tests/run_stage0_suite.ps1` invokes `tests/conformance/verify_stage0_grammar.ps1` in the stage0 aggregate suite.
 
 Acceptance criteria listed above remain normative for Implemented status.

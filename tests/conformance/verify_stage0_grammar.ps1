@@ -97,6 +97,7 @@ Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_borrow_type_a
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_use_after_drop.fn" -ExpectedMessagePart "use after drop for identifier 'value'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_double_drop.fn" -ExpectedMessagePart "double drop for identifier 'value'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_assign_after_drop.fn" -ExpectedMessagePart "cannot assign to dropped binding 'value'"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_assign_after_move_immutable.fn" -ExpectedMessagePart "cannot reinitialize moved immutable binding 'value'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_drop_undefined.fn" -ExpectedMessagePart "drop for undefined identifier 'value'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_use_after_move.fn" -ExpectedMessagePart "use after move for identifier 'value'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_double_move.fn" -ExpectedMessagePart "double move for identifier 'value'"

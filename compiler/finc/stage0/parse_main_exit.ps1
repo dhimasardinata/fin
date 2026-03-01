@@ -317,6 +317,9 @@ foreach ($stmt in $statements) {
             Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $targetState, $name)
         }
         if (-not [bool]$mutable[$name]) {
+            if ($targetState -eq "moved") {
+                Fail-Parse "cannot reinitialize moved immutable binding '$name'"
+            }
             Fail-Parse "cannot assign to immutable binding '$name'"
         }
 
