@@ -82,7 +82,7 @@ function Parse-Expr {
 }
 
 # Stage0 grammar subset:
-#   fn main() {
+#   fn main() [-> <type>] {
 #     (let|var) <ident> [: <type>] = <expr>;
 #     <ident> = <expr>;
 #     exit(<expr>);
@@ -90,13 +90,21 @@ function Parse-Expr {
 # <expr> := <u8-literal> | <ident>
 # <type> := u8
 # with optional semicolons and line comments (# or //).
-$programPattern = '(?s)^\s*fn\s+main\s*\(\s*\)\s*\{\s*(.*?)\s*\}\s*$'
+$programPattern = '(?s)^\s*fn\s+main\s*\(\s*\)\s*(?:->\s*([A-Za-z_][A-Za-z0-9_]*))?\s*\{\s*(.*?)\s*\}\s*$'
 $programMatch = [regex]::Match($raw, $programPattern)
 if (-not $programMatch.Success) {
-    Fail-Parse "expected entrypoint pattern fn main() { ... }"
+    Fail-Parse "expected entrypoint pattern fn main() [-> <type>] { ... }"
 }
 
-$body = $programMatch.Groups[1].Value
+$declaredMainReturnTypeRaw = $programMatch.Groups[1].Value
+$declaredMainReturnType = if ([string]::IsNullOrWhiteSpace($declaredMainReturnTypeRaw)) {
+    ""
+}
+else {
+    Parse-TypeAnnotation -TypeText $declaredMainReturnTypeRaw
+}
+
+$body = $programMatch.Groups[2].Value
 $withoutSlashComments = [regex]::Replace($body, '(?m)//.*$', '')
 $withoutComments = [regex]::Replace($withoutSlashComments, '(?m)#.*$', '')
 $normalized = $withoutComments -replace ';', "`n"
@@ -194,8 +202,14 @@ foreach ($stmt in $statements) {
 
     if ($stmt -match '^exit\s*\(\s*(.+)\s*\)$') {
         $exprValue = Parse-Expr -Expr $Matches[1] -Values $values -Types $types
-        if ([string]$exprValue.Type -ne "u8") {
-            Fail-Parse ("exit expression type must be u8, found {0}" -f $exprValue.Type)
+        $expectedExitType = if ([string]::IsNullOrWhiteSpace($declaredMainReturnType)) {
+            "u8"
+        }
+        else {
+            [string]$declaredMainReturnType
+        }
+        if ([string]$exprValue.Type -ne $expectedExitType) {
+            Fail-Parse ("exit expression type must be {0}, found {1}" -f $expectedExitType, $exprValue.Type)
         }
         $exitCode = [int]$exprValue.Value
         $haveExit = $true
