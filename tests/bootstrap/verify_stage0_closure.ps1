@@ -123,6 +123,31 @@ function Parse-KeyValueFile {
     }
 }
 
+function Write-TextFileAtomic {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path,
+        [Parameter(Mandatory = $true)]
+        [string]$Value
+    )
+
+    $dir = Split-Path -Parent $Path
+    if ($dir -and -not (Test-Path $dir)) {
+        New-Item -ItemType Directory -Path $dir -Force | Out-Null
+    }
+
+    $tempPath = Join-Path $dir (".tmp-{0}.txt" -f [Guid]::NewGuid().ToString("N"))
+    try {
+        Set-Content -Path $tempPath -Value $Value -NoNewline
+        Move-Item -LiteralPath $tempPath -Destination $Path -Force
+    }
+    finally {
+        if (Test-Path $tempPath) {
+            Remove-Item -LiteralPath $tempPath -Force -ErrorAction SilentlyContinue
+        }
+    }
+}
+
 function Remove-ClosureWorkspaceDirectory {
     param(
         [Parameter(Mandatory = $true)]
@@ -242,17 +267,15 @@ $runToken = "{0}-{1}" -f $PID, [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
 $runWorkspace = Join-Path $outDirFull ("run-" + $runToken)
 New-Item -ItemType Directory -Path $runWorkspace -Force | Out-Null
 
+$latestWitnessPath = Join-Path $outDirFull "stage0-closure-witness.txt"
+$mirrorLatestWitness = $false
 $witnessPath = $Witness
 if ([string]::IsNullOrWhiteSpace($witnessPath)) {
-    $witnessPath = Join-Path $outDirFull "stage0-closure-witness.txt"
+    $witnessPath = Join-Path $runWorkspace "stage0-closure-witness.txt"
+    $mirrorLatestWitness = $true
 }
 elseif (-not [System.IO.Path]::IsPathRooted($witnessPath)) {
     $witnessPath = [System.IO.Path]::GetFullPath((Join-Path $repoRoot $witnessPath))
-}
-
-$witnessDir = Split-Path -Parent $witnessPath
-if ($witnessDir -and -not (Test-Path $witnessDir)) {
-    New-Item -ItemType Directory -Path $witnessDir -Force | Out-Null
 }
 
 function Invoke-ClosureCase {
@@ -335,23 +358,94 @@ if ($seedManifestRaw -match 'sha256\s*=\s*"([^"]+)"') {
     $declaredSeed = $Matches[1]
 }
 
+$requiredKeys = @(
+    "closure_mode",
+    "source",
+    "seed_declared_sha256",
+    "seed_snapshot_sha256",
+    "toolchain_snapshot_sha256",
+    "closure_hash",
+    "linux_direct_sha256",
+    "linux_finobj_sha256",
+    "windows_direct_sha256",
+    "windows_finobj_sha256",
+    "linux_pipeline_parity",
+    "windows_pipeline_parity",
+    "closure_equal"
+)
+
+$actualWitness = @{
+    closure_mode = "stage0-proxy"
+    source = $sourceLabel
+    seed_declared_sha256 = $declaredSeed
+    seed_snapshot_sha256 = $seedSnapshot.Hash
+    toolchain_snapshot_sha256 = $toolchainSnapshot.Hash
+    closure_hash = $closureHash
+    linux_direct_sha256 = $linuxDirect.Generation1Hash
+    linux_finobj_sha256 = $linuxFinobj.Generation1Hash
+    windows_direct_sha256 = $windowsDirect.Generation1Hash
+    windows_finobj_sha256 = $windowsFinobj.Generation1Hash
+    linux_pipeline_parity = $linuxParity.ToString().ToLowerInvariant()
+    windows_pipeline_parity = $windowsParity.ToString().ToLowerInvariant()
+    closure_equal = "true"
+}
+
 $witnessLines = [System.Collections.Generic.List[string]]::new()
-$witnessLines.Add("closure_mode=stage0-proxy")
-$witnessLines.Add(("source={0}" -f $sourceLabel))
-$witnessLines.Add(("seed_declared_sha256={0}" -f $declaredSeed))
-$witnessLines.Add(("seed_snapshot_sha256={0}" -f $seedSnapshot.Hash))
-$witnessLines.Add(("toolchain_snapshot_sha256={0}" -f $toolchainSnapshot.Hash))
-$witnessLines.Add(("closure_hash={0}" -f $closureHash))
-$witnessLines.Add(("linux_direct_sha256={0}" -f $linuxDirect.Generation1Hash))
-$witnessLines.Add(("linux_finobj_sha256={0}" -f $linuxFinobj.Generation1Hash))
-$witnessLines.Add(("windows_direct_sha256={0}" -f $windowsDirect.Generation1Hash))
-$witnessLines.Add(("windows_finobj_sha256={0}" -f $windowsFinobj.Generation1Hash))
-$witnessLines.Add(("linux_pipeline_parity={0}" -f $linuxParity.ToString().ToLowerInvariant()))
-$witnessLines.Add(("windows_pipeline_parity={0}" -f $windowsParity.ToString().ToLowerInvariant()))
-$witnessLines.Add("closure_equal=true")
+foreach ($k in $requiredKeys) {
+    $witnessLines.Add(("{0}={1}" -f $k, ([string]$actualWitness[$k])))
+}
 
 $witnessContent = ($witnessLines.ToArray() -join "`n") + "`n"
-Set-Content -Path $witnessPath -Value $witnessContent -NoNewline
+Write-TextFileAtomic -Path $witnessPath -Value $witnessContent
+
+$witnessParsed = Parse-KeyValueFile -Path $witnessPath
+$witnessMap = $witnessParsed.Map
+$witnessKeyOrder = @($witnessParsed.OrderedKeys)
+$witnessMissing = @()
+$witnessMismatch = @()
+$witnessUnexpected = @()
+$witnessOrderMismatch = $false
+$requiredOrder = ($requiredKeys -join ",")
+$witnessOrder = ($witnessKeyOrder -join ",")
+
+foreach ($k in $requiredKeys) {
+    if (-not $witnessMap.ContainsKey($k)) {
+        $witnessMissing += $k
+        continue
+    }
+
+    if ([string]$witnessMap[$k] -ne [string]$actualWitness[$k]) {
+        $witnessMismatch += ("{0}: expected={1} actual={2}" -f $k, $actualWitness[$k], $witnessMap[$k])
+    }
+}
+
+foreach ($k in ($witnessMap.Keys | Sort-Object)) {
+    if ($requiredKeys -notcontains $k) {
+        $witnessUnexpected += $k
+    }
+}
+
+if ($witnessMissing.Count -eq 0 -and $witnessUnexpected.Count -eq 0 -and $witnessOrder -ne $requiredOrder) {
+    $witnessOrderMismatch = $true
+}
+
+if ($witnessMissing.Count -gt 0 -or $witnessMismatch.Count -gt 0 -or $witnessUnexpected.Count -gt 0 -or $witnessOrderMismatch) {
+    $issues = @()
+    if ($witnessMissing.Count -gt 0) {
+        $issues += ("missing_keys={0}" -f ($witnessMissing -join ","))
+    }
+    if ($witnessMismatch.Count -gt 0) {
+        $issues += ("mismatch={0}" -f ($witnessMismatch -join "; "))
+    }
+    if ($witnessUnexpected.Count -gt 0) {
+        $issues += ("unexpected_keys={0}" -f ($witnessUnexpected -join ","))
+    }
+    if ($witnessOrderMismatch) {
+        $issues += ("key_order_expected={0} actual={1}" -f $requiredOrder, $witnessOrder)
+    }
+    Write-Error ("Closure witness contract mismatch in {0}: {1}" -f $witnessPath, ($issues -join " | "))
+    exit 1
+}
 
 if ($VerifyBaseline) {
     $baselinePath = $Baseline
@@ -362,51 +456,19 @@ if ($VerifyBaseline) {
     $expectedParsed = Parse-KeyValueFile -Path $baselinePath
     $expected = $expectedParsed.Map
     $expectedKeyOrder = @($expectedParsed.OrderedKeys)
-    $requiredKeys = @(
-        "closure_mode",
-        "source",
-        "seed_declared_sha256",
-        "seed_snapshot_sha256",
-        "toolchain_snapshot_sha256",
-        "closure_hash",
-        "linux_direct_sha256",
-        "linux_finobj_sha256",
-        "windows_direct_sha256",
-        "windows_finobj_sha256",
-        "linux_pipeline_parity",
-        "windows_pipeline_parity",
-        "closure_equal"
-    )
-
-    $actual = @{
-        closure_mode = "stage0-proxy"
-        source = $sourceLabel
-        seed_declared_sha256 = $declaredSeed
-        seed_snapshot_sha256 = $seedSnapshot.Hash
-        toolchain_snapshot_sha256 = $toolchainSnapshot.Hash
-        closure_hash = $closureHash
-        linux_direct_sha256 = $linuxDirect.Generation1Hash
-        linux_finobj_sha256 = $linuxFinobj.Generation1Hash
-        windows_direct_sha256 = $windowsDirect.Generation1Hash
-        windows_finobj_sha256 = $windowsFinobj.Generation1Hash
-        linux_pipeline_parity = "true"
-        windows_pipeline_parity = "true"
-        closure_equal = "true"
-    }
 
     $missing = @()
     $mismatch = @()
     $unexpected = @()
     $orderMismatch = $false
-    $requiredOrder = ($requiredKeys -join ",")
-    $actualOrder = ($expectedKeyOrder -join ",")
+    $baselineOrder = ($expectedKeyOrder -join ",")
     foreach ($k in $requiredKeys) {
         if (-not $expected.ContainsKey($k)) {
             $missing += $k
             continue
         }
-        if ([string]$expected[$k] -ne [string]$actual[$k]) {
-            $mismatch += ("{0}: expected={1} actual={2}" -f $k, $expected[$k], $actual[$k])
+        if ([string]$expected[$k] -ne [string]$witnessMap[$k]) {
+            $mismatch += ("{0}: expected={1} actual={2}" -f $k, $expected[$k], $witnessMap[$k])
         }
     }
 
@@ -416,7 +478,7 @@ if ($VerifyBaseline) {
         }
     }
 
-    if ($missing.Count -eq 0 -and $unexpected.Count -eq 0 -and $actualOrder -ne $requiredOrder) {
+    if ($missing.Count -eq 0 -and $unexpected.Count -eq 0 -and $baselineOrder -ne $requiredOrder) {
         $orderMismatch = $true
     }
 
@@ -432,7 +494,7 @@ if ($VerifyBaseline) {
             $issues += ("unexpected_keys={0}" -f ($unexpected -join ","))
         }
         if ($orderMismatch) {
-            $issues += ("key_order_expected={0} actual={1}" -f $requiredOrder, $actualOrder)
+            $issues += ("key_order_expected={0} actual={1}" -f $requiredOrder, $baselineOrder)
         }
         Write-Error ("Closure baseline mismatch in {0}: {1}" -f $baselinePath, ($issues -join " | "))
         exit 1
@@ -441,8 +503,15 @@ if ($VerifyBaseline) {
     Write-Host ("closure_baseline_verified={0}" -f $baselinePath)
 }
 
+if ($mirrorLatestWitness) {
+    Write-TextFileAtomic -Path $latestWitnessPath -Value $witnessContent
+}
+
 Write-Host ("closure_mode=stage0-proxy")
 Write-Host ("closure_hash={0}" -f $closureHash)
 Write-Host ("witness={0}" -f $witnessPath)
+if ($mirrorLatestWitness) {
+    Write-Host ("witness_latest={0}" -f $latestWitnessPath)
+}
 Write-Host ("run_workspace={0}" -f $runWorkspace)
 Write-Host "stage0 closure check passed."

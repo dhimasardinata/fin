@@ -39,10 +39,11 @@ Current stage0 closure proxy:
 4. Compute and record snapshot hashes for:
    - seed metadata files (`seed/manifest.toml`, `seed/SHA256SUMS`)
    - stage0 toolchain control scripts (`cmd/fin/fin.ps1`, stage0 build/parser/emit/finobj/finld scripts)
-5. Write closure witness record to `artifacts/closure/stage0-closure-witness.txt`.
-6. Compare closure witness keys to committed baseline (`seed/stage0-closure-baseline.txt`) in stage0 test suite with strict keyset validation (missing/mismatch/unexpected key rejection), duplicate-key rejection, and canonical key-order validation.
-7. Materialize closure build outputs in a run-scoped workspace under `artifacts/closure` using run-tokenized output basenames to avoid cross-run collisions in both final outputs and stage0 intermediate finobj temp paths.
-8. Prune stale run workspaces under `artifacts/closure` before each run with age-gated policy (default 24h; configurable via `FIN_CLOSURE_STALE_HOURS`; bypass via `FIN_KEEP_CLOSURE_RUNS=1`), and skip active-owner PID workspaces.
+5. Write closure witness record to a run-scoped path (`artifacts/closure/run-*/stage0-closure-witness.txt`) and mirror latest successful witness atomically to `artifacts/closure/stage0-closure-witness.txt`.
+6. Validate emitted witness contract in stage0 test suite with strict keyset checks (missing/mismatch/unexpected key rejection), duplicate-key rejection, and canonical key-order validation before baseline comparison.
+7. Compare validated closure witness keys/values to committed baseline (`seed/stage0-closure-baseline.txt`) with strict keyset validation (missing/mismatch/unexpected key rejection), duplicate-key rejection, and canonical key-order validation.
+8. Materialize closure build outputs in a run-scoped workspace under `artifacts/closure` using run-tokenized output basenames to avoid cross-run collisions in both final outputs and stage0 intermediate finobj temp paths.
+9. Prune stale run workspaces under `artifacts/closure` before each run with age-gated policy (default 24h; configurable via `FIN_CLOSURE_STALE_HOURS`; bypass via `FIN_KEEP_CLOSURE_RUNS=1`), and skip active-owner PID workspaces.
 
 This proxy establishes deterministic closure evidence before native self-hosting exists.
 Full `fin-seed -> finc -> finc` closure remains the completion requirement for Implemented status.
@@ -63,7 +64,7 @@ Compatibility impact must be documented before Implemented status.
 
 Current checks:
 
-1. `tests/bootstrap/verify_stage0_closure.ps1` validates deterministic `gen1 == gen2` for all stage0 target/pipeline matrix cases, target-level direct/finobj parity, run-scoped closure workspace isolation, and stale-run workspace pruning safety.
+1. `tests/bootstrap/verify_stage0_closure.ps1` validates deterministic `gen1 == gen2` for all stage0 target/pipeline matrix cases, target-level direct/finobj parity, run-scoped closure workspace isolation, witness contract self-validation (keys/order/values), and stale-run workspace pruning safety.
 2. `tests/run_stage0_suite.ps1` includes closure check in `fin test`.
-3. Stage0 suite verifies closure witness against committed baseline with strict required-key equality, duplicate-key rejection, and canonical key-order validation.
+3. Stage0 suite verifies validated closure witness against committed baseline with strict required-key equality, duplicate-key rejection, and canonical key-order validation.
 4. CI executes `cmd/fin/fin.ps1 test --no-doctor` on push/PR.
