@@ -67,9 +67,9 @@ This repository implements the foundation phase:
 3. Runtime baseline is no-libc and raw OS ABI/syscalls.
 4. v0 target order is Linux x86_64 first, then Windows x64.
 
-## CLI Contract (Planned)
+## CLI Contract
 
-The unified `fin` CLI contract is tracked in `FIP-0015`:
+The unified `fin` CLI contract is tracked in `FIP-0015` (`Implemented`):
 
 - `fin init`
 - `fin build`

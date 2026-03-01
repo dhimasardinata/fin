@@ -1,4 +1,4 @@
-# fin CLI Contract (Draft)
+# fin CLI Contract
 
 The `fin` command is the single entry point for compiler and package workflows.
 
@@ -29,4 +29,4 @@ Until native `fin` is available, a compatibility shim is provided:
 - `fin pkg publish`: publish package.
 - `fin doctor`: validate environment and policy constraints.
 
-This contract is normative once `FIP-0015` reaches `Accepted`.
+This contract is normative under `FIP-0015` (`Implemented`).
