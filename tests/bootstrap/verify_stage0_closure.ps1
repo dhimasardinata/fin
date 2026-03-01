@@ -147,6 +147,10 @@ if (-not (Test-Path $outDirFull)) {
     New-Item -ItemType Directory -Path $outDirFull -Force | Out-Null
 }
 
+$runToken = "{0}-{1}" -f $PID, [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+$runWorkspace = Join-Path $outDirFull ("run-" + $runToken)
+New-Item -ItemType Directory -Path $runWorkspace -Force | Out-Null
+
 $witnessPath = $Witness
 if ([string]::IsNullOrWhiteSpace($witnessPath)) {
     $witnessPath = Join-Path $outDirFull "stage0-closure-witness.txt"
@@ -169,8 +173,8 @@ function Invoke-ClosureCase {
 
     $isWindowsTarget = ($Target -eq "x86_64-windows-pe")
     $ext = if ($isWindowsTarget) { ".exe" } else { "" }
-    $gen1 = Join-Path $outDirFull ("gen1-{0}{1}" -f $CaseId, $ext)
-    $gen2 = Join-Path $outDirFull ("gen2-{0}{1}" -f $CaseId, $ext)
+    $gen1 = Join-Path $runWorkspace ("gen1-{0}{1}" -f $CaseId, $ext)
+    $gen2 = Join-Path $runWorkspace ("gen2-{0}{1}" -f $CaseId, $ext)
 
     & $fin build --src $sourceForFin --out $gen1 --target $Target --pipeline $Pipeline
     & $fin build --src $sourceForFin --out $gen2 --target $Target --pipeline $Pipeline
@@ -348,4 +352,5 @@ if ($VerifyBaseline) {
 Write-Host ("closure_mode=stage0-proxy")
 Write-Host ("closure_hash={0}" -f $closureHash)
 Write-Host ("witness={0}" -f $witnessPath)
+Write-Host ("run_workspace={0}" -f $runWorkspace)
 Write-Host "stage0 closure check passed."
