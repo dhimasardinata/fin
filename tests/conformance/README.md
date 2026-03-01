@@ -23,6 +23,8 @@ Stage0 conformance checks:
 - `fixtures/main_result_move_reinit_var.fn`: valid source showing `Result<u8,u8>` mutable `move -> re-init` lifecycle path.
 - `fixtures/main_result_drop_reinit_var.fn`: valid source showing `Result<u8,u8>` mutable `drop -> re-init` lifecycle path.
 - `fixtures/main_result_drop_reinit_move.fn`: valid source showing `Result<u8,u8>` mutable `drop -> re-init -> move` lifecycle path.
+- `fixtures/main_result_move_reinit_move_again.fn`: valid source showing `Result<u8,u8>` mutable `move -> re-init -> move` lifecycle cycle.
+- `fixtures/main_result_drop_reinit_drop_reinit.fn`: valid source showing repeated `Result<u8,u8>` mutable `drop -> re-init` cycles.
 - `fixtures/invalid_missing_main.fn`: invalid source, parser must reject.
 - `fixtures/invalid_undefined_identifier.fn`: invalid source, parser must reject undefined identifier use.
 - `fixtures/invalid_assign_immutable.fn`: invalid source, parser must reject assignment to `let`.
