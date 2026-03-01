@@ -118,8 +118,7 @@ function Parse-Expr {
             Fail-Parse "try(...) requires known result state (ok/err) in stage0 bootstrap"
         }
 
-        # FIP-0008 stage0 bootstrap: try(expr) on non-result values forwards value/type.
-        return $innerValue
+        Fail-Parse ("try(...) expects Result<u8,u8> in stage0 bootstrap, found {0}" -f $innerValue.Type)
     }
 
     $literal = Parse-U8Literal -Text $Expr
