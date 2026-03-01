@@ -21,6 +21,8 @@
   - tests/conformance/fixtures/invalid_try_missing_expression.fn
   - tests/conformance/fixtures/invalid_ok_missing_expression.fn
   - tests/conformance/fixtures/invalid_err_missing_expression.fn
+  - tests/conformance/fixtures/invalid_ok_non_u8_identifier.fn
+  - tests/conformance/fixtures/invalid_err_non_u8_identifier.fn
   - tests/conformance/fixtures/invalid_try_err_result.fn
   - tests/conformance/fixtures/invalid_try_err_identifier.fn
   - tests/conformance/fixtures/invalid_try_move_err_identifier.fn
@@ -50,8 +52,9 @@ Current stage0 implementation delta:
 6. Stage0 `err(<expr>)` result construction is accepted for explicit error-value modeling without implicit control transfer.
 7. Stage0 `try(err(<expr>))` (including err-state identifier paths) is explicitly rejected to avoid hidden control flow in this bootstrap phase.
 8. Empty `try()`, `ok()`, and `err()` are rejected with explicit deterministic diagnostics (`try/ok/err (...) requires an inner expression`) backed by conformance fixtures.
-9. Stage0 `try(move(<ident>))` is supported for moved `Result<u8,u8>` values, with `ok` moved-state unwrapping and deterministic rejection for moved err-state results (no hidden control flow).
-10. Full `Result<T,E>` construction/propagation semantics remain pending; this slice establishes parser/test scaffolding and explicit bootstrap constraints.
+9. `ok(...)` and `err(...)` reject non-`u8` inner expressions (for example `Result<u8,u8>` identifiers) with deterministic type diagnostics.
+10. Stage0 `try(move(<ident>))` is supported for moved `Result<u8,u8>` values, with `ok` moved-state unwrapping and deterministic rejection for moved err-state results (no hidden control flow).
+11. Full `Result<T,E>` construction/propagation semantics remain pending; this slice establishes parser/test scaffolding and explicit bootstrap constraints.
 
 ## Alternatives
 
@@ -69,7 +72,7 @@ Compatibility impact must be documented before Implemented status.
 
 Current checks:
 
-1. `tests/conformance/verify_stage0_grammar.ps1` validates valid bootstrap `ok/err/try` cases (including explicit `Result<u8,u8>` local annotations and `try(move(<result-ident>))` on `ok` state) and rejects empty `try()/ok()/err()`, `try(err(...))` (including moved err-state identifier paths), and `try` on non-result inputs (literal and identifier), with deterministic message checks for hidden-control-flow and type constraints.
+1. `tests/conformance/verify_stage0_grammar.ps1` validates valid bootstrap `ok/err/try` cases (including explicit `Result<u8,u8>` local annotations and `try(move(<result-ident>))` on `ok` state) and rejects empty `try()/ok()/err()`, non-`u8` `ok/err` inner expressions, `try(err(...))` (including moved err-state identifier paths), and `try` on non-result inputs (literal and identifier), with deterministic message checks for hidden-control-flow and type constraints.
 2. `tests/run_stage0_suite.ps1` compiles and executes `ok/err/try` fixtures (including move-wrapped result `try`) in aggregated stage0 flow.
 
 Acceptance criteria listed above remain normative for Implemented status.

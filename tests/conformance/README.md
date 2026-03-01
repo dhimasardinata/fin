@@ -38,6 +38,8 @@ Stage0 conformance checks:
 - `fixtures/invalid_try_missing_expression.fn`: invalid source, parser must reject empty `try()` usage.
 - `fixtures/invalid_ok_missing_expression.fn`: invalid source, parser must reject empty `ok()` usage.
 - `fixtures/invalid_err_missing_expression.fn`: invalid source, parser must reject empty `err()` usage.
+- `fixtures/invalid_ok_non_u8_identifier.fn`: invalid source, parser must reject `ok(<expr>)` when `<expr>` is `Result<u8,u8>` (non-`u8`).
+- `fixtures/invalid_err_non_u8_identifier.fn`: invalid source, parser must reject `err(<expr>)` when `<expr>` is `Result<u8,u8>` (non-`u8`).
 - `fixtures/invalid_try_err_result.fn`: invalid source, parser must reject `try(err(...))` in stage0 bootstrap semantics.
 - `fixtures/invalid_try_non_result_literal.fn`: invalid source, parser must reject `try(<expr>)` when `<expr>` is not `Result<u8,u8>`.
 - `fixtures/invalid_try_err_identifier.fn`: invalid source, parser must reject `try(<ident>)` when the bound `Result<u8,u8>` state is `err` in stage0 bootstrap semantics.
