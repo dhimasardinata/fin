@@ -125,5 +125,7 @@ Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_resul
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_result_double_move.fn" -ExpectedMessagePart "double move for identifier 'value'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_result_use_after_redrop.fn" -ExpectedMessagePart "use after drop for identifier 'value'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_result_self_move_assignment.fn" -ExpectedMessagePart "assignment target 'value' moved or dropped during expression evaluation"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_result_drop_undefined.fn" -ExpectedMessagePart "drop for undefined identifier 'other'"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_result_move_undefined.fn" -ExpectedMessagePart "move for undefined identifier 'other'"
 
 Write-Host "Stage0 grammar conformance check passed."
