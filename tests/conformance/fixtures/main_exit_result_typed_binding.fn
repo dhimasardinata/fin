@@ -1,0 +1,4 @@
+fn main() -> u8 {
+  let value: Result<u8,u8> = ok(14)
+  exit(try(value))
+}

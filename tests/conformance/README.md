@@ -9,6 +9,7 @@ Stage0 conformance checks:
 - `fixtures/main_exit_comments.fn`: valid source with `#` and `//` comments.
 - `fixtures/main_exit_typed_u8.fn`: valid source with explicit `: u8` binding annotations.
 - `fixtures/main_exit_signature_u8.fn`: valid source with explicit `fn main() -> u8` boundary annotation.
+- `fixtures/main_exit_result_typed_binding.fn`: valid source with explicit `Result<u8,u8>` binding annotation and `try` unwrap.
 - `fixtures/main_exit_try_literal.fn`: valid source with stage0 bootstrap `try(ok(<expr>))` on literal expression.
 - `fixtures/main_exit_try_identifier.fn`: valid source with stage0 bootstrap `try(<expr>)` on identifier `Result<u8,u8>` binding.
 - `fixtures/main_exit_try_ok_result.fn`: valid source with stage0 bootstrap `ok(<expr>)` result wrapper and `try` unwrap.
@@ -20,3 +21,5 @@ Stage0 conformance checks:
 - `fixtures/invalid_try_missing_expression.fn`: invalid source, parser must reject empty `try()` usage.
 - `fixtures/invalid_try_err_result.fn`: invalid source, parser must reject `try(err(...))` in stage0 bootstrap semantics.
 - `fixtures/invalid_try_non_result_literal.fn`: invalid source, parser must reject `try(<expr>)` when `<expr>` is not `Result<u8,u8>`.
+- `fixtures/invalid_result_annotation_mismatch.fn`: invalid source, parser must reject annotation/expression mismatch for `Result<u8,u8>`.
+- `fixtures/invalid_unsupported_result_annotation.fn`: invalid source, parser must reject unsupported generic result annotations.

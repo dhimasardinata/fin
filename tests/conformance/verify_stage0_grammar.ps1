@@ -46,6 +46,7 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_signature_u
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_literal.fn" -ExpectedExit 11
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_identifier.fn" -ExpectedExit 12
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_ok_result.fn" -ExpectedExit 13
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_result_typed_binding.fn" -ExpectedExit 14
 
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_missing_main.fn"
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_undefined_identifier.fn"
@@ -55,5 +56,7 @@ Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_unsupported_r
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_try_missing_expression.fn"
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_try_err_result.fn"
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_try_non_result_literal.fn"
+Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_result_annotation_mismatch.fn"
+Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_unsupported_result_annotation.fn"
 
 Write-Host "Stage0 grammar conformance check passed."

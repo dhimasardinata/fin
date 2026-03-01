@@ -13,6 +13,9 @@
   - tests/conformance/verify_stage0_grammar.ps1
   - tests/conformance/fixtures/main_exit_typed_u8.fn
   - tests/conformance/fixtures/main_exit_signature_u8.fn
+  - tests/conformance/fixtures/main_exit_result_typed_binding.fn
+  - tests/conformance/fixtures/invalid_result_annotation_mismatch.fn
+  - tests/conformance/fixtures/invalid_unsupported_result_annotation.fn
   - tests/conformance/fixtures/invalid_unsupported_type_annotation.fn
   - tests/conformance/fixtures/invalid_unsupported_return_annotation.fn
   - tests/run_stage0_suite.ps1
@@ -35,9 +38,11 @@ Current stage0 implementation delta:
 2. Optional explicit annotation is accepted on bindings:
    - `let <ident>: u8 = <expr>`
    - `var <ident>: u8 = <expr>`
-3. Stage0 parser validates annotation set and currently accepts only `u8`.
+   - `let <ident>: Result<u8,u8> = <expr>`
+   - `var <ident>: Result<u8,u8> = <expr>`
+3. Stage0 parser validates annotation set and currently accepts `u8` and `Result<u8,u8>` on bindings.
 4. Unsupported annotations are rejected with deterministic parse diagnostics.
-5. Assignment and `exit(...)` expression validation uses inferred/declared type metadata (stage0 currently `u8` only).
+5. Assignment and `exit(...)` expression validation uses inferred/declared type metadata (stage0 currently `u8` and `Result<u8,u8>` for locals; entrypoint return remains `u8`).
 6. Optional entrypoint boundary annotation is accepted on stage0 signature:
    - `fn main() -> u8 { ... }`
 7. Unsupported entrypoint return annotations are rejected with deterministic parse diagnostics.
@@ -58,7 +63,7 @@ Compatibility impact must be documented before Implemented status.
 
 Current checks:
 
-1. `tests/conformance/verify_stage0_grammar.ps1` validates typed binding/signature success and unsupported annotation rejection.
-2. `tests/run_stage0_suite.ps1` compiles typed fixtures (`main_exit_typed_u8.fn`, `main_exit_signature_u8.fn`) in aggregated stage0 flow.
+1. `tests/conformance/verify_stage0_grammar.ps1` validates typed binding/signature success, `Result<u8,u8>` typed binding success, annotation mismatch failure, and unsupported annotation rejection.
+2. `tests/run_stage0_suite.ps1` compiles typed fixtures (`main_exit_typed_u8.fn`, `main_exit_signature_u8.fn`, `main_exit_result_typed_binding.fn`) in aggregated stage0 flow.
 
 Acceptance criteria listed above remain normative for Implemented status.
