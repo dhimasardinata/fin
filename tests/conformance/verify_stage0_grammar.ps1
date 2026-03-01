@@ -92,9 +92,9 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_result_drop_rein
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_err_unused.fn" -ExpectedExit 28
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_err_binding_ok_path.fn" -ExpectedExit 29
 
-Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_missing_main.fn"
-Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_undefined_identifier.fn"
-Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_assign_immutable.fn"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_missing_main.fn" -ExpectedMessagePart "expected entrypoint pattern fn main()"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_undefined_identifier.fn" -ExpectedMessagePart "undefined identifier 'code'"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_assign_immutable.fn" -ExpectedMessagePart "cannot assign to immutable binding 'code'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_unsupported_type_annotation.fn" -ExpectedMessagePart "unsupported type annotation 'i32'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_unsupported_return_annotation.fn" -ExpectedMessagePart "unsupported type annotation 'i32'"
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_try_missing_expression.fn"
