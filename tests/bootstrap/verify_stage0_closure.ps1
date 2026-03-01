@@ -356,7 +356,11 @@ function Invoke-ClosureWorkspacePrune {
         [string]$ClosureRoot
     )
 
-    if ($env:FIN_KEEP_CLOSURE_RUNS -eq "1") {
+    $keepClosureRuns = [string]$env:FIN_KEEP_CLOSURE_RUNS
+    if (-not [string]::IsNullOrWhiteSpace($keepClosureRuns)) {
+        if ($keepClosureRuns -ne "1") {
+            throw ("FIN_KEEP_CLOSURE_RUNS must be 1 when set, found: {0}" -f $keepClosureRuns)
+        }
         return
     }
 

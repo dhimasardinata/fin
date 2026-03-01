@@ -90,7 +90,11 @@ try {
     }
     New-Item -ItemType Directory -Path $closureRoot -Force | Out-Null
 
-    # Case 1: invalid stale-hours config must fail fast before closure build work.
+    # Case 1: invalid env config must fail fast before closure build work.
+    $env:FIN_KEEP_CLOSURE_RUNS = "true"
+    Assert-Throws -Action { & $closureCheck -OutDir $closureRoot } -Message "Expected invalid FIN_KEEP_CLOSURE_RUNS to fail."
+    Remove-Item Env:FIN_KEEP_CLOSURE_RUNS -ErrorAction SilentlyContinue
+
     Remove-Item Env:FIN_KEEP_CLOSURE_RUNS -ErrorAction SilentlyContinue
     $env:FIN_CLOSURE_STALE_HOURS = "0"
     Assert-Throws -Action { & $closureCheck -OutDir $closureRoot } -Message "Expected invalid FIN_CLOSURE_STALE_HOURS to fail."
