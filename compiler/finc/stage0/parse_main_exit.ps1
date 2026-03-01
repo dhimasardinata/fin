@@ -47,6 +47,10 @@ function Parse-TypeAnnotation {
 
     $normalizedType = [regex]::Replace($typeName, '\s+', '')
 
+    if ($normalizedType -match '^[&*]') {
+        Fail-Parse "ownership/borrowing type annotations are not available in stage0 bootstrap"
+    }
+
     if ($normalizedType -eq "u8") {
         return "u8"
     }
@@ -67,6 +71,13 @@ function Parse-Expr {
     )
 
     $trimmedExpr = $Expr.Trim()
+    if ($trimmedExpr -match '^&') {
+        Fail-Parse "borrow/reference expressions are not available in stage0 bootstrap"
+    }
+    if ($trimmedExpr -match '^\*') {
+        Fail-Parse "dereference expressions are not available in stage0 bootstrap"
+    }
+
     if ($trimmedExpr -match '^ok\s*\(\s*(.+)\s*\)$') {
         $innerExpr = $Matches[1]
         if ([string]::IsNullOrWhiteSpace($innerExpr)) {
