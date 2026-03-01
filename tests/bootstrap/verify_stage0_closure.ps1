@@ -289,6 +289,7 @@ if ($VerifyBaseline) {
 
     $missing = @()
     $mismatch = @()
+    $unexpected = @()
     foreach ($k in $requiredKeys) {
         if (-not $expected.ContainsKey($k)) {
             $missing += $k
@@ -299,13 +300,22 @@ if ($VerifyBaseline) {
         }
     }
 
-    if ($missing.Count -gt 0 -or $mismatch.Count -gt 0) {
+    foreach ($k in ($expected.Keys | Sort-Object)) {
+        if ($requiredKeys -notcontains $k) {
+            $unexpected += $k
+        }
+    }
+
+    if ($missing.Count -gt 0 -or $mismatch.Count -gt 0 -or $unexpected.Count -gt 0) {
         $issues = @()
         if ($missing.Count -gt 0) {
             $issues += ("missing_keys={0}" -f ($missing -join ","))
         }
         if ($mismatch.Count -gt 0) {
             $issues += ("mismatch={0}" -f ($mismatch -join "; "))
+        }
+        if ($unexpected.Count -gt 0) {
+            $issues += ("unexpected_keys={0}" -f ($unexpected -join ","))
         }
         Write-Error ("Closure baseline mismatch in {0}: {1}" -f $baselinePath, ($issues -join " | "))
         exit 1

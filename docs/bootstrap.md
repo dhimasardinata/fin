@@ -28,7 +28,7 @@ Proxy rule:
 2. Require generation-1 and generation-2 output hashes to match per case.
 3. Require direct/finobj pipeline parity per target.
 4. Emit witness metadata at `artifacts/closure/stage0-closure-witness.txt`.
-5. Verify witness keys against committed baseline `seed/stage0-closure-baseline.txt`.
+5. Verify witness keys against committed baseline `seed/stage0-closure-baseline.txt` with strict keyset matching.
 
 ## Constraints
 
