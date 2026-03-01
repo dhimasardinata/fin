@@ -68,5 +68,5 @@ Current checks:
 1. `tests/bootstrap/verify_stage0_closure.ps1` validates deterministic `gen1 == gen2` for all stage0 target/pipeline matrix cases, target-level direct/finobj parity, run-scoped closure workspace isolation, witness contract self-validation (keys/order/values), and stale-run workspace pruning safety with owner-metadata active-dir protection.
 2. `tests/run_stage0_suite.ps1` includes closure check in `fin test`.
 3. Stage0 suite verifies validated closure witness against committed baseline with strict required-key equality, duplicate-key rejection, and canonical key-order validation.
-4. `tests/reproducibility/verify_closure_workspace_policy.ps1` validates closure stale-pruning policy scenarios (invalid stale-hours env rejection, active legacy PID-only backfill, invalid-metadata fallback+repair, mismatched metadata pruning, inactive-dir pruning).
+4. `tests/reproducibility/verify_closure_workspace_policy.ps1` validates closure stale-pruning policy scenarios (invalid stale-hours env rejection, `FIN_KEEP_CLOSURE_RUNS=1` keep-mode prune bypass, active legacy PID-only backfill, invalid-metadata fallback+repair, mismatched metadata pruning, inactive-dir pruning).
 5. CI executes `cmd/fin/fin.ps1 test --no-doctor` on push/PR.
