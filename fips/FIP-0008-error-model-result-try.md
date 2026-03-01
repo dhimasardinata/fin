@@ -13,7 +13,9 @@
   - tests/conformance/verify_stage0_grammar.ps1
   - tests/conformance/fixtures/main_exit_try_literal.fn
   - tests/conformance/fixtures/main_exit_try_identifier.fn
+  - tests/conformance/fixtures/main_exit_try_ok_result.fn
   - tests/conformance/fixtures/invalid_try_missing_expression.fn
+  - tests/conformance/fixtures/invalid_try_err_result.fn
   - tests/run_stage0_suite.ps1
 - acceptance:
   - Error-flow conformance suite passes without hidden control flow.
@@ -30,10 +32,12 @@ This proposal is part of the Fin independent-toolchain baseline and is required 
 
 Current stage0 implementation delta:
 
-1. Stage0 expression parser accepts bootstrap `try(<expr>)` form.
-2. Stage0 `try(<expr>)` currently forwards inner expression value/type (no hidden control flow).
-3. Empty `try()` is rejected with deterministic parse diagnostics.
-4. `Result<T,E>` construction/propagation semantics remain pending; this slice establishes parser/test scaffolding for `try` syntax.
+1. Stage0 expression parser accepts bootstrap `try(<expr>)`, `ok(<expr>)`, and `err(<expr>)` forms.
+2. Stage0 bootstrap result type is restricted to `Result<u8,u8>` wrappers from `ok/err`.
+3. Stage0 `try(ok(<expr>))` (or `try` of known-ok result binding) unwraps to `u8`.
+4. Stage0 `try(err(<expr>))` is explicitly rejected to avoid hidden control flow in this bootstrap phase.
+5. Empty `try()`, `ok()`, and `err()` are rejected with deterministic parse diagnostics.
+6. Full `Result<T,E>` construction/propagation semantics remain pending; this slice establishes parser/test scaffolding and explicit bootstrap constraints.
 
 ## Alternatives
 
@@ -51,7 +55,7 @@ Compatibility impact must be documented before Implemented status.
 
 Current checks:
 
-1. `tests/conformance/verify_stage0_grammar.ps1` validates valid `try(<expr>)` literal/identifier cases and rejects empty `try()` case.
-2. `tests/run_stage0_suite.ps1` compiles and executes `try` fixtures in aggregated stage0 flow.
+1. `tests/conformance/verify_stage0_grammar.ps1` validates valid `try/ok` bootstrap cases and rejects empty `try()` plus `try(err(...))` case.
+2. `tests/run_stage0_suite.ps1` compiles and executes `try/ok` fixtures in aggregated stage0 flow.
 
 Acceptance criteria listed above remain normative for Implemented status.

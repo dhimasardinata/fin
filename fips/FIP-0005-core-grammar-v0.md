@@ -39,7 +39,8 @@ Current stage0 subset grammar:
 
 1. `<u8-literal>` (`0..255`)
 2. `<ident>`
-3. `try(<expr>)` (stage0 bootstrap form)
+3. `ok(<expr>)` / `err(<expr>)` (stage0 bootstrap result wrappers)
+4. `try(<expr>)` (stage0 bootstrap form)
 
 Accepted stage0 tolerances:
 

@@ -56,18 +56,70 @@ function Parse-Expr {
     param(
         [string]$Expr,
         [hashtable]$Values,
-        [hashtable]$Types
+        [hashtable]$Types,
+        [hashtable]$ResultStates
     )
 
     $trimmedExpr = $Expr.Trim()
+    if ($trimmedExpr -match '^ok\s*\(\s*(.+)\s*\)$') {
+        $innerExpr = $Matches[1]
+        if ([string]::IsNullOrWhiteSpace($innerExpr)) {
+            Fail-Parse "ok(...) requires an inner expression"
+        }
+
+        $innerValue = Parse-Expr -Expr $innerExpr -Values $Values -Types $Types -ResultStates $ResultStates
+        if ([string]$innerValue.Type -ne "u8") {
+            Fail-Parse ("ok(...) expects u8 expression in stage0, found {0}" -f $innerValue.Type)
+        }
+
+        return [pscustomobject]@{
+            Type = "Result<u8,u8>"
+            Value = [int]$innerValue.Value
+            ResultState = "ok"
+        }
+    }
+
+    if ($trimmedExpr -match '^err\s*\(\s*(.+)\s*\)$') {
+        $innerExpr = $Matches[1]
+        if ([string]::IsNullOrWhiteSpace($innerExpr)) {
+            Fail-Parse "err(...) requires an inner expression"
+        }
+
+        $innerValue = Parse-Expr -Expr $innerExpr -Values $Values -Types $Types -ResultStates $ResultStates
+        if ([string]$innerValue.Type -ne "u8") {
+            Fail-Parse ("err(...) expects u8 expression in stage0, found {0}" -f $innerValue.Type)
+        }
+
+        return [pscustomobject]@{
+            Type = "Result<u8,u8>"
+            Value = [int]$innerValue.Value
+            ResultState = "err"
+        }
+    }
+
     if ($trimmedExpr -match '^try\s*\(\s*(.+)\s*\)$') {
         $innerExpr = $Matches[1]
         if ([string]::IsNullOrWhiteSpace($innerExpr)) {
             Fail-Parse "try(...) requires an inner expression"
         }
 
-        # FIP-0008 stage0 bootstrap: try(expr) currently forwards value/type.
-        return Parse-Expr -Expr $innerExpr -Values $Values -Types $Types
+        $innerValue = Parse-Expr -Expr $innerExpr -Values $Values -Types $Types -ResultStates $ResultStates
+        if ([string]$innerValue.Type -eq "Result<u8,u8>") {
+            if ([string]$innerValue.ResultState -eq "ok") {
+                return [pscustomobject]@{
+                    Type = "u8"
+                    Value = [int]$innerValue.Value
+                    ResultState = "none"
+                }
+            }
+            if ([string]$innerValue.ResultState -eq "err") {
+                Fail-Parse "try(err(...)) is not supported in stage0 bootstrap (would require hidden control flow)"
+            }
+            Fail-Parse "try(...) requires known result state (ok/err) in stage0 bootstrap"
+        }
+
+        # FIP-0008 stage0 bootstrap: try(expr) on non-result values forwards value/type.
+        return $innerValue
     }
 
     $literal = Parse-U8Literal -Text $Expr
@@ -75,6 +127,7 @@ function Parse-Expr {
         return [pscustomobject]@{
             Type = "u8"
             Value = [int]$literal
+            ResultState = "none"
         }
     }
 
@@ -89,6 +142,7 @@ function Parse-Expr {
     return [pscustomobject]@{
         Type = [string]$Types[$name]
         Value = [int]$Values[$name]
+        ResultState = [string]$ResultStates[$name]
     }
 }
 
@@ -98,7 +152,7 @@ function Parse-Expr {
 #     <ident> = <expr>;
 #     exit(<expr>);
 #   }
-# <expr> := <u8-literal> | <ident> | try(<expr>)
+# <expr> := <u8-literal> | <ident> | ok(<expr>) | err(<expr>) | try(<expr>)
 # <type> := u8
 # with optional semicolons and line comments (# or //).
 $programPattern = '(?s)^\s*fn\s+main\s*\(\s*\)\s*(?:->\s*([A-Za-z_][A-Za-z0-9_]*))?\s*\{\s*(.*?)\s*\}\s*$'
@@ -134,6 +188,7 @@ if ($statements.Count -eq 0) {
 $values = @{}
 $mutable = @{}
 $types = @{}
+$resultStates = @{}
 $haveExit = $false
 [int]$exitCode = -1
 
@@ -150,7 +205,7 @@ foreach ($stmt in $statements) {
             Fail-Parse "duplicate binding '$name'"
         }
 
-        $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types
+        $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types -ResultStates $resultStates
         $declaredType = if ([string]::IsNullOrWhiteSpace($declaredTypeRaw)) {
             [string]$exprValue.Type
         }
@@ -164,6 +219,7 @@ foreach ($stmt in $statements) {
         $values[$name] = [int]$exprValue.Value
         $mutable[$name] = $false
         $types[$name] = $declaredType
+        $resultStates[$name] = [string]$exprValue.ResultState
         continue
     }
 
@@ -175,7 +231,7 @@ foreach ($stmt in $statements) {
             Fail-Parse "duplicate binding '$name'"
         }
 
-        $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types
+        $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types -ResultStates $resultStates
         $declaredType = if ([string]::IsNullOrWhiteSpace($declaredTypeRaw)) {
             [string]$exprValue.Type
         }
@@ -189,6 +245,7 @@ foreach ($stmt in $statements) {
         $values[$name] = [int]$exprValue.Value
         $mutable[$name] = $true
         $types[$name] = $declaredType
+        $resultStates[$name] = [string]$exprValue.ResultState
         continue
     }
 
@@ -202,17 +259,18 @@ foreach ($stmt in $statements) {
             Fail-Parse "cannot assign to immutable binding '$name'"
         }
 
-        $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types
+        $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types -ResultStates $resultStates
         $targetType = [string]$types[$name]
         if ([string]$exprValue.Type -ne $targetType) {
             Fail-Parse ("type mismatch for assignment '{0}': expected {1}, found {2}" -f $name, $targetType, $exprValue.Type)
         }
         $values[$name] = [int]$exprValue.Value
+        $resultStates[$name] = [string]$exprValue.ResultState
         continue
     }
 
     if ($stmt -match '^exit\s*\(\s*(.+)\s*\)$') {
-        $exprValue = Parse-Expr -Expr $Matches[1] -Values $values -Types $types
+        $exprValue = Parse-Expr -Expr $Matches[1] -Values $values -Types $types -ResultStates $resultStates
         $expectedExitType = if ([string]::IsNullOrWhiteSpace($declaredMainReturnType)) {
             "u8"
         }

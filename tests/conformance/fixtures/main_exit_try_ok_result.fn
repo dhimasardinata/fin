@@ -1,0 +1,4 @@
+fn main() -> u8 {
+  let value = ok(13)
+  exit(try(value))
+}
