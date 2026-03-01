@@ -39,6 +39,7 @@ Current stage0 subset grammar:
 
 1. `<u8-literal>` (`0..255`)
 2. `<ident>`
+3. `try(<expr>)` (stage0 bootstrap form)
 
 Accepted stage0 tolerances:
 
@@ -49,7 +50,7 @@ Accepted stage0 tolerances:
 
 This subset is intentionally minimal and acts as the first executable parser checkpoint.
 
-Note: stage0 optional binding type-annotation forms (`let/var <ident>: u8 = <expr>`) and optional entrypoint return annotation (`fn main() -> u8`) are introduced under `FIP-0006`.
+Note: stage0 optional binding type-annotation forms (`let/var <ident>: u8 = <expr>`) and optional entrypoint return annotation (`fn main() -> u8`) are introduced under `FIP-0006`. Stage0 bootstrap `try(<expr>)` syntax is introduced under `FIP-0008`.
 
 ## Alternatives
 

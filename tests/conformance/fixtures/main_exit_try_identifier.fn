@@ -1,0 +1,4 @@
+fn main() -> u8 {
+  let value: u8 = 12
+  exit(try(value))
+}

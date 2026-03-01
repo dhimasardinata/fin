@@ -2,13 +2,19 @@
 
 - id: FIP-0008
 - address: fin://fip/FIP-0008
-- status: Scheduled
+- status: InProgress
 - authors: @fin-maintainers
 - created: 2026-02-27
 - requires: ["FIP-0006"]
 - target_release: M2
 - discussion: TBD
-- implementation: []
+- implementation:
+  - compiler/finc/stage0/parse_main_exit.ps1
+  - tests/conformance/verify_stage0_grammar.ps1
+  - tests/conformance/fixtures/main_exit_try_literal.fn
+  - tests/conformance/fixtures/main_exit_try_identifier.fn
+  - tests/conformance/fixtures/invalid_try_missing_expression.fn
+  - tests/run_stage0_suite.ps1
 - acceptance:
   - Error-flow conformance suite passes without hidden control flow.
 
@@ -22,7 +28,12 @@ This proposal is part of the Fin independent-toolchain baseline and is required 
 
 ## Design
 
-Initial design details are tracked in the corresponding spec and architecture documents. Concrete implementation deltas must be appended to this section before status changes to InProgress.
+Current stage0 implementation delta:
+
+1. Stage0 expression parser accepts bootstrap `try(<expr>)` form.
+2. Stage0 `try(<expr>)` currently forwards inner expression value/type (no hidden control flow).
+3. Empty `try()` is rejected with deterministic parse diagnostics.
+4. `Result<T,E>` construction/propagation semantics remain pending; this slice establishes parser/test scaffolding for `try` syntax.
 
 ## Alternatives
 
@@ -38,4 +49,9 @@ Compatibility impact must be documented before Implemented status.
 
 ## Test Plan
 
-Acceptance criteria listed above are normative; CI coverage for this proposal must be linked in implementation once available.
+Current checks:
+
+1. `tests/conformance/verify_stage0_grammar.ps1` validates valid `try(<expr>)` literal/identifier cases and rejects empty `try()` case.
+2. `tests/run_stage0_suite.ps1` compiles and executes `try` fixtures in aggregated stage0 flow.
+
+Acceptance criteria listed above remain normative for Implemented status.
