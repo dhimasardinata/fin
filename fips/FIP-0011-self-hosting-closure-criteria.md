@@ -41,7 +41,7 @@ Current stage0 closure proxy:
    - stage0 toolchain control scripts (`cmd/fin/fin.ps1`, stage0 build/parser/emit/finobj/finld scripts)
 5. Write closure witness record to `artifacts/closure/stage0-closure-witness.txt`.
 6. Compare closure witness keys to committed baseline (`seed/stage0-closure-baseline.txt`) in stage0 test suite with strict keyset validation (missing/mismatch/unexpected key rejection), duplicate-key rejection, and canonical key-order validation.
-7. Materialize closure build outputs in a run-scoped workspace under `artifacts/closure` to avoid cross-run artifact collisions.
+7. Materialize closure build outputs in a run-scoped workspace under `artifacts/closure` using run-tokenized output basenames to avoid cross-run collisions in both final outputs and stage0 intermediate finobj temp paths.
 
 This proxy establishes deterministic closure evidence before native self-hosting exists.
 Full `fin-seed -> finc -> finc` closure remains the completion requirement for Implemented status.
