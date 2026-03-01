@@ -84,7 +84,7 @@ Current stage0 implementation delta:
 16. Expression parser rejects borrow/reference syntax (`&expr`) with deterministic diagnostics.
 17. Expression parser rejects dereference syntax (`*expr`) with deterministic diagnostics.
 18. Type-annotation parser rejects ownership/borrowing-prefixed type annotations in stage0 bootstrap.
-19. Conformance suite now asserts deterministic ownership/lifecycle diagnostics by message substring for use-after-drop/move and invalid transition cases.
+19. Conformance suite now asserts deterministic ownership/lifecycle diagnostics by message substring for use-after-drop/move and invalid transition cases, and for unsupported borrow/dereference/type-annotation syntax in stage0.
 20. This slice creates explicit parser/test safety gates while ownership inference and borrow-check semantics are still evolving.
 
 ## Alternatives
@@ -103,7 +103,7 @@ Compatibility impact must be documented before Implemented status.
 
 Current checks:
 
-1. `tests/conformance/verify_stage0_grammar.ps1` validates `main_drop_unused.fn`, `main_move_binding.fn`, `main_move_reinit_var.fn`, `main_drop_reinit_var.fn`, `main_move_reinit_move_again.fn`, `main_drop_reinit_move.fn`, `main_drop_reinit_drop_reinit.fn`, `main_result_move_reinit_var.fn`, `main_result_drop_reinit_var.fn`, `main_result_drop_reinit_move.fn`, `main_result_move_reinit_move_again.fn`, and `main_result_drop_reinit_drop_reinit.fn`; it asserts parse failures for use-after-drop/move/redrop, double-drop/move, drop-after-move, move-after-drop, assign-after-drop-immutable, assign-after-move-immutable, undefined-drop/move, self-move assignment, borrow-reference, dereference, and borrow-type fixtures, including result-typed lifecycle misuse, repeated-transition misuse, and undefined-operation misuse fixtures, with message-substring checks for ownership/lifecycle diagnostics.
+1. `tests/conformance/verify_stage0_grammar.ps1` validates `main_drop_unused.fn`, `main_move_binding.fn`, `main_move_reinit_var.fn`, `main_drop_reinit_var.fn`, `main_move_reinit_move_again.fn`, `main_drop_reinit_move.fn`, `main_drop_reinit_drop_reinit.fn`, `main_result_move_reinit_var.fn`, `main_result_drop_reinit_var.fn`, `main_result_drop_reinit_move.fn`, `main_result_move_reinit_move_again.fn`, and `main_result_drop_reinit_drop_reinit.fn`; it asserts parse failures for use-after-drop/move/redrop, double-drop/move, drop-after-move, move-after-drop, assign-after-drop-immutable, assign-after-move-immutable, undefined-drop/move, self-move assignment, borrow-reference, dereference, and borrow-type fixtures, including result-typed lifecycle misuse, repeated-transition misuse, and undefined-operation misuse fixtures, with deterministic message-substring checks for ownership/lifecycle diagnostics and unsupported borrow/dereference/type-annotation syntax.
 2. `tests/run_stage0_suite.ps1` invokes `tests/conformance/verify_stage0_grammar.ps1` in the stage0 aggregate suite.
 
 Acceptance criteria listed above remain normative for Implemented status.
