@@ -1,0 +1,6 @@
+fn main() {
+  var value = 1
+  drop(value)
+  value = 2
+  exit(0)
+}

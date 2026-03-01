@@ -1,0 +1,4 @@
+fn main() {
+  drop(value)
+  exit(0)
+}

@@ -67,7 +67,8 @@ function Parse-Expr {
         [string]$Expr,
         [hashtable]$Values,
         [hashtable]$Types,
-        [hashtable]$ResultStates
+        [hashtable]$ResultStates,
+        [hashtable]$AliveStates
     )
 
     $trimmedExpr = $Expr.Trim()
@@ -84,7 +85,7 @@ function Parse-Expr {
             Fail-Parse "ok(...) requires an inner expression"
         }
 
-        $innerValue = Parse-Expr -Expr $innerExpr -Values $Values -Types $Types -ResultStates $ResultStates
+        $innerValue = Parse-Expr -Expr $innerExpr -Values $Values -Types $Types -ResultStates $ResultStates -AliveStates $AliveStates
         if ([string]$innerValue.Type -ne "u8") {
             Fail-Parse ("ok(...) expects u8 expression in stage0, found {0}" -f $innerValue.Type)
         }
@@ -102,7 +103,7 @@ function Parse-Expr {
             Fail-Parse "err(...) requires an inner expression"
         }
 
-        $innerValue = Parse-Expr -Expr $innerExpr -Values $Values -Types $Types -ResultStates $ResultStates
+        $innerValue = Parse-Expr -Expr $innerExpr -Values $Values -Types $Types -ResultStates $ResultStates -AliveStates $AliveStates
         if ([string]$innerValue.Type -ne "u8") {
             Fail-Parse ("err(...) expects u8 expression in stage0, found {0}" -f $innerValue.Type)
         }
@@ -120,7 +121,7 @@ function Parse-Expr {
             Fail-Parse "try(...) requires an inner expression"
         }
 
-        $innerValue = Parse-Expr -Expr $innerExpr -Values $Values -Types $Types -ResultStates $ResultStates
+        $innerValue = Parse-Expr -Expr $innerExpr -Values $Values -Types $Types -ResultStates $ResultStates -AliveStates $AliveStates
         if ([string]$innerValue.Type -eq "Result<u8,u8>") {
             if ([string]$innerValue.ResultState -eq "ok") {
                 return [pscustomobject]@{
@@ -154,6 +155,9 @@ function Parse-Expr {
     if (-not $Values.ContainsKey($name)) {
         Fail-Parse "undefined identifier '$name'"
     }
+    if (-not [bool]$AliveStates[$name]) {
+        Fail-Parse "use after drop for identifier '$name'"
+    }
 
     return [pscustomobject]@{
         Type = [string]$Types[$name]
@@ -166,6 +170,7 @@ function Parse-Expr {
 #   fn main() [-> <type>] {
 #     (let|var) <ident> [: <type>] = <expr>;
 #     <ident> = <expr>;
+#     drop(<ident>);
 #     exit(<expr>);
 #   }
 # <expr> := <u8-literal> | <ident> | ok(<expr>) | err(<expr>) | try(<expr>)
@@ -205,6 +210,7 @@ $values = @{}
 $mutable = @{}
 $types = @{}
 $resultStates = @{}
+$aliveStates = @{}
 $haveExit = $false
 [int]$exitCode = -1
 
@@ -221,7 +227,7 @@ foreach ($stmt in $statements) {
             Fail-Parse "duplicate binding '$name'"
         }
 
-        $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types -ResultStates $resultStates
+        $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types -ResultStates $resultStates -AliveStates $aliveStates
         $declaredType = if ([string]::IsNullOrWhiteSpace($declaredTypeRaw)) {
             [string]$exprValue.Type
         }
@@ -236,6 +242,7 @@ foreach ($stmt in $statements) {
         $mutable[$name] = $false
         $types[$name] = $declaredType
         $resultStates[$name] = [string]$exprValue.ResultState
+        $aliveStates[$name] = $true
         continue
     }
 
@@ -247,7 +254,7 @@ foreach ($stmt in $statements) {
             Fail-Parse "duplicate binding '$name'"
         }
 
-        $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types -ResultStates $resultStates
+        $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types -ResultStates $resultStates -AliveStates $aliveStates
         $declaredType = if ([string]::IsNullOrWhiteSpace($declaredTypeRaw)) {
             [string]$exprValue.Type
         }
@@ -262,6 +269,7 @@ foreach ($stmt in $statements) {
         $mutable[$name] = $true
         $types[$name] = $declaredType
         $resultStates[$name] = [string]$exprValue.ResultState
+        $aliveStates[$name] = $true
         continue
     }
 
@@ -271,11 +279,14 @@ foreach ($stmt in $statements) {
         if (-not $values.ContainsKey($name)) {
             Fail-Parse "assignment to undefined identifier '$name'"
         }
+        if (-not [bool]$aliveStates[$name]) {
+            Fail-Parse "cannot assign to dropped binding '$name'"
+        }
         if (-not [bool]$mutable[$name]) {
             Fail-Parse "cannot assign to immutable binding '$name'"
         }
 
-        $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types -ResultStates $resultStates
+        $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types -ResultStates $resultStates -AliveStates $aliveStates
         $targetType = [string]$types[$name]
         if ([string]$exprValue.Type -ne $targetType) {
             Fail-Parse ("type mismatch for assignment '{0}': expected {1}, found {2}" -f $name, $targetType, $exprValue.Type)
@@ -285,8 +296,20 @@ foreach ($stmt in $statements) {
         continue
     }
 
+    if ($stmt -match '^drop\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)$') {
+        $name = $Matches[1]
+        if (-not $values.ContainsKey($name)) {
+            Fail-Parse "drop for undefined identifier '$name'"
+        }
+        if (-not [bool]$aliveStates[$name]) {
+            Fail-Parse "double drop for identifier '$name'"
+        }
+        $aliveStates[$name] = $false
+        continue
+    }
+
     if ($stmt -match '^exit\s*\(\s*(.+)\s*\)$') {
-        $exprValue = Parse-Expr -Expr $Matches[1] -Values $values -Types $types -ResultStates $resultStates
+        $exprValue = Parse-Expr -Expr $Matches[1] -Values $values -Types $types -ResultStates $resultStates -AliveStates $aliveStates
         $expectedExitType = if ([string]::IsNullOrWhiteSpace($declaredMainReturnType)) {
             "u8"
         }

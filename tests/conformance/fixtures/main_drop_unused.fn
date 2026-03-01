@@ -1,0 +1,5 @@
+fn main() {
+  let temp = 99
+  drop(temp)
+  exit(15)
+}

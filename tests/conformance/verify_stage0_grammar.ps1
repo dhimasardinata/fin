@@ -47,6 +47,7 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_literal
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_identifier.fn" -ExpectedExit 12
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_ok_result.fn" -ExpectedExit 13
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_result_typed_binding.fn" -ExpectedExit 14
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_drop_unused.fn" -ExpectedExit 15
 
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_missing_main.fn"
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_undefined_identifier.fn"
@@ -61,5 +62,9 @@ Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_unsupported_r
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_borrow_reference_expr.fn"
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_dereference_expr.fn"
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_borrow_type_annotation.fn"
+Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_use_after_drop.fn"
+Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_double_drop.fn"
+Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_assign_after_drop.fn"
+Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_drop_undefined.fn"
 
 Write-Host "Stage0 grammar conformance check passed."
