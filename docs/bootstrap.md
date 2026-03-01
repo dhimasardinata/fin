@@ -29,6 +29,7 @@ Proxy rule:
 3. Require direct/finobj pipeline parity per target.
 4. Emit witness metadata at `artifacts/closure/stage0-closure-witness.txt`.
 5. Verify witness keys against committed baseline `seed/stage0-closure-baseline.txt` with strict keyset matching, duplicate-key rejection, and canonical key-order validation.
+6. Use a run-scoped closure workspace under `artifacts/closure` so concurrent closure runs do not collide on output filenames.
 
 ## Constraints
 
