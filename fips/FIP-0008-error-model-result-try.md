@@ -47,7 +47,7 @@ Current stage0 implementation delta:
 5. Stage0 `try(ok(<expr>))` (or `try` of known-ok result binding) unwraps to `u8`.
 6. Stage0 `err(<expr>)` result construction is accepted for explicit error-value modeling without implicit control transfer.
 7. Stage0 `try(err(<expr>))` (including err-state identifier paths) is explicitly rejected to avoid hidden control flow in this bootstrap phase.
-8. Empty `try()`, `ok()`, and `err()` are rejected with deterministic parse diagnostics (explicit conformance fixtures).
+8. Empty `try()`, `ok()`, and `err()` are rejected with explicit deterministic diagnostics (`try/ok/err (...) requires an inner expression`) backed by conformance fixtures.
 9. Full `Result<T,E>` construction/propagation semantics remain pending; this slice establishes parser/test scaffolding and explicit bootstrap constraints.
 
 ## Alternatives

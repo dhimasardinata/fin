@@ -102,7 +102,7 @@ function Parse-Expr {
         }
     }
 
-    if ($trimmedExpr -match '^ok\s*\(\s*(.+)\s*\)$') {
+    if ($trimmedExpr -match '^ok\s*\(\s*(.*)\s*\)$') {
         $innerExpr = $Matches[1]
         if ([string]::IsNullOrWhiteSpace($innerExpr)) {
             Fail-Parse "ok(...) requires an inner expression"
@@ -120,7 +120,7 @@ function Parse-Expr {
         }
     }
 
-    if ($trimmedExpr -match '^err\s*\(\s*(.+)\s*\)$') {
+    if ($trimmedExpr -match '^err\s*\(\s*(.*)\s*\)$') {
         $innerExpr = $Matches[1]
         if ([string]::IsNullOrWhiteSpace($innerExpr)) {
             Fail-Parse "err(...) requires an inner expression"
@@ -138,7 +138,7 @@ function Parse-Expr {
         }
     }
 
-    if ($trimmedExpr -match '^try\s*\(\s*(.+)\s*\)$') {
+    if ($trimmedExpr -match '^try\s*\(\s*(.*)\s*\)$') {
         $innerExpr = $Matches[1]
         if ([string]::IsNullOrWhiteSpace($innerExpr)) {
             Fail-Parse "try(...) requires an inner expression"
