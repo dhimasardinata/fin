@@ -123,6 +123,96 @@ function Parse-KeyValueFile {
     }
 }
 
+function Remove-ClosureWorkspaceDirectory {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path,
+        [switch]$IgnoreFailure
+    )
+
+    if (-not (Test-Path $Path)) {
+        return
+    }
+
+    $lastError = $null
+    for ($attempt = 1; $attempt -le 8; $attempt++) {
+        try {
+            Remove-Item -Recurse -Force $Path -ErrorAction Stop
+            return
+        }
+        catch {
+            $lastError = $_
+            if ($attempt -lt 8) {
+                Start-Sleep -Milliseconds 150
+            }
+        }
+    }
+
+    if ($IgnoreFailure) {
+        Write-Warning ("Failed to remove closure workspace after retries: {0}" -f $Path)
+        return
+    }
+
+    if ($null -ne $lastError) {
+        throw $lastError
+    }
+}
+
+function Test-ClosureWorkspaceOwnerActive {
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.IO.DirectoryInfo]$Directory
+    )
+
+    $pidMatch = [regex]::Match($Directory.Name, '^run-(?<pid>[0-9]+)-')
+    if (-not $pidMatch.Success) {
+        return $false
+    }
+
+    [int]$ownerPid = 0
+    if (-not [int]::TryParse($pidMatch.Groups["pid"].Value, [ref]$ownerPid) -or $ownerPid -lt 1) {
+        return $false
+    }
+
+    try {
+        $null = Get-Process -Id $ownerPid -ErrorAction Stop
+        return $true
+    }
+    catch {
+        return $false
+    }
+}
+
+function Invoke-ClosureWorkspacePrune {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ClosureRoot
+    )
+
+    if ($env:FIN_KEEP_CLOSURE_RUNS -eq "1") {
+        return
+    }
+
+    [int]$staleHours = 24
+    if (-not [string]::IsNullOrWhiteSpace($env:FIN_CLOSURE_STALE_HOURS)) {
+        [int]$parsedHours = 0
+        if (-not [int]::TryParse($env:FIN_CLOSURE_STALE_HOURS, [ref]$parsedHours) -or $parsedHours -lt 1) {
+            throw ("FIN_CLOSURE_STALE_HOURS must be a positive integer, found: {0}" -f $env:FIN_CLOSURE_STALE_HOURS)
+        }
+        $staleHours = $parsedHours
+    }
+
+    $staleCutoffUtc = (Get-Date).ToUniversalTime().AddHours(-1 * $staleHours)
+    Get-ChildItem -Path $ClosureRoot -Directory -Filter "run-*" -ErrorAction SilentlyContinue |
+        Where-Object {
+            $_.LastWriteTimeUtc -lt $staleCutoffUtc -and
+            -not (Test-ClosureWorkspaceOwnerActive -Directory $_)
+        } |
+        ForEach-Object {
+            Remove-ClosureWorkspaceDirectory -Path $_.FullName -IgnoreFailure
+        }
+}
+
 if ($RequireSeedSet) {
     & $seedCheck -RequireSet
 }
@@ -146,6 +236,7 @@ else {
 if (-not (Test-Path $outDirFull)) {
     New-Item -ItemType Directory -Path $outDirFull -Force | Out-Null
 }
+Invoke-ClosureWorkspacePrune -ClosureRoot $outDirFull
 
 $runToken = "{0}-{1}" -f $PID, [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
 $runWorkspace = Join-Path $outDirFull ("run-" + $runToken)

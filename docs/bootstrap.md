@@ -30,6 +30,7 @@ Proxy rule:
 4. Emit witness metadata at `artifacts/closure/stage0-closure-witness.txt`.
 5. Verify witness keys against committed baseline `seed/stage0-closure-baseline.txt` with strict keyset matching, duplicate-key rejection, and canonical key-order validation.
 6. Use a run-scoped closure workspace under `artifacts/closure` with run-tokenized output basenames so concurrent closure runs do not collide on output filenames or stage0 intermediate finobj temp names.
+7. Prune stale `run-*` closure workspaces with age gating (default 24h; override via `FIN_CLOSURE_STALE_HOURS`; disable via `FIN_KEEP_CLOSURE_RUNS=1`) while skipping active-owner PID directories.
 
 ## Constraints
 
