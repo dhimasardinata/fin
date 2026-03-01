@@ -33,7 +33,8 @@ Current stage0 subset grammar:
 1. `let <ident> = <expr>`
 2. `var <ident> = <expr>`
 3. `<ident> = <expr>` (only for `var`)
-4. `exit(<expr>)` (terminal statement)
+4. `drop(<ident>)`
+5. `exit(<expr>)` (terminal statement)
 
 `<expr>` (stage0):
 

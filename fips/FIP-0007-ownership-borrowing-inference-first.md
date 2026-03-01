@@ -11,9 +11,14 @@
 - implementation:
   - compiler/finc/stage0/parse_main_exit.ps1
   - tests/conformance/verify_stage0_grammar.ps1
+  - tests/conformance/fixtures/main_drop_unused.fn
   - tests/conformance/fixtures/invalid_borrow_reference_expr.fn
   - tests/conformance/fixtures/invalid_dereference_expr.fn
   - tests/conformance/fixtures/invalid_borrow_type_annotation.fn
+  - tests/conformance/fixtures/invalid_use_after_drop.fn
+  - tests/conformance/fixtures/invalid_double_drop.fn
+  - tests/conformance/fixtures/invalid_assign_after_drop.fn
+  - tests/conformance/fixtures/invalid_drop_undefined.fn
 - acceptance:
   - Safety suite catches use-after-free and double-free classes.
 
@@ -30,10 +35,14 @@ This proposal is part of the Fin independent-toolchain baseline and is required 
 Current stage0 implementation delta:
 
 1. Stage0 bootstrap model is copy-only value semantics; ownership/borrowing operators are not part of executable grammar yet.
-2. Expression parser now rejects borrow/reference syntax (`&expr`) with deterministic diagnostics.
-3. Expression parser now rejects dereference syntax (`*expr`) with deterministic diagnostics.
-4. Type-annotation parser rejects ownership/borrowing-prefixed type annotations in stage0 bootstrap.
-5. This slice creates an explicit parser/test gate so unsupported ownership syntax is rejected deterministically while ownership inference design is still evolving.
+2. Stage0 parser now supports `drop(<ident>)` as an explicit lifetime-end marker for bindings in parser semantics.
+3. Identifier use after `drop(<ident>)` is rejected deterministically.
+4. Double-drop and assignment-to-dropped-binding are rejected deterministically.
+5. Drop on undefined identifiers is rejected deterministically.
+6. Expression parser rejects borrow/reference syntax (`&expr`) with deterministic diagnostics.
+7. Expression parser rejects dereference syntax (`*expr`) with deterministic diagnostics.
+8. Type-annotation parser rejects ownership/borrowing-prefixed type annotations in stage0 bootstrap.
+9. This slice creates explicit parser/test safety gates while ownership inference and borrow-check semantics are still evolving.
 
 ## Alternatives
 
@@ -51,7 +60,7 @@ Compatibility impact must be documented before Implemented status.
 
 Current checks:
 
-1. `tests/conformance/verify_stage0_grammar.ps1` asserts parse failures for `invalid_borrow_reference_expr.fn`, `invalid_dereference_expr.fn`, and `invalid_borrow_type_annotation.fn`.
+1. `tests/conformance/verify_stage0_grammar.ps1` validates `main_drop_unused.fn` and asserts parse failures for use-after-drop, double-drop, assign-after-drop, undefined-drop, borrow-reference, dereference, and borrow-type fixtures.
 2. `tests/run_stage0_suite.ps1` invokes `tests/conformance/verify_stage0_grammar.ps1` in the stage0 aggregate suite.
 
 Acceptance criteria listed above remain normative for Implemented status.

@@ -13,6 +13,7 @@ Stage0 conformance checks:
 - `fixtures/main_exit_try_literal.fn`: valid source with stage0 bootstrap `try(ok(<expr>))` on literal expression.
 - `fixtures/main_exit_try_identifier.fn`: valid source with stage0 bootstrap `try(<expr>)` on identifier `Result<u8,u8>` binding.
 - `fixtures/main_exit_try_ok_result.fn`: valid source with stage0 bootstrap `ok(<expr>)` result wrapper and `try` unwrap.
+- `fixtures/main_drop_unused.fn`: valid source with stage0 `drop(<ident>)` followed by independent literal exit.
 - `fixtures/invalid_missing_main.fn`: invalid source, parser must reject.
 - `fixtures/invalid_undefined_identifier.fn`: invalid source, parser must reject undefined identifier use.
 - `fixtures/invalid_assign_immutable.fn`: invalid source, parser must reject assignment to `let`.
@@ -26,3 +27,7 @@ Stage0 conformance checks:
 - `fixtures/invalid_borrow_reference_expr.fn`: invalid source, parser must reject stage0 borrow/reference expression syntax (`&x`).
 - `fixtures/invalid_dereference_expr.fn`: invalid source, parser must reject stage0 dereference expression syntax (`*x`).
 - `fixtures/invalid_borrow_type_annotation.fn`: invalid source, parser must reject ownership/borrowing type annotations in stage0 (`&u8`).
+- `fixtures/invalid_use_after_drop.fn`: invalid source, parser must reject identifier usage after `drop(<ident>)`.
+- `fixtures/invalid_double_drop.fn`: invalid source, parser must reject repeated `drop(<ident>)` on the same binding.
+- `fixtures/invalid_assign_after_drop.fn`: invalid source, parser must reject assignment to a dropped binding.
+- `fixtures/invalid_drop_undefined.fn`: invalid source, parser must reject `drop(<ident>)` for undefined identifiers.
