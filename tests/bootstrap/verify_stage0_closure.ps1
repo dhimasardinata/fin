@@ -183,6 +183,129 @@ function Remove-ClosureWorkspaceDirectory {
     }
 }
 
+function Get-ClosureWorkspaceProcessStartUtc {
+    param(
+        [Parameter(Mandatory = $true)]
+        [int]$OwnerPid
+    )
+
+    $proc = Get-Process -Id $OwnerPid -ErrorAction Stop
+    return $proc.StartTime.ToUniversalTime()
+}
+
+function Set-ClosureWorkspaceOwnerMetadata {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$WorkspaceDir,
+        [Parameter(Mandatory = $true)]
+        [int]$OwnerPid,
+        [Parameter(Mandatory = $true)]
+        [datetime]$OwnerStartUtc
+    )
+
+    $metadataPath = Join-Path $WorkspaceDir ".fin-closure-owner.json"
+    $payload = [ordered]@{
+        pid = [int]$OwnerPid
+        start_utc = $OwnerStartUtc.ToUniversalTime().ToString("o")
+    } | ConvertTo-Json -Compress
+    Set-Content -Path $metadataPath -Value $payload -NoNewline
+}
+
+function Test-ClosureWorkspacePidActive {
+    param(
+        [Parameter(Mandatory = $true)]
+        [int]$OwnerPid
+    )
+
+    try {
+        return $null -ne (Get-Process -Id $OwnerPid -ErrorAction Stop)
+    }
+    catch {
+        return $false
+    }
+}
+
+function Get-ClosureWorkspaceOwnerMetadataStatus {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$MetadataPath,
+        [Parameter(Mandatory = $true)]
+        [int]$ExpectedPid
+    )
+
+    $status = [pscustomobject]@{
+        Valid = $false
+        Active = $false
+    }
+
+    $raw = Get-Content -Path $MetadataPath -Raw -ErrorAction Stop
+    $pidRaw = ""
+    $startRaw = ""
+    $doc = $null
+    try {
+        $doc = [System.Text.Json.JsonDocument]::Parse($raw)
+        $root = $doc.RootElement
+        $pidRaw = $root.GetProperty("pid").ToString()
+        $startRaw = $root.GetProperty("start_utc").GetString()
+    }
+    catch {
+        return $status
+    }
+    finally {
+        if ($null -ne $doc) {
+            $doc.Dispose()
+        }
+    }
+
+    [int]$metadataPid = 0
+    if (-not [int]::TryParse([string]$pidRaw, [ref]$metadataPid) -or $metadataPid -lt 1) {
+        return $status
+    }
+
+    if ([string]::IsNullOrWhiteSpace($startRaw)) {
+        return $status
+    }
+
+    try {
+        $metadataStartUtc = [datetime]::Parse($startRaw, [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::RoundtripKind).ToUniversalTime()
+    }
+    catch {
+        return $status
+    }
+
+    $status.Valid = $true
+    if ($metadataPid -ne $ExpectedPid) {
+        return $status
+    }
+
+    try {
+        $processStartUtc = Get-ClosureWorkspaceProcessStartUtc -OwnerPid $metadataPid
+    }
+    catch {
+        return $status
+    }
+
+    $status.Active = ([math]::Abs(($processStartUtc - $metadataStartUtc).TotalSeconds) -lt 2)
+    return $status
+}
+
+function Try-BackfillClosureWorkspaceOwnerMetadata {
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.IO.DirectoryInfo]$Directory,
+        [Parameter(Mandatory = $true)]
+        [int]$OwnerPid
+    )
+
+    try {
+        $ownerStartUtc = Get-ClosureWorkspaceProcessStartUtc -OwnerPid $OwnerPid
+        Set-ClosureWorkspaceOwnerMetadata -WorkspaceDir $Directory.FullName -OwnerPid $OwnerPid -OwnerStartUtc $ownerStartUtc
+    }
+    catch {
+        # Best-effort backfill only; stale-prune safety falls back to PID-active behavior.
+    }
+}
+
 function Test-ClosureWorkspaceOwnerActive {
     param(
         [Parameter(Mandatory = $true)]
@@ -199,13 +322,32 @@ function Test-ClosureWorkspaceOwnerActive {
         return $false
     }
 
-    try {
-        $null = Get-Process -Id $ownerPid -ErrorAction Stop
-        return $true
+    $pidIsActive = Test-ClosureWorkspacePidActive -OwnerPid $ownerPid
+    $metadataPath = Join-Path $Directory.FullName ".fin-closure-owner.json"
+    if (Test-Path $metadataPath) {
+        try {
+            $metadataStatus = Get-ClosureWorkspaceOwnerMetadataStatus -MetadataPath $metadataPath -ExpectedPid $ownerPid
+            if (-not [bool]$metadataStatus.Valid) {
+                if ($pidIsActive) {
+                    Try-BackfillClosureWorkspaceOwnerMetadata -Directory $Directory -OwnerPid $ownerPid
+                }
+                return $pidIsActive
+            }
+            return [bool]$metadataStatus.Active
+        }
+        catch {
+            if ($pidIsActive) {
+                Try-BackfillClosureWorkspaceOwnerMetadata -Directory $Directory -OwnerPid $ownerPid
+            }
+            return $pidIsActive
+        }
     }
-    catch {
-        return $false
+
+    if ($pidIsActive) {
+        Try-BackfillClosureWorkspaceOwnerMetadata -Directory $Directory -OwnerPid $ownerPid
     }
+
+    return $pidIsActive
 }
 
 function Invoke-ClosureWorkspacePrune {
@@ -266,6 +408,7 @@ Invoke-ClosureWorkspacePrune -ClosureRoot $outDirFull
 $runToken = "{0}-{1}" -f $PID, [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
 $runWorkspace = Join-Path $outDirFull ("run-" + $runToken)
 New-Item -ItemType Directory -Path $runWorkspace -Force | Out-Null
+Set-ClosureWorkspaceOwnerMetadata -WorkspaceDir $runWorkspace -OwnerPid $PID -OwnerStartUtc (Get-ClosureWorkspaceProcessStartUtc -OwnerPid $PID)
 
 $latestWitnessPath = Join-Path $outDirFull "stage0-closure-witness.txt"
 $mirrorLatestWitness = $false
