@@ -9,7 +9,7 @@
 | FIP-0005 | Core Grammar v0 | Implemented | `fin://fip/FIP-0005` |
 | FIP-0006 | Type Inference Model | InProgress | `fin://fip/FIP-0006` |
 | FIP-0007 | Ownership and Borrowing (Inference-First) | Scheduled | `fin://fip/FIP-0007` |
-| FIP-0008 | Error Model (Result + try) | Scheduled | `fin://fip/FIP-0008` |
+| FIP-0008 | Error Model (Result + try) | InProgress | `fin://fip/FIP-0008` |
 | FIP-0009 | Linux ABI and Syscall Contract | Implemented | `fin://fip/FIP-0009` |
 | FIP-0010 | Direct ELF Emitter | Implemented | `fin://fip/FIP-0010` |
 | FIP-0011 | Self-Hosting Closure Criteria | InProgress | `fin://fip/FIP-0011` |

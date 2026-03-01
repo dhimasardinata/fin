@@ -59,6 +59,17 @@ function Parse-Expr {
         [hashtable]$Types
     )
 
+    $trimmedExpr = $Expr.Trim()
+    if ($trimmedExpr -match '^try\s*\(\s*(.+)\s*\)$') {
+        $innerExpr = $Matches[1]
+        if ([string]::IsNullOrWhiteSpace($innerExpr)) {
+            Fail-Parse "try(...) requires an inner expression"
+        }
+
+        # FIP-0008 stage0 bootstrap: try(expr) currently forwards value/type.
+        return Parse-Expr -Expr $innerExpr -Values $Values -Types $Types
+    }
+
     $literal = Parse-U8Literal -Text $Expr
     if ($null -ne $literal) {
         return [pscustomobject]@{
@@ -87,7 +98,7 @@ function Parse-Expr {
 #     <ident> = <expr>;
 #     exit(<expr>);
 #   }
-# <expr> := <u8-literal> | <ident>
+# <expr> := <u8-literal> | <ident> | try(<expr>)
 # <type> := u8
 # with optional semicolons and line comments (# or //).
 $programPattern = '(?s)^\s*fn\s+main\s*\(\s*\)\s*(?:->\s*([A-Za-z_][A-Za-z0-9_]*))?\s*\{\s*(.*?)\s*\}\s*$'
