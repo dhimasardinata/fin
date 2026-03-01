@@ -42,6 +42,11 @@ Current stage0 subset grammar:
 3. `ok(<expr>)` / `err(<expr>)` (stage0 bootstrap result wrappers)
 4. `try(<expr>)` (stage0 bootstrap form)
 
+`<type>` (stage0):
+
+1. `u8`
+2. `Result<u8,u8>` (binding annotations only; entrypoint return remains `u8` in stage0)
+
 Accepted stage0 tolerances:
 
 1. Arbitrary whitespace/newlines.
@@ -51,7 +56,7 @@ Accepted stage0 tolerances:
 
 This subset is intentionally minimal and acts as the first executable parser checkpoint.
 
-Note: stage0 optional binding type-annotation forms (`let/var <ident>: u8 = <expr>`) and optional entrypoint return annotation (`fn main() -> u8`) are introduced under `FIP-0006`. Stage0 bootstrap `try(<expr>)` syntax is introduced under `FIP-0008`, where stage0 `try` is constrained to `Result<u8,u8>` inputs.
+Note: stage0 optional binding type-annotation forms (`let/var <ident>: u8 = <expr>` and `let/var <ident>: Result<u8,u8> = <expr>`) plus optional entrypoint return annotation (`fn main() -> u8`) are introduced under `FIP-0006`. Stage0 bootstrap `try(<expr>)` syntax is introduced under `FIP-0008`, where stage0 `try` is constrained to `Result<u8,u8>` inputs.
 
 ## Alternatives
 

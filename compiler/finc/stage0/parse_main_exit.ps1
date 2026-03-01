@@ -45,8 +45,14 @@ function Parse-TypeAnnotation {
         Fail-Parse "type annotation must not be empty"
     }
 
-    if ($typeName -eq "u8") {
+    $normalizedType = [regex]::Replace($typeName, '\s+', '')
+
+    if ($normalizedType -eq "u8") {
         return "u8"
+    }
+
+    if ($normalizedType -eq "Result<u8,u8>") {
+        return "Result<u8,u8>"
     }
 
     Fail-Parse "unsupported type annotation '$typeName'"
@@ -196,7 +202,7 @@ foreach ($stmt in $statements) {
         Fail-Parse "statements after exit(...) are not allowed in stage0"
     }
 
-    if ($stmt -match '^let\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([A-Za-z_][A-Za-z0-9_]*))?\s*=\s*(.+)$') {
+    if ($stmt -match '^let\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([^=]+?))?\s*=\s*(.+)$') {
         $name = $Matches[1]
         $declaredTypeRaw = $Matches[2]
         $expr = $Matches[3]
@@ -222,7 +228,7 @@ foreach ($stmt in $statements) {
         continue
     }
 
-    if ($stmt -match '^var\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([A-Za-z_][A-Za-z0-9_]*))?\s*=\s*(.+)$') {
+    if ($stmt -match '^var\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([^=]+?))?\s*=\s*(.+)$') {
         $name = $Matches[1]
         $declaredTypeRaw = $Matches[2]
         $expr = $Matches[3]
