@@ -1,0 +1,4 @@
+fn main() -> u8 {
+  let failure = err(1)
+  exit(28)
+}

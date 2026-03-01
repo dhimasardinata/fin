@@ -83,6 +83,8 @@ if (-not $SkipDoctor) {
 & $fin build --src tests/conformance/fixtures/main_result_drop_reinit_move.fn --out artifacts/test-exit25
 & $fin build --src tests/conformance/fixtures/main_result_move_reinit_move_again.fn --out artifacts/test-exit26
 & $fin build --src tests/conformance/fixtures/main_result_drop_reinit_drop_reinit.fn --out artifacts/test-exit27
+& $fin build --src tests/conformance/fixtures/main_exit_err_unused.fn --out artifacts/test-exit28
+& $fin build --src tests/conformance/fixtures/main_exit_err_binding_ok_path.fn --out artifacts/test-exit29
 
 if (-not $SkipRun) {
     & $fin run --no-build --out artifacts/test-exit0 --expect-exit 0
@@ -107,6 +109,8 @@ if (-not $SkipRun) {
         & $fin run --no-build --out artifacts/test-exit25 --expect-exit 25
         & $fin run --no-build --out artifacts/test-exit26 --expect-exit 26
         & $fin run --no-build --out artifacts/test-exit27 --expect-exit 27
+        & $fin run --no-build --out artifacts/test-exit28 --expect-exit 28
+        & $fin run --no-build --out artifacts/test-exit29 --expect-exit 29
     }
 }
 
