@@ -13,6 +13,7 @@ Stage0 conformance checks:
 - `fixtures/main_exit_try_literal.fn`: valid source with stage0 bootstrap `try(ok(<expr>))` on literal expression.
 - `fixtures/main_exit_try_identifier.fn`: valid source with stage0 bootstrap `try(<expr>)` on identifier `Result<u8,u8>` binding.
 - `fixtures/main_exit_try_ok_result.fn`: valid source with stage0 bootstrap `ok(<expr>)` result wrapper and `try` unwrap.
+- `fixtures/main_exit_try_move_ok_result.fn`: valid source with stage0 bootstrap `try(move(<result-ident>))` on an `ok` result binding.
 - `fixtures/main_exit_err_unused.fn`: valid source confirming stage0 `err(<expr>)` result construction is accepted without hidden control flow.
 - `fixtures/main_exit_err_binding_ok_path.fn`: valid source with typed `Result<u8,u8>` `err` binding alongside an explicit `ok` `try` success path.
 - `fixtures/main_drop_unused.fn`: valid source with stage0 `drop(<ident>)` followed by independent literal exit.
@@ -40,6 +41,7 @@ Stage0 conformance checks:
 - `fixtures/invalid_try_err_result.fn`: invalid source, parser must reject `try(err(...))` in stage0 bootstrap semantics.
 - `fixtures/invalid_try_non_result_literal.fn`: invalid source, parser must reject `try(<expr>)` when `<expr>` is not `Result<u8,u8>`.
 - `fixtures/invalid_try_err_identifier.fn`: invalid source, parser must reject `try(<ident>)` when the bound `Result<u8,u8>` state is `err` in stage0 bootstrap semantics.
+- `fixtures/invalid_try_move_err_identifier.fn`: invalid source, parser must reject `try(move(<ident>))` when moved `Result<u8,u8>` state is `err` in stage0 bootstrap semantics.
 - `fixtures/invalid_try_non_result_identifier.fn`: invalid source, parser must reject `try(<ident>)` when `<ident>` is a non-result value.
 - Error-model invalid fixtures above are also assertion-checked for deterministic diagnostic message text in `verify_stage0_grammar.ps1` (empty `try/ok/err`, hidden-control-flow `try(err(...))`, and non-result `try(...)` paths).
 - `fixtures/invalid_result_annotation_mismatch.fn`: invalid source, parser must reject annotation/expression mismatch for `Result<u8,u8>`.
