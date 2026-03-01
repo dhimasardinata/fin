@@ -1,0 +1,4 @@
+fn main() -> u8 {
+  let failure: Result<u8,u8> = err(3)
+  exit(try(failure))
+}

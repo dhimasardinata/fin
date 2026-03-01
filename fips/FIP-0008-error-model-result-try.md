@@ -15,9 +15,13 @@
   - tests/conformance/fixtures/main_exit_try_identifier.fn
   - tests/conformance/fixtures/main_exit_try_ok_result.fn
   - tests/conformance/fixtures/main_exit_result_typed_binding.fn
+  - tests/conformance/fixtures/main_exit_err_unused.fn
+  - tests/conformance/fixtures/main_exit_err_binding_ok_path.fn
   - tests/conformance/fixtures/invalid_try_missing_expression.fn
   - tests/conformance/fixtures/invalid_try_err_result.fn
+  - tests/conformance/fixtures/invalid_try_err_identifier.fn
   - tests/conformance/fixtures/invalid_try_non_result_literal.fn
+  - tests/conformance/fixtures/invalid_try_non_result_identifier.fn
   - tests/run_stage0_suite.ps1
 - acceptance:
   - Error-flow conformance suite passes without hidden control flow.
@@ -39,9 +43,10 @@ Current stage0 implementation delta:
 3. Stage0 `try(...)` is restricted to `Result<u8,u8>` inputs in this phase; non-result inputs are rejected deterministically.
 4. Stage0 `Result<u8,u8>` local binding annotations are accepted and interoperable with `try`.
 5. Stage0 `try(ok(<expr>))` (or `try` of known-ok result binding) unwraps to `u8`.
-6. Stage0 `try(err(<expr>))` is explicitly rejected to avoid hidden control flow in this bootstrap phase.
-7. Empty `try()`, `ok()`, and `err()` are rejected with deterministic parse diagnostics.
-8. Full `Result<T,E>` construction/propagation semantics remain pending; this slice establishes parser/test scaffolding and explicit bootstrap constraints.
+6. Stage0 `err(<expr>)` result construction is accepted for explicit error-value modeling without implicit control transfer.
+7. Stage0 `try(err(<expr>))` (including err-state identifier paths) is explicitly rejected to avoid hidden control flow in this bootstrap phase.
+8. Empty `try()`, `ok()`, and `err()` are rejected with deterministic parse diagnostics.
+9. Full `Result<T,E>` construction/propagation semantics remain pending; this slice establishes parser/test scaffolding and explicit bootstrap constraints.
 
 ## Alternatives
 
@@ -59,7 +64,7 @@ Compatibility impact must be documented before Implemented status.
 
 Current checks:
 
-1. `tests/conformance/verify_stage0_grammar.ps1` validates valid `try/ok` bootstrap cases (including explicit `Result<u8,u8>` local annotations) and rejects empty `try()`, `try(err(...))`, and `try` on non-result input.
-2. `tests/run_stage0_suite.ps1` compiles and executes `try/ok` fixtures in aggregated stage0 flow.
+1. `tests/conformance/verify_stage0_grammar.ps1` validates valid bootstrap `ok/err/try` cases (including explicit `Result<u8,u8>` local annotations) and rejects empty `try()`, `try(err(...))`, and `try` on non-result inputs (literal and identifier), with deterministic message checks for hidden-control-flow and type constraints.
+2. `tests/run_stage0_suite.ps1` compiles and executes `ok/err/try` fixtures in aggregated stage0 flow.
 
 Acceptance criteria listed above remain normative for Implemented status.

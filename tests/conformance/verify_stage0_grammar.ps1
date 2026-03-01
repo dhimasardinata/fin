@@ -89,6 +89,8 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_result_drop_rein
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_result_drop_reinit_move.fn" -ExpectedExit 25
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_result_move_reinit_move_again.fn" -ExpectedExit 26
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_result_drop_reinit_drop_reinit.fn" -ExpectedExit 27
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_err_unused.fn" -ExpectedExit 28
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_err_binding_ok_path.fn" -ExpectedExit 29
 
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_missing_main.fn"
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_undefined_identifier.fn"
@@ -98,6 +100,10 @@ Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_unsupported_r
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_try_missing_expression.fn"
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_try_err_result.fn"
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_try_non_result_literal.fn"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_err_result.fn" -ExpectedMessagePart "try(err(...)) is not supported in stage0 bootstrap (would require hidden control flow)"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_err_identifier.fn" -ExpectedMessagePart "try(err(...)) is not supported in stage0 bootstrap (would require hidden control flow)"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_non_result_literal.fn" -ExpectedMessagePart "try(...) expects Result<u8,u8> in stage0 bootstrap, found u8"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_non_result_identifier.fn" -ExpectedMessagePart "try(...) expects Result<u8,u8> in stage0 bootstrap, found u8"
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_result_annotation_mismatch.fn"
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_unsupported_result_annotation.fn"
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_borrow_reference_expr.fn"
