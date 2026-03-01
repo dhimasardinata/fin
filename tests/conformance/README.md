@@ -42,6 +42,7 @@ Stage0 conformance checks:
 - Error-model invalid fixtures above are also assertion-checked for deterministic diagnostic message text in `verify_stage0_grammar.ps1` (empty `try/ok/err`, hidden-control-flow `try(err(...))`, and non-result `try(...)` paths).
 - `fixtures/invalid_result_annotation_mismatch.fn`: invalid source, parser must reject annotation/expression mismatch for `Result<u8,u8>`.
 - `fixtures/invalid_unsupported_result_annotation.fn`: invalid source, parser must reject unsupported generic result annotations.
+- Type-annotation invalid fixtures above are also assertion-checked for deterministic diagnostic message text in `verify_stage0_grammar.ps1` (unsupported annotations and result-annotation mismatch).
 - `fixtures/invalid_result_use_after_drop.fn`: invalid source, parser must reject `Result<u8,u8>` usage after `drop(<ident>)`.
 - `fixtures/invalid_result_use_after_move.fn`: invalid source, parser must reject `Result<u8,u8>` usage after `move(<ident>)`.
 - `fixtures/invalid_result_assign_after_drop_immutable.fn`: invalid source, parser must reject re-initialization assignment to dropped immutable `Result<u8,u8>` bindings.
