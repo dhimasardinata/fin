@@ -76,6 +76,6 @@ Compatibility impact must be documented before Implemented status.
 
 Current checks:
 
-1. `tests/conformance/verify_stage0_grammar.ps1` validates valid and invalid fixtures for literals, bindings, mutation, and comments.
+1. `tests/conformance/verify_stage0_grammar.ps1` validates valid and invalid fixtures for literals, bindings, mutation, and comments, with deterministic message-substring assertions for missing entrypoint, undefined identifier use, and immutable assignment rejection.
 2. Parser rejects non-`main` entrypoint patterns for stage0 subset.
 3. Parser rejects undefined identifiers and assignment to immutable `let` bindings.

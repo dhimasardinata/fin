@@ -30,6 +30,7 @@ Stage0 conformance checks:
 - `fixtures/invalid_missing_main.fn`: invalid source, parser must reject.
 - `fixtures/invalid_undefined_identifier.fn`: invalid source, parser must reject undefined identifier use.
 - `fixtures/invalid_assign_immutable.fn`: invalid source, parser must reject assignment to `let`.
+- Core grammar invalid fixtures above are also assertion-checked for deterministic diagnostic message text in `verify_stage0_grammar.ps1`.
 - `fixtures/invalid_unsupported_type_annotation.fn`: invalid source, parser must reject unsupported type annotations.
 - `fixtures/invalid_unsupported_return_annotation.fn`: invalid source, parser must reject unsupported entrypoint return annotations.
 - `fixtures/invalid_try_missing_expression.fn`: invalid source, parser must reject empty `try()` usage.
