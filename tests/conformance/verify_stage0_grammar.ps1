@@ -45,6 +45,7 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_typed_u8.fn
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_signature_u8.fn" -ExpectedExit 10
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_literal.fn" -ExpectedExit 11
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_identifier.fn" -ExpectedExit 12
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_ok_result.fn" -ExpectedExit 13
 
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_missing_main.fn"
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_undefined_identifier.fn"
@@ -52,5 +53,6 @@ Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_assign_immuta
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_unsupported_type_annotation.fn"
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_unsupported_return_annotation.fn"
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_try_missing_expression.fn"
+Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_try_err_result.fn"
 
 Write-Host "Stage0 grammar conformance check passed."
