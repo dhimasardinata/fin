@@ -122,6 +122,7 @@ try {
     $inactiveLegacyDir = Join-Path $closureRoot ("run-{0}-legacy-inactive" -f $inactivePid)
     $inactiveMetadataDir = Join-Path $closureRoot ("run-{0}-metadata-inactive" -f $inactivePid)
     $malformedRunDir = Join-Path $closureRoot "run-bad-format"
+    $nonRunStaleDir = Join-Path $closureRoot "misc-stale-dir"
 
     New-Item -ItemType Directory -Path $activeLegacyDir -Force | Out-Null
     New-Item -ItemType Directory -Path $activeInvalidDir -Force | Out-Null
@@ -129,11 +130,13 @@ try {
     New-Item -ItemType Directory -Path $inactiveLegacyDir -Force | Out-Null
     New-Item -ItemType Directory -Path $inactiveMetadataDir -Force | Out-Null
     New-Item -ItemType Directory -Path $malformedRunDir -Force | Out-Null
+    New-Item -ItemType Directory -Path $nonRunStaleDir -Force | Out-Null
 
     Set-Content -Path (Join-Path $activeInvalidDir ".fin-closure-owner.json") -Value "{bad-json" -NoNewline
     Set-ClosureOwnerMetadata -WorkspaceDir $activeMismatchDir -OwnerPid $activePid -OwnerStartUtc $activeStartUtc.AddMinutes(-5)
     Set-ClosureOwnerMetadata -WorkspaceDir $inactiveMetadataDir -OwnerPid $inactivePid -OwnerStartUtc $inactiveStartUtc
     Set-ClosureOwnerMetadata -WorkspaceDir $malformedRunDir -OwnerPid $activePid -OwnerStartUtc $activeStartUtc
+    Set-ClosureOwnerMetadata -WorkspaceDir $nonRunStaleDir -OwnerPid $activePid -OwnerStartUtc $activeStartUtc
 
     Set-WorkspaceStale -Path $activeLegacyDir
     Set-WorkspaceStale -Path $activeInvalidDir
@@ -141,6 +144,7 @@ try {
     Set-WorkspaceStale -Path $inactiveLegacyDir
     Set-WorkspaceStale -Path $inactiveMetadataDir
     Set-WorkspaceStale -Path $malformedRunDir
+    Set-WorkspaceStale -Path $nonRunStaleDir
 
     $env:FIN_CLOSURE_STALE_HOURS = "1"
     Remove-Item Env:FIN_KEEP_CLOSURE_RUNS -ErrorAction SilentlyContinue
@@ -152,6 +156,7 @@ try {
     Assert-False -Condition (Test-Path $inactiveLegacyDir) -Message "Expected inactive legacy closure dir to be pruned."
     Assert-False -Condition (Test-Path $inactiveMetadataDir) -Message "Expected inactive metadata closure dir to be pruned."
     Assert-False -Condition (Test-Path $malformedRunDir) -Message "Expected malformed run-name closure dir to be pruned."
+    Assert-True -Condition (Test-Path $nonRunStaleDir) -Message "Expected stale non-run closure dir to be retained (prune scope is run-* only)."
 
     $activeLegacyMetadata = Join-Path $activeLegacyDir ".fin-closure-owner.json"
     $activeInvalidMetadata = Join-Path $activeInvalidDir ".fin-closure-owner.json"
