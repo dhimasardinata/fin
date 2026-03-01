@@ -37,15 +37,34 @@ function Parse-U8Literal {
     return $value
 }
 
+function Parse-TypeAnnotation {
+    param([string]$TypeText)
+
+    $typeName = $TypeText.Trim()
+    if ([string]::IsNullOrWhiteSpace($typeName)) {
+        Fail-Parse "type annotation must not be empty"
+    }
+
+    if ($typeName -eq "u8") {
+        return "u8"
+    }
+
+    Fail-Parse "unsupported type annotation '$typeName'"
+}
+
 function Parse-Expr {
     param(
         [string]$Expr,
-        [hashtable]$Values
+        [hashtable]$Values,
+        [hashtable]$Types
     )
 
     $literal = Parse-U8Literal -Text $Expr
     if ($null -ne $literal) {
-        return [int]$literal
+        return [pscustomobject]@{
+            Type = "u8"
+            Value = [int]$literal
+        }
     }
 
     $name = $Expr.Trim()
@@ -56,16 +75,20 @@ function Parse-Expr {
         Fail-Parse "undefined identifier '$name'"
     }
 
-    return [int]$Values[$name]
+    return [pscustomobject]@{
+        Type = [string]$Types[$name]
+        Value = [int]$Values[$name]
+    }
 }
 
 # Stage0 grammar subset:
 #   fn main() {
-#     (let|var) <ident> = <expr>;
+#     (let|var) <ident> [: <type>] = <expr>;
 #     <ident> = <expr>;
 #     exit(<expr>);
 #   }
 # <expr> := <u8-literal> | <ident>
+# <type> := u8
 # with optional semicolons and line comments (# or //).
 $programPattern = '(?s)^\s*fn\s+main\s*\(\s*\)\s*\{\s*(.*?)\s*\}\s*$'
 $programMatch = [regex]::Match($raw, $programPattern)
@@ -91,6 +114,7 @@ if ($statements.Count -eq 0) {
 
 $values = @{}
 $mutable = @{}
+$types = @{}
 $haveExit = $false
 [int]$exitCode = -1
 
@@ -99,25 +123,53 @@ foreach ($stmt in $statements) {
         Fail-Parse "statements after exit(...) are not allowed in stage0"
     }
 
-    if ($stmt -match '^let\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$') {
+    if ($stmt -match '^let\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([A-Za-z_][A-Za-z0-9_]*))?\s*=\s*(.+)$') {
         $name = $Matches[1]
-        $expr = $Matches[2]
+        $declaredTypeRaw = $Matches[2]
+        $expr = $Matches[3]
         if ($values.ContainsKey($name)) {
             Fail-Parse "duplicate binding '$name'"
         }
-        $values[$name] = Parse-Expr -Expr $expr -Values $values
+
+        $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types
+        $declaredType = if ([string]::IsNullOrWhiteSpace($declaredTypeRaw)) {
+            [string]$exprValue.Type
+        }
+        else {
+            Parse-TypeAnnotation -TypeText $declaredTypeRaw
+        }
+        if ([string]$exprValue.Type -ne $declaredType) {
+            Fail-Parse ("type mismatch for binding '{0}': expected {1}, found {2}" -f $name, $declaredType, $exprValue.Type)
+        }
+
+        $values[$name] = [int]$exprValue.Value
         $mutable[$name] = $false
+        $types[$name] = $declaredType
         continue
     }
 
-    if ($stmt -match '^var\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$') {
+    if ($stmt -match '^var\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([A-Za-z_][A-Za-z0-9_]*))?\s*=\s*(.+)$') {
         $name = $Matches[1]
-        $expr = $Matches[2]
+        $declaredTypeRaw = $Matches[2]
+        $expr = $Matches[3]
         if ($values.ContainsKey($name)) {
             Fail-Parse "duplicate binding '$name'"
         }
-        $values[$name] = Parse-Expr -Expr $expr -Values $values
+
+        $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types
+        $declaredType = if ([string]::IsNullOrWhiteSpace($declaredTypeRaw)) {
+            [string]$exprValue.Type
+        }
+        else {
+            Parse-TypeAnnotation -TypeText $declaredTypeRaw
+        }
+        if ([string]$exprValue.Type -ne $declaredType) {
+            Fail-Parse ("type mismatch for binding '{0}': expected {1}, found {2}" -f $name, $declaredType, $exprValue.Type)
+        }
+
+        $values[$name] = [int]$exprValue.Value
         $mutable[$name] = $true
+        $types[$name] = $declaredType
         continue
     }
 
@@ -130,12 +182,22 @@ foreach ($stmt in $statements) {
         if (-not [bool]$mutable[$name]) {
             Fail-Parse "cannot assign to immutable binding '$name'"
         }
-        $values[$name] = Parse-Expr -Expr $expr -Values $values
+
+        $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types
+        $targetType = [string]$types[$name]
+        if ([string]$exprValue.Type -ne $targetType) {
+            Fail-Parse ("type mismatch for assignment '{0}': expected {1}, found {2}" -f $name, $targetType, $exprValue.Type)
+        }
+        $values[$name] = [int]$exprValue.Value
         continue
     }
 
     if ($stmt -match '^exit\s*\(\s*(.+)\s*\)$') {
-        $exitCode = Parse-Expr -Expr $Matches[1] -Values $values
+        $exprValue = Parse-Expr -Expr $Matches[1] -Values $values -Types $types
+        if ([string]$exprValue.Type -ne "u8") {
+            Fail-Parse ("exit expression type must be u8, found {0}" -f $exprValue.Type)
+        }
+        $exitCode = [int]$exprValue.Value
         $haveExit = $true
         continue
     }

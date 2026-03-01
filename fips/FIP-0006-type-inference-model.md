@@ -2,13 +2,18 @@
 
 - id: FIP-0006
 - address: fin://fip/FIP-0006
-- status: Scheduled
+- status: InProgress
 - authors: @fin-maintainers
 - created: 2026-02-27
 - requires: ["FIP-0005"]
 - target_release: M2
 - discussion: TBD
-- implementation: []
+- implementation:
+  - compiler/finc/stage0/parse_main_exit.ps1
+  - tests/conformance/verify_stage0_grammar.ps1
+  - tests/conformance/fixtures/main_exit_typed_u8.fn
+  - tests/conformance/fixtures/invalid_unsupported_type_annotation.fn
+  - tests/run_stage0_suite.ps1
 - acceptance:
   - Inference test corpus passes with stable diagnostics.
 
@@ -22,7 +27,15 @@ This proposal is part of the Fin independent-toolchain baseline and is required 
 
 ## Design
 
-Initial design details are tracked in the corresponding spec and architecture documents. Concrete implementation deltas must be appended to this section before status changes to InProgress.
+Current stage0 implementation delta:
+
+1. Local binding inference is active for stage0 expressions (`u8` literals and identifiers).
+2. Optional explicit annotation is accepted on bindings:
+   - `let <ident>: u8 = <expr>`
+   - `var <ident>: u8 = <expr>`
+3. Stage0 parser validates annotation set and currently accepts only `u8`.
+4. Unsupported annotations are rejected with deterministic parse diagnostics.
+5. Assignment and `exit(...)` expression validation uses inferred/declared type metadata (stage0 currently `u8` only).
 
 ## Alternatives
 
@@ -38,4 +51,9 @@ Compatibility impact must be documented before Implemented status.
 
 ## Test Plan
 
-Acceptance criteria listed above are normative; CI coverage for this proposal must be linked in implementation once available.
+Current checks:
+
+1. `tests/conformance/verify_stage0_grammar.ps1` validates typed binding success and unsupported annotation rejection.
+2. `tests/run_stage0_suite.ps1` compiles and executes typed fixture (`main_exit_typed_u8.fn`) in aggregated stage0 flow.
+
+Acceptance criteria listed above remain normative for Implemented status.

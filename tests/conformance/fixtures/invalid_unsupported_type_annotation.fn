@@ -1,0 +1,4 @@
+fn main() {
+  let value: i32 = 7
+  exit(value)
+}
