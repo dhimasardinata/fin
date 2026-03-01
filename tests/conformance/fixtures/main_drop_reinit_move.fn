@@ -1,0 +1,7 @@
+fn main() {
+  var value = 1
+  drop(value)
+  value = 20
+  let taken = move(value)
+  exit(taken)
+}

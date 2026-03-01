@@ -1,0 +1,7 @@
+fn main() {
+  var value = 1
+  let first = move(value)
+  value = 19
+  let second = move(value)
+  exit(second)
+}

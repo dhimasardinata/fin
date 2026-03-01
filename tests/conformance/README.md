@@ -17,6 +17,8 @@ Stage0 conformance checks:
 - `fixtures/main_move_binding.fn`: valid source with stage0 `move(<ident>)` ownership transfer to a new binding.
 - `fixtures/main_move_reinit_var.fn`: valid source with stage0 `move(<ident>)` followed by mutable binding re-initialization.
 - `fixtures/main_drop_reinit_var.fn`: valid source with stage0 `drop(<ident>)` followed by mutable binding re-initialization.
+- `fixtures/main_move_reinit_move_again.fn`: valid source showing `move -> mutable re-init -> move` lifecycle transition chain.
+- `fixtures/main_drop_reinit_move.fn`: valid source showing `drop -> mutable re-init -> move` lifecycle transition chain.
 - `fixtures/invalid_missing_main.fn`: invalid source, parser must reject.
 - `fixtures/invalid_undefined_identifier.fn`: invalid source, parser must reject undefined identifier use.
 - `fixtures/invalid_assign_immutable.fn`: invalid source, parser must reject assignment to `let`.
