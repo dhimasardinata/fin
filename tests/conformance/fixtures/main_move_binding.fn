@@ -1,0 +1,5 @@
+fn main() {
+  let value = 16
+  let moved = move(value)
+  exit(moved)
+}

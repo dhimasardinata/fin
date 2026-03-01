@@ -40,8 +40,9 @@ Current stage0 subset grammar:
 
 1. `<u8-literal>` (`0..255`)
 2. `<ident>`
-3. `ok(<expr>)` / `err(<expr>)` (stage0 bootstrap result wrappers)
-4. `try(<expr>)` (stage0 bootstrap form)
+3. `move(<ident>)` (stage0 bootstrap ownership transfer form)
+4. `ok(<expr>)` / `err(<expr>)` (stage0 bootstrap result wrappers)
+5. `try(<expr>)` (stage0 bootstrap form)
 
 `<type>` (stage0):
 
@@ -57,7 +58,7 @@ Accepted stage0 tolerances:
 
 This subset is intentionally minimal and acts as the first executable parser checkpoint.
 
-Note: stage0 optional binding type-annotation forms (`let/var <ident>: u8 = <expr>` and `let/var <ident>: Result<u8,u8> = <expr>`) plus optional entrypoint return annotation (`fn main() -> u8`) are introduced under `FIP-0006`. Stage0 bootstrap `try(<expr>)` syntax is introduced under `FIP-0008`, where stage0 `try` is constrained to `Result<u8,u8>` inputs. Ownership/borrowing syntax (`&`, `*`) is explicitly rejected in stage0 under `FIP-0007` until inference-first ownership semantics are implemented.
+Note: stage0 optional binding type-annotation forms (`let/var <ident>: u8 = <expr>` and `let/var <ident>: Result<u8,u8> = <expr>`) plus optional entrypoint return annotation (`fn main() -> u8`) are introduced under `FIP-0006`. Stage0 bootstrap `try(<expr>)` syntax is introduced under `FIP-0008`, where stage0 `try` is constrained to `Result<u8,u8>` inputs. Stage0 `drop(<ident>)` and `move(<ident>)` bootstrap ownership forms are introduced under `FIP-0007`; ownership/borrowing syntax (`&`, `*`) remains explicitly rejected until inference-first ownership semantics are implemented.
 
 ## Alternatives
 
