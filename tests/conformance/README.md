@@ -32,6 +32,7 @@ Stage0 conformance checks:
 - `fixtures/invalid_use_after_drop.fn`: invalid source, parser must reject identifier usage after `drop(<ident>)`.
 - `fixtures/invalid_double_drop.fn`: invalid source, parser must reject repeated `drop(<ident>)` on the same binding.
 - `fixtures/invalid_assign_after_drop.fn`: invalid source, parser must reject assignment to a dropped binding.
+- `fixtures/invalid_assign_after_move_immutable.fn`: invalid source, parser must reject re-initialization assignment to an immutable binding after `move(<ident>)`.
 - `fixtures/invalid_drop_undefined.fn`: invalid source, parser must reject `drop(<ident>)` for undefined identifiers.
 - `fixtures/invalid_use_after_move.fn`: invalid source, parser must reject identifier usage after `move(<ident>)`.
 - `fixtures/invalid_double_move.fn`: invalid source, parser must reject repeated `move(<ident>)` on the same binding.
