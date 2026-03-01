@@ -1,0 +1,6 @@
+fn main() {
+    var value = 1
+    let taken = move(value)
+    value = 17
+    exit(value)
+}

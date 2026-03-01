@@ -68,7 +68,7 @@ function Parse-Expr {
         [hashtable]$Values,
         [hashtable]$Types,
         [hashtable]$ResultStates,
-        [hashtable]$AliveStates
+        [hashtable]$LifecycleStates
     )
 
     $trimmedExpr = $Expr.Trim()
@@ -83,11 +83,18 @@ function Parse-Expr {
         if (-not $Values.ContainsKey($name)) {
             Fail-Parse "move for undefined identifier '$name'"
         }
-        if (-not [bool]$AliveStates[$name]) {
+        $state = [string]$LifecycleStates[$name]
+        if ($state -eq "moved") {
             Fail-Parse "double move for identifier '$name'"
         }
+        if ($state -eq "dropped") {
+            Fail-Parse "move after drop for identifier '$name'"
+        }
+        if ($state -ne "alive") {
+            Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $state, $name)
+        }
 
-        $AliveStates[$name] = $false
+        $LifecycleStates[$name] = "moved"
         return [pscustomobject]@{
             Type = [string]$Types[$name]
             Value = [int]$Values[$name]
@@ -101,7 +108,7 @@ function Parse-Expr {
             Fail-Parse "ok(...) requires an inner expression"
         }
 
-        $innerValue = Parse-Expr -Expr $innerExpr -Values $Values -Types $Types -ResultStates $ResultStates -AliveStates $AliveStates
+        $innerValue = Parse-Expr -Expr $innerExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates
         if ([string]$innerValue.Type -ne "u8") {
             Fail-Parse ("ok(...) expects u8 expression in stage0, found {0}" -f $innerValue.Type)
         }
@@ -119,7 +126,7 @@ function Parse-Expr {
             Fail-Parse "err(...) requires an inner expression"
         }
 
-        $innerValue = Parse-Expr -Expr $innerExpr -Values $Values -Types $Types -ResultStates $ResultStates -AliveStates $AliveStates
+        $innerValue = Parse-Expr -Expr $innerExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates
         if ([string]$innerValue.Type -ne "u8") {
             Fail-Parse ("err(...) expects u8 expression in stage0, found {0}" -f $innerValue.Type)
         }
@@ -137,7 +144,7 @@ function Parse-Expr {
             Fail-Parse "try(...) requires an inner expression"
         }
 
-        $innerValue = Parse-Expr -Expr $innerExpr -Values $Values -Types $Types -ResultStates $ResultStates -AliveStates $AliveStates
+        $innerValue = Parse-Expr -Expr $innerExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates
         if ([string]$innerValue.Type -eq "Result<u8,u8>") {
             if ([string]$innerValue.ResultState -eq "ok") {
                 return [pscustomobject]@{
@@ -171,8 +178,15 @@ function Parse-Expr {
     if (-not $Values.ContainsKey($name)) {
         Fail-Parse "undefined identifier '$name'"
     }
-    if (-not [bool]$AliveStates[$name]) {
+    $state = [string]$LifecycleStates[$name]
+    if ($state -eq "moved") {
+        Fail-Parse "use after move for identifier '$name'"
+    }
+    if ($state -eq "dropped") {
         Fail-Parse "use after drop for identifier '$name'"
+    }
+    if ($state -ne "alive") {
+        Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $state, $name)
     }
 
     return [pscustomobject]@{
@@ -226,7 +240,7 @@ $values = @{}
 $mutable = @{}
 $types = @{}
 $resultStates = @{}
-$aliveStates = @{}
+$lifecycleStates = @{}
 $haveExit = $false
 [int]$exitCode = -1
 
@@ -243,7 +257,7 @@ foreach ($stmt in $statements) {
             Fail-Parse "duplicate binding '$name'"
         }
 
-        $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types -ResultStates $resultStates -AliveStates $aliveStates
+        $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates
         $declaredType = if ([string]::IsNullOrWhiteSpace($declaredTypeRaw)) {
             [string]$exprValue.Type
         }
@@ -258,7 +272,7 @@ foreach ($stmt in $statements) {
         $mutable[$name] = $false
         $types[$name] = $declaredType
         $resultStates[$name] = [string]$exprValue.ResultState
-        $aliveStates[$name] = $true
+        $lifecycleStates[$name] = "alive"
         continue
     }
 
@@ -270,7 +284,7 @@ foreach ($stmt in $statements) {
             Fail-Parse "duplicate binding '$name'"
         }
 
-        $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types -ResultStates $resultStates -AliveStates $aliveStates
+        $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates
         $declaredType = if ([string]::IsNullOrWhiteSpace($declaredTypeRaw)) {
             [string]$exprValue.Type
         }
@@ -285,7 +299,7 @@ foreach ($stmt in $statements) {
         $mutable[$name] = $true
         $types[$name] = $declaredType
         $resultStates[$name] = [string]$exprValue.ResultState
-        $aliveStates[$name] = $true
+        $lifecycleStates[$name] = "alive"
         continue
     }
 
@@ -295,16 +309,24 @@ foreach ($stmt in $statements) {
         if (-not $values.ContainsKey($name)) {
             Fail-Parse "assignment to undefined identifier '$name'"
         }
-        if (-not [bool]$aliveStates[$name]) {
+        $targetState = [string]$lifecycleStates[$name]
+        if ($targetState -eq "dropped") {
             Fail-Parse "cannot assign to dropped binding '$name'"
+        }
+        if (($targetState -ne "alive") -and ($targetState -ne "moved")) {
+            Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $targetState, $name)
         }
         if (-not [bool]$mutable[$name]) {
             Fail-Parse "cannot assign to immutable binding '$name'"
         }
 
-        $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types -ResultStates $resultStates -AliveStates $aliveStates
-        if (-not [bool]$aliveStates[$name]) {
+        $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates
+        $postExprTargetState = [string]$lifecycleStates[$name]
+        if (($targetState -eq "alive") -and (($postExprTargetState -eq "dropped") -or ($postExprTargetState -eq "moved"))) {
             Fail-Parse ("assignment target '{0}' moved or dropped during expression evaluation" -f $name)
+        }
+        if (($postExprTargetState -ne "alive") -and ($postExprTargetState -ne "moved")) {
+            Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $postExprTargetState, $name)
         }
         $targetType = [string]$types[$name]
         if ([string]$exprValue.Type -ne $targetType) {
@@ -312,6 +334,7 @@ foreach ($stmt in $statements) {
         }
         $values[$name] = [int]$exprValue.Value
         $resultStates[$name] = [string]$exprValue.ResultState
+        $lifecycleStates[$name] = "alive"
         continue
     }
 
@@ -320,15 +343,22 @@ foreach ($stmt in $statements) {
         if (-not $values.ContainsKey($name)) {
             Fail-Parse "drop for undefined identifier '$name'"
         }
-        if (-not [bool]$aliveStates[$name]) {
+        $state = [string]$lifecycleStates[$name]
+        if ($state -eq "dropped") {
             Fail-Parse "double drop for identifier '$name'"
         }
-        $aliveStates[$name] = $false
+        if ($state -eq "moved") {
+            Fail-Parse "drop after move for identifier '$name'"
+        }
+        if ($state -ne "alive") {
+            Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $state, $name)
+        }
+        $lifecycleStates[$name] = "dropped"
         continue
     }
 
     if ($stmt -match '^exit\s*\(\s*(.+)\s*\)$') {
-        $exprValue = Parse-Expr -Expr $Matches[1] -Values $values -Types $types -ResultStates $resultStates -AliveStates $aliveStates
+        $exprValue = Parse-Expr -Expr $Matches[1] -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates
         $expectedExitType = if ([string]::IsNullOrWhiteSpace($declaredMainReturnType)) {
             "u8"
         }
