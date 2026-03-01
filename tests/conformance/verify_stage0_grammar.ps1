@@ -54,5 +54,6 @@ Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_unsupported_t
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_unsupported_return_annotation.fn"
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_try_missing_expression.fn"
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_try_err_result.fn"
+Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_try_non_result_literal.fn"
 
 Write-Host "Stage0 grammar conformance check passed."
