@@ -48,6 +48,7 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_identif
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_ok_result.fn" -ExpectedExit 13
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_result_typed_binding.fn" -ExpectedExit 14
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_drop_unused.fn" -ExpectedExit 15
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_move_binding.fn" -ExpectedExit 16
 
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_missing_main.fn"
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_undefined_identifier.fn"
@@ -66,5 +67,9 @@ Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_use_after_dro
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_double_drop.fn"
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_assign_after_drop.fn"
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_drop_undefined.fn"
+Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_use_after_move.fn"
+Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_double_move.fn"
+Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_move_undefined.fn"
+Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_self_move_assignment.fn"
 
 Write-Host "Stage0 grammar conformance check passed."

@@ -78,6 +78,22 @@ function Parse-Expr {
     if ($trimmedExpr -match '^\*') {
         Fail-Parse "dereference expressions are not available in stage0 bootstrap"
     }
+    if ($trimmedExpr -match '^move\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)$') {
+        $name = $Matches[1]
+        if (-not $Values.ContainsKey($name)) {
+            Fail-Parse "move for undefined identifier '$name'"
+        }
+        if (-not [bool]$AliveStates[$name]) {
+            Fail-Parse "double move for identifier '$name'"
+        }
+
+        $AliveStates[$name] = $false
+        return [pscustomobject]@{
+            Type = [string]$Types[$name]
+            Value = [int]$Values[$name]
+            ResultState = [string]$ResultStates[$name]
+        }
+    }
 
     if ($trimmedExpr -match '^ok\s*\(\s*(.+)\s*\)$') {
         $innerExpr = $Matches[1]
@@ -173,8 +189,8 @@ function Parse-Expr {
 #     drop(<ident>);
 #     exit(<expr>);
 #   }
-# <expr> := <u8-literal> | <ident> | ok(<expr>) | err(<expr>) | try(<expr>)
-# <type> := u8
+# <expr> := <u8-literal> | <ident> | move(<ident>) | ok(<expr>) | err(<expr>) | try(<expr>)
+# <type> := u8 | Result<u8,u8>
 # with optional semicolons and line comments (# or //).
 $programPattern = '(?s)^\s*fn\s+main\s*\(\s*\)\s*(?:->\s*([A-Za-z_][A-Za-z0-9_]*))?\s*\{\s*(.*?)\s*\}\s*$'
 $programMatch = [regex]::Match($raw, $programPattern)
@@ -287,6 +303,9 @@ foreach ($stmt in $statements) {
         }
 
         $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types -ResultStates $resultStates -AliveStates $aliveStates
+        if (-not [bool]$aliveStates[$name]) {
+            Fail-Parse ("assignment target '{0}' moved or dropped during expression evaluation" -f $name)
+        }
         $targetType = [string]$types[$name]
         if ([string]$exprValue.Type -ne $targetType) {
             Fail-Parse ("type mismatch for assignment '{0}': expected {1}, found {2}" -f $name, $targetType, $exprValue.Type)

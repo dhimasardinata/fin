@@ -1,0 +1,6 @@
+fn main() {
+  let value = 1
+  let first = move(value)
+  let second = move(value)
+  exit(first)
+}

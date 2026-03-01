@@ -14,6 +14,7 @@ Stage0 conformance checks:
 - `fixtures/main_exit_try_identifier.fn`: valid source with stage0 bootstrap `try(<expr>)` on identifier `Result<u8,u8>` binding.
 - `fixtures/main_exit_try_ok_result.fn`: valid source with stage0 bootstrap `ok(<expr>)` result wrapper and `try` unwrap.
 - `fixtures/main_drop_unused.fn`: valid source with stage0 `drop(<ident>)` followed by independent literal exit.
+- `fixtures/main_move_binding.fn`: valid source with stage0 `move(<ident>)` ownership transfer to a new binding.
 - `fixtures/invalid_missing_main.fn`: invalid source, parser must reject.
 - `fixtures/invalid_undefined_identifier.fn`: invalid source, parser must reject undefined identifier use.
 - `fixtures/invalid_assign_immutable.fn`: invalid source, parser must reject assignment to `let`.
@@ -31,3 +32,7 @@ Stage0 conformance checks:
 - `fixtures/invalid_double_drop.fn`: invalid source, parser must reject repeated `drop(<ident>)` on the same binding.
 - `fixtures/invalid_assign_after_drop.fn`: invalid source, parser must reject assignment to a dropped binding.
 - `fixtures/invalid_drop_undefined.fn`: invalid source, parser must reject `drop(<ident>)` for undefined identifiers.
+- `fixtures/invalid_use_after_move.fn`: invalid source, parser must reject identifier usage after `move(<ident>)`.
+- `fixtures/invalid_double_move.fn`: invalid source, parser must reject repeated `move(<ident>)` on the same binding.
+- `fixtures/invalid_move_undefined.fn`: invalid source, parser must reject `move(<ident>)` for undefined identifiers.
+- `fixtures/invalid_self_move_assignment.fn`: invalid source, parser must reject assignment targets moved by their own assignment expression.

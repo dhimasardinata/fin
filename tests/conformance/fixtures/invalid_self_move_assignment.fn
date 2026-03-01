@@ -1,0 +1,5 @@
+fn main() {
+  var value = 1
+  value = move(value)
+  exit(value)
+}

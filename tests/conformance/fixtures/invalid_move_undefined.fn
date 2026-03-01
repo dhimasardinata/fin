@@ -1,0 +1,4 @@
+fn main() {
+  let value = move(other)
+  exit(0)
+}
