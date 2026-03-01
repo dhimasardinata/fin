@@ -84,6 +84,9 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_drop_reinit_var.
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_move_reinit_move_again.fn" -ExpectedExit 19
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_drop_reinit_move.fn" -ExpectedExit 20
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_drop_reinit_drop_reinit.fn" -ExpectedExit 22
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_result_move_reinit_var.fn" -ExpectedExit 23
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_result_drop_reinit_var.fn" -ExpectedExit 24
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_result_drop_reinit_move.fn" -ExpectedExit 25
 
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_missing_main.fn"
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_undefined_identifier.fn"
