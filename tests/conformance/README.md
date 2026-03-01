@@ -41,6 +41,10 @@ Stage0 conformance checks:
 - `fixtures/invalid_result_assign_after_move_immutable.fn`: invalid source, parser must reject re-initialization assignment to moved immutable `Result<u8,u8>` bindings.
 - `fixtures/invalid_result_drop_after_move.fn`: invalid source, parser must reject `drop(<ident>)` after moved immutable `Result<u8,u8>` bindings.
 - `fixtures/invalid_result_move_after_drop.fn`: invalid source, parser must reject `move(<ident>)` after dropped immutable `Result<u8,u8>` bindings.
+- `fixtures/invalid_result_double_drop.fn`: invalid source, parser must reject repeated `drop(<ident>)` on `Result<u8,u8>` bindings.
+- `fixtures/invalid_result_double_move.fn`: invalid source, parser must reject repeated `move(<ident>)` on `Result<u8,u8>` bindings.
+- `fixtures/invalid_result_use_after_redrop.fn`: invalid source, parser must reject `Result<u8,u8>` usage after repeated `drop -> re-init -> drop` cycles.
+- `fixtures/invalid_result_self_move_assignment.fn`: invalid source, parser must reject self-move assignment hazards for `Result<u8,u8>` bindings.
 - `fixtures/invalid_borrow_reference_expr.fn`: invalid source, parser must reject stage0 borrow/reference expression syntax (`&x`).
 - `fixtures/invalid_dereference_expr.fn`: invalid source, parser must reject stage0 dereference expression syntax (`*x`).
 - `fixtures/invalid_borrow_type_annotation.fn`: invalid source, parser must reject ownership/borrowing type annotations in stage0 (`&u8`).

@@ -1,0 +1,7 @@
+fn main() -> u8 {
+  var value: Result<u8,u8> = ok(1)
+  drop(value)
+  value = ok(21)
+  drop(value)
+  exit(try(value))
+}
