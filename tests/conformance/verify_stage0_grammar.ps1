@@ -107,6 +107,8 @@ Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_ok_mi
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_err_missing_expression.fn" -ExpectedMessagePart "err(...) requires an inner expression"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_ok_non_u8_identifier.fn" -ExpectedMessagePart "ok(...) expects u8 expression in stage0, found Result<u8,u8>"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_err_non_u8_identifier.fn" -ExpectedMessagePart "err(...) expects u8 expression in stage0, found Result<u8,u8>"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_ok_move_non_u8_identifier.fn" -ExpectedMessagePart "ok(...) expects u8 expression in stage0, found Result<u8,u8>"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_err_move_non_u8_identifier.fn" -ExpectedMessagePart "err(...) expects u8 expression in stage0, found Result<u8,u8>"
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_try_err_result.fn"
 Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_try_non_result_literal.fn"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_err_result.fn" -ExpectedMessagePart "try(err(...)) is not supported in stage0 bootstrap (would require hidden control flow)"

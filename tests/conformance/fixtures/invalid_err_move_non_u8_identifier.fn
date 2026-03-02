@@ -1,0 +1,5 @@
+fn main() {
+    let wrapped = err(12)
+    let value = err(move(wrapped))
+    exit(0)
+}
