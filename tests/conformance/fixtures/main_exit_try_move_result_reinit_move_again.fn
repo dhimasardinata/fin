@@ -1,0 +1,7 @@
+fn main() {
+    var wrapped = ok(34)
+    let first = try(move(wrapped))
+    wrapped = ok(35)
+    let second = try(move(wrapped))
+    exit(second)
+}

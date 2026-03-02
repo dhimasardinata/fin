@@ -77,6 +77,7 @@ if (-not $SkipDoctor) {
 & $fin build --src tests/conformance/fixtures/main_exit_try_ok_move_u8.fn --out artifacts/test-exit31
 & $fin build --src tests/conformance/fixtures/main_exit_err_move_u8.fn --out artifacts/test-exit32
 & $fin build --src tests/conformance/fixtures/main_exit_try_move_ok_move_u8.fn --out artifacts/test-exit33
+& $fin build --src tests/conformance/fixtures/main_exit_try_move_result_reinit_move_again.fn --out artifacts/test-exit35
 & $fin build --src tests/conformance/fixtures/main_drop_unused.fn --out artifacts/test-exit15
 & $fin build --src tests/conformance/fixtures/main_move_binding.fn --out artifacts/test-exit16
 & $fin build --src tests/conformance/fixtures/main_move_reinit_var.fn --out artifacts/test-exit17
@@ -107,6 +108,7 @@ if (-not $SkipRun) {
         & $fin run --no-build --out artifacts/test-exit31 --expect-exit 31
         & $fin run --no-build --out artifacts/test-exit32 --expect-exit 32
         & $fin run --no-build --out artifacts/test-exit33 --expect-exit 33
+        & $fin run --no-build --out artifacts/test-exit35 --expect-exit 35
         & $fin run --no-build --out artifacts/test-exit15 --expect-exit 15
         & $fin run --no-build --out artifacts/test-exit16 --expect-exit 16
         & $fin run --no-build --out artifacts/test-exit17 --expect-exit 17
