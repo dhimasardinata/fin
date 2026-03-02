@@ -87,6 +87,7 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_move_ot
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_move_ok_nested_wrapper.fn" -ExpectedExit 43
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_err_try_move_ok_identifier.fn" -ExpectedExit 45
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_err_try_move_ok_reinit_source.fn" -ExpectedExit 48
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_ok_try_move_ok_reinit_source.fn" -ExpectedExit 51
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_drop_unused.fn" -ExpectedExit 15
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_move_binding.fn" -ExpectedExit 16
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_move_reinit_var.fn" -ExpectedExit 17
@@ -124,6 +125,7 @@ Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_m
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_ok_try_move_err_identifier.fn" -ExpectedMessagePart "try(err(...)) is not supported in stage0 bootstrap (would require hidden control flow)"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_err_try_move_err_identifier.fn" -ExpectedMessagePart "try(err(...)) is not supported in stage0 bootstrap (would require hidden control flow)"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_err_try_move_use_after_move_source.fn" -ExpectedMessagePart "use after move for identifier 'source'"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_ok_try_move_use_after_move_source.fn" -ExpectedMessagePart "use after move for identifier 'source'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_non_result_literal.fn" -ExpectedMessagePart "try(...) expects Result<u8,u8> in stage0 bootstrap, found u8"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_non_result_identifier.fn" -ExpectedMessagePart "try(...) expects Result<u8,u8> in stage0 bootstrap, found u8"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_move_non_result_identifier.fn" -ExpectedMessagePart "try(...) expects Result<u8,u8> in stage0 bootstrap, found u8"

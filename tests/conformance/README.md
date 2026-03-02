@@ -23,6 +23,7 @@ Stage0 conformance checks:
 - `fixtures/main_exit_try_move_ok_nested_wrapper.fn`: valid source with stage0 bootstrap nested wrapper composition `ok(try(move(<result-ident>)))` followed by moved unwrap.
 - `fixtures/main_exit_err_try_move_ok_identifier.fn`: valid source with stage0 bootstrap nested wrapper composition `err(try(move(<result-ident>)))` on moved `ok` input.
 - `fixtures/main_exit_err_try_move_ok_reinit_source.fn`: valid source with nested `err(try(move(<result-ident>)))`, then mutable re-init of the consumed source and second moved unwrap.
+- `fixtures/main_exit_ok_try_move_ok_reinit_source.fn`: valid source with nested `ok(try(move(<result-ident>)))`, then mutable re-init of the consumed source and second moved unwrap.
 - `fixtures/main_exit_err_unused.fn`: valid source confirming stage0 `err(<expr>)` result construction is accepted without hidden control flow.
 - `fixtures/main_exit_err_binding_ok_path.fn`: valid source with typed `Result<u8,u8>` `err` binding alongside an explicit `ok` `try` success path.
 - `fixtures/main_drop_unused.fn`: valid source with stage0 `drop(<ident>)` followed by independent literal exit.
@@ -58,6 +59,7 @@ Stage0 conformance checks:
 - `fixtures/invalid_ok_try_move_err_identifier.fn`: invalid source, parser must reject nested `ok(try(move(<ident>)))` when moved `Result<u8,u8>` state is `err`.
 - `fixtures/invalid_err_try_move_err_identifier.fn`: invalid source, parser must reject nested `err(try(move(<ident>)))` when moved `Result<u8,u8>` state is `err`.
 - `fixtures/invalid_err_try_move_use_after_move_source.fn`: invalid source, parser must reject source identifier use after nested `err(try(move(<ident>)))` consumes it.
+- `fixtures/invalid_ok_try_move_use_after_move_source.fn`: invalid source, parser must reject source identifier use after nested `ok(try(move(<ident>)))` consumes it.
 - `fixtures/invalid_try_non_result_identifier.fn`: invalid source, parser must reject `try(<ident>)` when `<ident>` is a non-result value.
 - `fixtures/invalid_try_move_non_result_identifier.fn`: invalid source, parser must reject `try(move(<ident>))` when moved `<ident>` is a non-result value.
 - `fixtures/invalid_try_move_result_use_after_move.fn`: invalid source, parser must reject use of a `Result<u8,u8>` identifier after it is consumed by `try(move(<ident>))`.
