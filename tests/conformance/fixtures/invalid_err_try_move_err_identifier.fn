@@ -1,0 +1,5 @@
+fn main() {
+    let source = err(46)
+    let wrapped = err(try(move(source)))
+    exit(0)
+}
