@@ -1,0 +1,6 @@
+fn main() {
+    var wrapped = ok(40)
+    var other = ok(41)
+    wrapped = ok(try(move(other)))
+    exit(try(move(wrapped)))
+}

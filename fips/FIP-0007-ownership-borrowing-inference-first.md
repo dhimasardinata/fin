@@ -27,6 +27,7 @@
   - tests/conformance/fixtures/main_exit_try_move_ok_move_u8.fn
   - tests/conformance/fixtures/main_exit_try_move_result_reinit_move_again.fn
   - tests/conformance/fixtures/main_exit_try_move_result_reinit_drop_reinit.fn
+  - tests/conformance/fixtures/main_exit_try_move_other_result_assign.fn
   - tests/conformance/fixtures/main_exit_try_ok_move_u8.fn
   - tests/conformance/fixtures/main_exit_err_move_u8.fn
   - tests/conformance/fixtures/invalid_result_use_after_drop.fn
@@ -42,6 +43,7 @@
   - tests/conformance/fixtures/invalid_try_move_result_use_after_move.fn
   - tests/conformance/fixtures/invalid_try_move_result_assign_after_move_immutable.fn
   - tests/conformance/fixtures/invalid_try_move_result_drop_after_move.fn
+  - tests/conformance/fixtures/invalid_try_move_result_self_assignment.fn
   - tests/conformance/fixtures/invalid_result_drop_undefined.fn
   - tests/conformance/fixtures/invalid_result_move_undefined.fn
   - tests/conformance/fixtures/invalid_borrow_reference_expr.fn
@@ -99,7 +101,8 @@ Current stage0 implementation delta:
 21. Result-binding moves inside error-model unwrapping paths (for example `try(move(<result-ident>))`) consume the result binding itself, and subsequent identifier use is rejected deterministically.
 22. Moved mutable result bindings consumed by `try(move(<result-ident>))` may be re-initialized and consumed again, while moved immutable result bindings reject re-initialization with deterministic diagnostics.
 23. Lifecycle transition restrictions remain active after moved unwrap consumption; for example `drop(<ident>)` after `try(move(<result-ident>))` is rejected as drop-after-move until explicit re-initialization occurs on mutable bindings.
-24. This slice creates explicit parser/test safety gates while ownership inference and borrow-check semantics are still evolving.
+24. Assignment-target hazard guards remain active when moved unwraps appear inside assignment expressions; self-target expressions such as `target = ok(try(move(target)))` are rejected deterministically.
+25. This slice creates explicit parser/test safety gates while ownership inference and borrow-check semantics are still evolving.
 
 ## Alternatives
 
@@ -117,7 +120,7 @@ Compatibility impact must be documented before Implemented status.
 
 Current checks:
 
-1. `tests/conformance/verify_stage0_grammar.ps1` validates `main_drop_unused.fn`, `main_move_binding.fn`, `main_move_reinit_var.fn`, `main_drop_reinit_var.fn`, `main_move_reinit_move_again.fn`, `main_drop_reinit_move.fn`, `main_drop_reinit_drop_reinit.fn`, `main_result_move_reinit_var.fn`, `main_result_drop_reinit_var.fn`, `main_result_drop_reinit_move.fn`, `main_result_move_reinit_move_again.fn`, `main_result_drop_reinit_drop_reinit.fn`, and nested-wrapper/unwrap move fixtures `main_exit_try_ok_move_u8.fn`, `main_exit_err_move_u8.fn`, `main_exit_try_move_ok_move_u8.fn`, `main_exit_try_move_result_reinit_move_again.fn`, and `main_exit_try_move_result_reinit_drop_reinit.fn`; it asserts parse failures for use-after-drop/move/redrop, double-drop/move, drop-after-move, move-after-drop, assign-after-drop-immutable, assign-after-move-immutable, undefined-drop/move, self-move assignment, nested-wrapper use-after-move (`invalid_use_after_move_inside_ok.fn`, `invalid_use_after_move_inside_err.fn`), post-`try(move(<result-ident>))` use-after-move (`invalid_try_move_result_use_after_move.fn`), immutable re-init after moved `try` consumption (`invalid_try_move_result_assign_after_move_immutable.fn`), drop-after-move after moved `try` consumption (`invalid_try_move_result_drop_after_move.fn`), borrow-reference, dereference, and borrow-type fixtures, including result-typed lifecycle misuse, repeated-transition misuse, and undefined-operation misuse fixtures, with deterministic message-substring checks for ownership/lifecycle diagnostics and unsupported borrow/dereference/type-annotation syntax.
+1. `tests/conformance/verify_stage0_grammar.ps1` validates `main_drop_unused.fn`, `main_move_binding.fn`, `main_move_reinit_var.fn`, `main_drop_reinit_var.fn`, `main_move_reinit_move_again.fn`, `main_drop_reinit_move.fn`, `main_drop_reinit_drop_reinit.fn`, `main_result_move_reinit_var.fn`, `main_result_drop_reinit_var.fn`, `main_result_drop_reinit_move.fn`, `main_result_move_reinit_move_again.fn`, `main_result_drop_reinit_drop_reinit.fn`, and nested-wrapper/unwrap move fixtures `main_exit_try_ok_move_u8.fn`, `main_exit_err_move_u8.fn`, `main_exit_try_move_ok_move_u8.fn`, `main_exit_try_move_result_reinit_move_again.fn`, `main_exit_try_move_result_reinit_drop_reinit.fn`, and `main_exit_try_move_other_result_assign.fn`; it asserts parse failures for use-after-drop/move/redrop, double-drop/move, drop-after-move, move-after-drop, assign-after-drop-immutable, assign-after-move-immutable, undefined-drop/move, self-move assignment, nested-wrapper use-after-move (`invalid_use_after_move_inside_ok.fn`, `invalid_use_after_move_inside_err.fn`), post-`try(move(<result-ident>))` use-after-move (`invalid_try_move_result_use_after_move.fn`), immutable re-init after moved `try` consumption (`invalid_try_move_result_assign_after_move_immutable.fn`), drop-after-move after moved `try` consumption (`invalid_try_move_result_drop_after_move.fn`), self-target assignment hazards through moved unwraps (`invalid_try_move_result_self_assignment.fn`), borrow-reference, dereference, and borrow-type fixtures, including result-typed lifecycle misuse, repeated-transition misuse, and undefined-operation misuse fixtures, with deterministic message-substring checks for ownership/lifecycle diagnostics and unsupported borrow/dereference/type-annotation syntax.
 2. `tests/run_stage0_suite.ps1` invokes `tests/conformance/verify_stage0_grammar.ps1` in the stage0 aggregate suite.
 
 Acceptance criteria listed above remain normative for Implemented status.

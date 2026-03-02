@@ -83,6 +83,7 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_err_move_u8
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_move_ok_move_u8.fn" -ExpectedExit 33
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_move_result_reinit_move_again.fn" -ExpectedExit 35
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_move_result_reinit_drop_reinit.fn" -ExpectedExit 38
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_move_other_result_assign.fn" -ExpectedExit 41
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_drop_unused.fn" -ExpectedExit 15
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_move_binding.fn" -ExpectedExit 16
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_move_reinit_var.fn" -ExpectedExit 17
@@ -123,6 +124,7 @@ Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_m
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_move_result_use_after_move.fn" -ExpectedMessagePart "use after move for identifier 'wrapped'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_move_result_assign_after_move_immutable.fn" -ExpectedMessagePart "cannot reinitialize moved immutable binding 'wrapped'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_move_result_drop_after_move.fn" -ExpectedMessagePart "drop after move for identifier 'wrapped'"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_move_result_self_assignment.fn" -ExpectedMessagePart "assignment target 'wrapped' moved or dropped during expression evaluation"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_result_annotation_mismatch.fn" -ExpectedMessagePart "type mismatch for binding 'value': expected Result<u8,u8>, found u8"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_unsupported_result_annotation.fn" -ExpectedMessagePart "unsupported type annotation 'Result<u8,i32>'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_borrow_reference_expr.fn" -ExpectedMessagePart "borrow/reference expressions are not available in stage0 bootstrap"
