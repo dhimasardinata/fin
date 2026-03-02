@@ -24,6 +24,7 @@
   - tests/conformance/fixtures/main_result_drop_reinit_move.fn
   - tests/conformance/fixtures/main_result_move_reinit_move_again.fn
   - tests/conformance/fixtures/main_result_drop_reinit_drop_reinit.fn
+  - tests/conformance/fixtures/main_exit_try_ok_move_u8.fn
   - tests/conformance/fixtures/invalid_result_use_after_drop.fn
   - tests/conformance/fixtures/invalid_result_use_after_move.fn
   - tests/conformance/fixtures/invalid_result_assign_after_drop_immutable.fn
@@ -46,6 +47,7 @@
   - tests/conformance/fixtures/invalid_assign_after_move_immutable.fn
   - tests/conformance/fixtures/invalid_drop_undefined.fn
   - tests/conformance/fixtures/invalid_use_after_move.fn
+  - tests/conformance/fixtures/invalid_use_after_move_inside_ok.fn
   - tests/conformance/fixtures/invalid_double_move.fn
   - tests/conformance/fixtures/invalid_move_undefined.fn
   - tests/conformance/fixtures/invalid_drop_after_move.fn
@@ -85,7 +87,8 @@ Current stage0 implementation delta:
 17. Expression parser rejects dereference syntax (`*expr`) with deterministic diagnostics.
 18. Type-annotation parser rejects ownership/borrowing-prefixed type annotations in stage0 bootstrap.
 19. Conformance suite now asserts deterministic ownership/lifecycle diagnostics by message substring for use-after-drop/move and invalid transition cases, and for unsupported borrow/dereference/type-annotation syntax in stage0.
-20. This slice creates explicit parser/test safety gates while ownership inference and borrow-check semantics are still evolving.
+20. Lifecycle tracking propagates through nested expression contexts; move operations nested inside wrappers (for example `ok(move(<ident>))`) still consume the source binding and enforce use-after-move diagnostics.
+21. This slice creates explicit parser/test safety gates while ownership inference and borrow-check semantics are still evolving.
 
 ## Alternatives
 
@@ -103,7 +106,7 @@ Compatibility impact must be documented before Implemented status.
 
 Current checks:
 
-1. `tests/conformance/verify_stage0_grammar.ps1` validates `main_drop_unused.fn`, `main_move_binding.fn`, `main_move_reinit_var.fn`, `main_drop_reinit_var.fn`, `main_move_reinit_move_again.fn`, `main_drop_reinit_move.fn`, `main_drop_reinit_drop_reinit.fn`, `main_result_move_reinit_var.fn`, `main_result_drop_reinit_var.fn`, `main_result_drop_reinit_move.fn`, `main_result_move_reinit_move_again.fn`, and `main_result_drop_reinit_drop_reinit.fn`; it asserts parse failures for use-after-drop/move/redrop, double-drop/move, drop-after-move, move-after-drop, assign-after-drop-immutable, assign-after-move-immutable, undefined-drop/move, self-move assignment, borrow-reference, dereference, and borrow-type fixtures, including result-typed lifecycle misuse, repeated-transition misuse, and undefined-operation misuse fixtures, with deterministic message-substring checks for ownership/lifecycle diagnostics and unsupported borrow/dereference/type-annotation syntax.
+1. `tests/conformance/verify_stage0_grammar.ps1` validates `main_drop_unused.fn`, `main_move_binding.fn`, `main_move_reinit_var.fn`, `main_drop_reinit_var.fn`, `main_move_reinit_move_again.fn`, `main_drop_reinit_move.fn`, `main_drop_reinit_drop_reinit.fn`, `main_result_move_reinit_var.fn`, `main_result_drop_reinit_var.fn`, `main_result_drop_reinit_move.fn`, `main_result_move_reinit_move_again.fn`, `main_result_drop_reinit_drop_reinit.fn`, and nested-wrapper move fixture `main_exit_try_ok_move_u8.fn`; it asserts parse failures for use-after-drop/move/redrop, double-drop/move, drop-after-move, move-after-drop, assign-after-drop-immutable, assign-after-move-immutable, undefined-drop/move, self-move assignment, nested-wrapper use-after-move (`invalid_use_after_move_inside_ok.fn`), borrow-reference, dereference, and borrow-type fixtures, including result-typed lifecycle misuse, repeated-transition misuse, and undefined-operation misuse fixtures, with deterministic message-substring checks for ownership/lifecycle diagnostics and unsupported borrow/dereference/type-annotation syntax.
 2. `tests/run_stage0_suite.ps1` invokes `tests/conformance/verify_stage0_grammar.ps1` in the stage0 aggregate suite.
 
 Acceptance criteria listed above remain normative for Implemented status.
