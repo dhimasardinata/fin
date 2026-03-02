@@ -1,0 +1,6 @@
+fn main() {
+    let value = 33
+    let wrapped = ok(move(value))
+    let code = try(move(wrapped))
+    exit(code)
+}
