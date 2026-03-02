@@ -79,6 +79,7 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_ok_resu
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_result_typed_binding.fn" -ExpectedExit 14
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_move_ok_result.fn" -ExpectedExit 30
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_ok_move_u8.fn" -ExpectedExit 31
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_err_move_u8.fn" -ExpectedExit 32
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_drop_unused.fn" -ExpectedExit 15
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_move_binding.fn" -ExpectedExit 16
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_move_reinit_var.fn" -ExpectedExit 17
@@ -127,6 +128,7 @@ Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_assig
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_drop_undefined.fn" -ExpectedMessagePart "drop for undefined identifier 'value'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_use_after_move.fn" -ExpectedMessagePart "use after move for identifier 'value'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_use_after_move_inside_ok.fn" -ExpectedMessagePart "use after move for identifier 'value'"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_use_after_move_inside_err.fn" -ExpectedMessagePart "use after move for identifier 'value'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_double_move.fn" -ExpectedMessagePart "double move for identifier 'value'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_move_undefined.fn" -ExpectedMessagePart "move for undefined identifier 'other'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_drop_after_move.fn" -ExpectedMessagePart "drop after move for identifier 'value'"

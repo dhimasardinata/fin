@@ -15,6 +15,7 @@ Stage0 conformance checks:
 - `fixtures/main_exit_try_ok_result.fn`: valid source with stage0 bootstrap `ok(<expr>)` result wrapper and `try` unwrap.
 - `fixtures/main_exit_try_move_ok_result.fn`: valid source with stage0 bootstrap `try(move(<result-ident>))` on an `ok` result binding.
 - `fixtures/main_exit_try_ok_move_u8.fn`: valid source with stage0 bootstrap `ok(move(<u8-ident>))` followed by `try` unwrap.
+- `fixtures/main_exit_err_move_u8.fn`: valid source with stage0 bootstrap `err(move(<u8-ident>))` ownership propagation path.
 - `fixtures/main_exit_err_unused.fn`: valid source confirming stage0 `err(<expr>)` result construction is accepted without hidden control flow.
 - `fixtures/main_exit_err_binding_ok_path.fn`: valid source with typed `Result<u8,u8>` `err` binding alongside an explicit `ok` `try` success path.
 - `fixtures/main_drop_unused.fn`: valid source with stage0 `drop(<ident>)` followed by independent literal exit.
@@ -75,6 +76,7 @@ Stage0 conformance checks:
 - `fixtures/invalid_drop_undefined.fn`: invalid source, parser must reject `drop(<ident>)` for undefined identifiers.
 - `fixtures/invalid_use_after_move.fn`: invalid source, parser must reject identifier usage after `move(<ident>)`.
 - `fixtures/invalid_use_after_move_inside_ok.fn`: invalid source, parser must reject identifier usage after `move(<ident>)` when move occurs inside `ok(...)`.
+- `fixtures/invalid_use_after_move_inside_err.fn`: invalid source, parser must reject identifier usage after `move(<ident>)` when move occurs inside `err(...)`.
 - `fixtures/invalid_double_move.fn`: invalid source, parser must reject repeated `move(<ident>)` on the same binding.
 - `fixtures/invalid_move_undefined.fn`: invalid source, parser must reject `move(<ident>)` for undefined identifiers.
 - `fixtures/invalid_drop_after_move.fn`: invalid source, parser must reject `drop(<ident>)` after the binding has already been moved.

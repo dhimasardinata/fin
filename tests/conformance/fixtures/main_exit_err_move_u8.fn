@@ -1,0 +1,5 @@
+fn main() {
+  let value = 32
+  let failure = err(move(value))
+  exit(32)
+}
