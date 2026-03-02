@@ -28,6 +28,7 @@
   - tests/conformance/fixtures/invalid_try_move_err_identifier.fn
   - tests/conformance/fixtures/invalid_try_non_result_literal.fn
   - tests/conformance/fixtures/invalid_try_non_result_identifier.fn
+  - tests/conformance/fixtures/invalid_try_move_non_result_identifier.fn
   - tests/run_stage0_suite.ps1
 - acceptance:
   - Error-flow conformance suite passes without hidden control flow.
@@ -72,7 +73,7 @@ Compatibility impact must be documented before Implemented status.
 
 Current checks:
 
-1. `tests/conformance/verify_stage0_grammar.ps1` validates valid bootstrap `ok/err/try` cases (including explicit `Result<u8,u8>` local annotations and `try(move(<result-ident>))` on `ok` state) and rejects empty `try()/ok()/err()`, non-`u8` `ok/err` inner expressions, `try(err(...))` (including moved err-state identifier paths), and `try` on non-result inputs (literal and identifier), with deterministic message checks for hidden-control-flow and type constraints.
+1. `tests/conformance/verify_stage0_grammar.ps1` validates valid bootstrap `ok/err/try` cases (including explicit `Result<u8,u8>` local annotations and `try(move(<result-ident>))` on `ok` state) and rejects empty `try()/ok()/err()`, non-`u8` `ok/err` inner expressions, `try(err(...))` (including moved err-state identifier paths), and `try` on non-result inputs (literal, identifier, and moved non-result identifier), with deterministic message checks for hidden-control-flow and type constraints.
 2. `tests/run_stage0_suite.ps1` compiles and executes `ok/err/try` fixtures (including move-wrapped result `try`) in aggregated stage0 flow.
 
 Acceptance criteria listed above remain normative for Implemented status.
