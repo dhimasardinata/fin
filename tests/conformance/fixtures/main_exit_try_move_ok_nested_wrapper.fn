@@ -1,0 +1,5 @@
+fn main() {
+    let source = ok(43)
+    let wrapped = ok(try(move(source)))
+    exit(try(move(wrapped)))
+}
