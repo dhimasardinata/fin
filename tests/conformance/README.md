@@ -100,6 +100,7 @@ Stage0 conformance checks:
 - `fixtures/main_exit_borrow_typed_u8.fn`: valid source with explicit reference annotation `&u8` on a borrowed local binding.
 - `fixtures/main_exit_borrow_result_try.fn`: valid source with explicit reference annotation `&Result<u8,u8>` and unwrap via `try(*<ref-ident>)`.
 - `fixtures/main_exit_borrow_reflects_reassign.fn`: valid source proving borrowed references read latest source value after mutable reassignment.
+- `fixtures/main_exit_borrow_drop_ref_then_move.fn`: valid source proving dropping a reference binding releases borrow restrictions, allowing later `move(<target>)`.
 - `fixtures/main_exit_err_unused.fn`: valid source confirming stage0 `err(<expr>)` result construction is accepted without hidden control flow.
 - `fixtures/main_exit_err_binding_ok_path.fn`: valid source with typed `Result<u8,u8>` `err` binding alongside an explicit `ok` `try` success path.
 - `fixtures/main_drop_unused.fn`: valid source with stage0 `drop(<ident>)` followed by independent literal exit.
@@ -236,9 +237,10 @@ Stage0 conformance checks:
 - `fixtures/invalid_result_drop_undefined.fn`: invalid source, parser must reject `drop(<ident>)` for undefined identifiers in `Result<u8,u8>` usage contexts.
 - `fixtures/invalid_result_move_undefined.fn`: invalid source, parser must reject `move(<ident>)` for undefined identifiers in `Result<u8,u8>` usage contexts.
 - `fixtures/invalid_borrow_reference_expr.fn`: invalid source, parser must reject borrow expressions where operand is not an identifier (`&(expr)`).
-- `fixtures/invalid_dereference_expr.fn`: invalid source, parser must reject dereference of a reference whose target was dropped.
+- `fixtures/invalid_dereference_expr.fn`: invalid source, parser must reject dropping a target while it is still actively borrowed.
 - `fixtures/invalid_borrow_type_annotation.fn`: invalid source, parser must reject `&u8` annotation mismatches when initializer is non-reference.
 - `fixtures/invalid_borrow_after_move.fn`: invalid source, parser must reject borrowing an identifier after it was moved.
+- `fixtures/invalid_move_while_borrowed.fn`: invalid source, parser must reject moving a target while an active reference points to it.
 - `fixtures/invalid_dereference_missing_operand.fn`: invalid source, parser must reject dereference `*` with missing operand.
 - `fixtures/invalid_dereference_non_reference.fn`: invalid source, parser must reject dereference when operand type is non-reference (`u8`).
 - Borrow/operator invalid fixtures above are also assertion-checked for deterministic diagnostic message text in `verify_stage0_grammar.ps1`.

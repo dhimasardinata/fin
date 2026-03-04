@@ -170,6 +170,36 @@ function Set-ReferenceMetadata {
     }
 }
 
+function Get-LiveReferenceAliasesForTarget {
+    param(
+        [string]$Target,
+        [hashtable]$Types,
+        [hashtable]$LifecycleStates,
+        [hashtable]$ReferenceTargets
+    )
+
+    $aliases = [System.Collections.Generic.List[string]]::new()
+    foreach ($name in ($ReferenceTargets.Keys | Sort-Object)) {
+        if (-not $Types.ContainsKey($name)) {
+            continue
+        }
+        if (-not ([string]$Types[$name]).StartsWith("&")) {
+            continue
+        }
+        if ([string]$ReferenceTargets[$name] -ne $Target) {
+            continue
+        }
+        if (-not $LifecycleStates.ContainsKey($name)) {
+            continue
+        }
+        if ([string]$LifecycleStates[$name] -eq "alive") {
+            $aliases.Add([string]$name)
+        }
+    }
+
+    return [string[]]$aliases.ToArray()
+}
+
 function Split-TopLevelArguments {
     param([string]$Expr)
 
@@ -700,6 +730,13 @@ function Parse-Expr {
         }
 
         $moveType = [string]$Types[$name]
+        if (-not $moveType.StartsWith("&")) {
+            $activeBorrowers = @(Get-LiveReferenceAliasesForTarget -Target $name -Types $Types -LifecycleStates $LifecycleStates -ReferenceTargets $ReferenceTargets)
+            if ($activeBorrowers.Count -gt 0) {
+                Fail-Parse ("cannot move identifier '{0}' while borrowed by '{1}'" -f $name, [string]$activeBorrowers[0])
+            }
+        }
+
         $moveValue = [int]$Values[$name]
         $moveResultState = [string]$ResultStates[$name]
         $moveReferenceTarget = ""
@@ -1229,6 +1266,15 @@ foreach ($stmt in $statements) {
         if ($state -ne "alive") {
             Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $state, $name)
         }
+
+        $dropType = [string]$types[$name]
+        if (-not $dropType.StartsWith("&")) {
+            $activeBorrowers = @(Get-LiveReferenceAliasesForTarget -Target $name -Types $types -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets)
+            if ($activeBorrowers.Count -gt 0) {
+                Fail-Parse ("cannot drop identifier '{0}' while borrowed by '{1}'" -f $name, [string]$activeBorrowers[0])
+            }
+        }
+
         $lifecycleStates[$name] = "dropped"
         continue
     }
