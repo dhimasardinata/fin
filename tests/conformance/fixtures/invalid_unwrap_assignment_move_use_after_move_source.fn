@@ -1,0 +1,6 @@
+fn main() {
+    var code = 0
+    var source: Result<u8,u8> = ok(1)
+    code ?= move(source)
+    exit(source)
+}

@@ -1,0 +1,6 @@
+fn main() {
+    var code = 0
+    let value = 1
+    code ?= value
+    exit(code)
+}

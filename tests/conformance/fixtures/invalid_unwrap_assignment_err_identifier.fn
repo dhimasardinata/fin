@@ -1,0 +1,6 @@
+fn main() {
+    var code = 0
+    let wrapped = err(1)
+    code ?= wrapped
+    exit(code)
+}

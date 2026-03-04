@@ -752,6 +752,7 @@ function Parse-Expr {
 #   fn main() [-> <type>] {
 #     (let|var) <ident> [: <type>] = <expr>;
 #     let <ident> [: <type>] ?= <expr>;
+#     <ident> ?= <expr>;
 #     <ident> = <expr>;
 #     drop(<ident>);
 #     exit(<expr>);
@@ -890,6 +891,62 @@ foreach ($stmt in $statements) {
         $values[$name] = [int]$exprValue.Value
         $mutable[$name] = $true
         $types[$name] = $declaredType
+        $resultStates[$name] = [string]$exprValue.ResultState
+        $lifecycleStates[$name] = "alive"
+        continue
+    }
+
+    if ($stmt -match '^([A-Za-z_][A-Za-z0-9_]*)\s*\?=\s*$') {
+        Fail-Parse "unwrap assignment requires expression"
+    }
+
+    if ($stmt -match '^([A-Za-z_][A-Za-z0-9_]*)\s*\?=\s*(.+)$') {
+        $name = $Matches[1]
+        Assert-NonKeywordIdentifier -Name $name
+        $expr = $Matches[2]
+        if (-not $values.ContainsKey($name)) {
+            Fail-Parse "assignment to undefined identifier '$name'"
+        }
+        $targetState = [string]$lifecycleStates[$name]
+        if (($targetState -ne "alive") -and ($targetState -ne "moved") -and ($targetState -ne "dropped")) {
+            Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $targetState, $name)
+        }
+        if (-not [bool]$mutable[$name]) {
+            if ($targetState -eq "moved") {
+                Fail-Parse "cannot reinitialize moved immutable binding '$name'"
+            }
+            if ($targetState -eq "dropped") {
+                Fail-Parse "cannot reinitialize dropped immutable binding '$name'"
+            }
+            Fail-Parse "cannot assign to immutable binding '$name'"
+        }
+
+        # Sugar: x ?= rhs  => x = try rhs
+        $exprValue = Parse-Expr -Expr ("try " + $expr) -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates
+        $postExprTargetState = [string]$lifecycleStates[$name]
+        if (($targetState -eq "alive") -and (($postExprTargetState -eq "dropped") -or ($postExprTargetState -eq "moved"))) {
+            Fail-Parse ("assignment target '{0}' moved or dropped during expression evaluation" -f $name)
+        }
+        if ($targetState -eq "alive") {
+            if ($postExprTargetState -ne "alive") {
+                Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $postExprTargetState, $name)
+            }
+        }
+        elseif ($targetState -eq "moved") {
+            if (($postExprTargetState -ne "moved") -and ($postExprTargetState -ne "alive")) {
+                Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $postExprTargetState, $name)
+            }
+        }
+        else {
+            if (($postExprTargetState -ne "dropped") -and ($postExprTargetState -ne "alive")) {
+                Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $postExprTargetState, $name)
+            }
+        }
+        $targetType = [string]$types[$name]
+        if ([string]$exprValue.Type -ne $targetType) {
+            Fail-Parse ("type mismatch for assignment '{0}': expected {1}, found {2}" -f $name, $targetType, $exprValue.Type)
+        }
+        $values[$name] = [int]$exprValue.Value
         $resultStates[$name] = [string]$exprValue.ResultState
         $lifecycleStates[$name] = "alive"
         continue
