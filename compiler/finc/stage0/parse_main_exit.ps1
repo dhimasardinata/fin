@@ -752,6 +752,7 @@ function Parse-Expr {
 #   fn main() [-> <type>] {
 #     (let|var) <ident> [: <type>] = <expr>;
 #     let <ident> [: <type>] ?= <expr>;
+#     var <ident> [: <type>] ?= <expr>;
 #     <ident> ?= <expr>;
 #     <ident> = <expr>;
 #     drop(<ident>);
@@ -878,6 +879,39 @@ foreach ($stmt in $statements) {
         }
 
         $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates
+        $declaredType = if ([string]::IsNullOrWhiteSpace($declaredTypeRaw)) {
+            [string]$exprValue.Type
+        }
+        else {
+            Parse-TypeAnnotation -TypeText $declaredTypeRaw
+        }
+        if ([string]$exprValue.Type -ne $declaredType) {
+            Fail-Parse ("type mismatch for binding '{0}': expected {1}, found {2}" -f $name, $declaredType, $exprValue.Type)
+        }
+
+        $values[$name] = [int]$exprValue.Value
+        $mutable[$name] = $true
+        $types[$name] = $declaredType
+        $resultStates[$name] = [string]$exprValue.ResultState
+        $lifecycleStates[$name] = "alive"
+        continue
+    }
+
+    if ($stmt -match '^var\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([^?=]+?))?\s*\?=\s*$') {
+        Fail-Parse "unwrap var binding requires expression"
+    }
+
+    if ($stmt -match '^var\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([^?=]+?))?\s*\?=\s*(.+)$') {
+        $name = $Matches[1]
+        Assert-NonKeywordIdentifier -Name $name
+        $declaredTypeRaw = $Matches[2]
+        $expr = $Matches[3]
+        if ($values.ContainsKey($name)) {
+            Fail-Parse "duplicate binding '$name'"
+        }
+
+        # Sugar: var x ?= rhs  => var x = try rhs
+        $exprValue = Parse-Expr -Expr ("try " + $expr) -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates
         $declaredType = if ([string]::IsNullOrWhiteSpace($declaredTypeRaw)) {
             [string]$exprValue.Type
         }

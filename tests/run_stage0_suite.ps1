@@ -153,6 +153,9 @@ if (-not $SkipDoctor) {
 & $fin build --src tests/conformance/fixtures/main_exit_unwrap_assignment_ok.fn --out artifacts/test-exit144
 & $fin build --src tests/conformance/fixtures/main_exit_unwrap_assignment_move_ok.fn --out artifacts/test-exit145
 & $fin build --src tests/conformance/fixtures/main_exit_unwrap_assignment_arithmetic.fn --out artifacts/test-exit146
+& $fin build --src tests/conformance/fixtures/main_exit_var_unwrap_binding_ok.fn --out artifacts/test-exit147
+& $fin build --src tests/conformance/fixtures/main_exit_var_unwrap_binding_move_ok.fn --out artifacts/test-exit148
+& $fin build --src tests/conformance/fixtures/main_exit_var_unwrap_binding_arithmetic.fn --out artifacts/test-exit149
 & $fin build --src tests/conformance/fixtures/main_drop_unused.fn --out artifacts/test-exit15
 & $fin build --src tests/conformance/fixtures/main_move_binding.fn --out artifacts/test-exit16
 & $fin build --src tests/conformance/fixtures/main_move_reinit_var.fn --out artifacts/test-exit17
@@ -259,6 +262,9 @@ if (-not $SkipRun) {
         & $fin run --no-build --out artifacts/test-exit144 --expect-exit 144
         & $fin run --no-build --out artifacts/test-exit145 --expect-exit 145
         & $fin run --no-build --out artifacts/test-exit146 --expect-exit 146
+        & $fin run --no-build --out artifacts/test-exit147 --expect-exit 147
+        & $fin run --no-build --out artifacts/test-exit148 --expect-exit 148
+        & $fin run --no-build --out artifacts/test-exit149 --expect-exit 149
         & $fin run --no-build --out artifacts/test-exit15 --expect-exit 15
         & $fin run --no-build --out artifacts/test-exit16 --expect-exit 16
         & $fin run --no-build --out artifacts/test-exit17 --expect-exit 17
