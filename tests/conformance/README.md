@@ -12,6 +12,10 @@ Stage0 conformance checks:
 - `fixtures/main_exit_add_literals.fn`: valid source with stage0 `u8` arithmetic addition on literals.
 - `fixtures/main_exit_add_identifier_literal.fn`: valid source with stage0 `u8` arithmetic addition across identifier and literal operands.
 - `fixtures/main_exit_sub_literals.fn`: valid source with stage0 `u8` arithmetic subtraction on literals.
+- `fixtures/main_exit_mul_literals.fn`: valid source with stage0 `u8` arithmetic multiplication on literals.
+- `fixtures/main_exit_div_literals.fn`: valid source with stage0 `u8` arithmetic division on literals.
+- `fixtures/main_exit_mul_precedence.fn`: valid source proving stage0 arithmetic precedence (`*` before `+`).
+- `fixtures/main_exit_mul_grouped.fn`: valid source proving stage0 parenthesized grouping overrides arithmetic precedence.
 - `fixtures/main_exit_result_typed_binding.fn`: valid source with explicit `Result<u8,u8>` binding annotation and `try` unwrap.
 - `fixtures/main_exit_try_literal.fn`: valid source with stage0 bootstrap `try(ok(<expr>))` on literal expression.
 - `fixtures/main_exit_try_identifier.fn`: valid source with stage0 bootstrap `try(<expr>)` on identifier `Result<u8,u8>` binding.
@@ -49,6 +53,10 @@ Stage0 conformance checks:
 - `fixtures/invalid_add_non_u8_operand.fn`: invalid source, parser must reject arithmetic operator operands that are not `u8`.
 - `fixtures/invalid_add_overflow.fn`: invalid source, parser must reject `u8` overflow in stage0 `+` expressions.
 - `fixtures/invalid_sub_underflow.fn`: invalid source, parser must reject `u8` underflow in stage0 `-` expressions.
+- `fixtures/invalid_mul_non_u8_operand.fn`: invalid source, parser must reject `*` operand typing when a non-`u8` value participates.
+- `fixtures/invalid_mul_overflow.fn`: invalid source, parser must reject `u8` overflow in stage0 `*` expressions.
+- `fixtures/invalid_div_by_zero.fn`: invalid source, parser must reject division by zero in stage0 `/` expressions.
+- `fixtures/invalid_empty_parenthesized_expr.fn`: invalid source, parser must reject empty parenthesized expressions.
 - Core grammar invalid fixtures above are also assertion-checked for deterministic diagnostic message text in `verify_stage0_grammar.ps1`.
 - `fixtures/invalid_unsupported_type_annotation.fn`: invalid source, parser must reject unsupported type annotations.
 - `fixtures/invalid_unsupported_return_annotation.fn`: invalid source, parser must reject unsupported entrypoint return annotations.

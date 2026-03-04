@@ -15,9 +15,17 @@
   - tests/conformance/fixtures/main_exit_add_literals.fn
   - tests/conformance/fixtures/main_exit_add_identifier_literal.fn
   - tests/conformance/fixtures/main_exit_sub_literals.fn
+  - tests/conformance/fixtures/main_exit_mul_literals.fn
+  - tests/conformance/fixtures/main_exit_div_literals.fn
+  - tests/conformance/fixtures/main_exit_mul_precedence.fn
+  - tests/conformance/fixtures/main_exit_mul_grouped.fn
   - tests/conformance/fixtures/invalid_add_non_u8_operand.fn
   - tests/conformance/fixtures/invalid_add_overflow.fn
   - tests/conformance/fixtures/invalid_sub_underflow.fn
+  - tests/conformance/fixtures/invalid_mul_non_u8_operand.fn
+  - tests/conformance/fixtures/invalid_mul_overflow.fn
+  - tests/conformance/fixtures/invalid_div_by_zero.fn
+  - tests/conformance/fixtures/invalid_empty_parenthesized_expr.fn
 - acceptance:
   - Parser conformance suite passes canonical grammar fixtures.
 
@@ -50,7 +58,8 @@ Current stage0 subset grammar:
 3. `move(<ident>)` (stage0 bootstrap ownership transfer form)
 4. `ok(<expr>)` / `err(<expr>)` (stage0 bootstrap result wrappers)
 5. `try(<expr>)` (stage0 bootstrap form)
-6. `<expr> + <expr>` and `<expr> - <expr>` (stage0 `u8` arithmetic form)
+6. `(<expr>)` (parenthesized expression grouping)
+7. `<expr> + <expr>`, `<expr> - <expr>`, `<expr> * <expr>`, and `<expr> / <expr>` (stage0 `u8` arithmetic forms, with `*`/`/` higher precedence than `+`/`-`)
 
 `<type>` (stage0):
 
@@ -67,7 +76,7 @@ Accepted stage0 tolerances:
 This subset is intentionally minimal and acts as the first executable parser checkpoint.
 
 Note: stage0 optional binding type-annotation forms (`let/var <ident>: u8 = <expr>` and `let/var <ident>: Result<u8,u8> = <expr>`) plus optional entrypoint return annotation (`fn main() -> u8`) are introduced under `FIP-0006`. Stage0 bootstrap `try(<expr>)` syntax is introduced under `FIP-0008`, where stage0 `try` is constrained to `Result<u8,u8>` inputs. Stage0 `drop(<ident>)` and `move(<ident>)` bootstrap ownership forms are introduced under `FIP-0007`; stage0 parser semantics now track `alive/moved/dropped` lifecycle states, allow mutable moved/dropped binding re-initialization via assignment, reject immutable moved/dropped binding re-initialization, and continue to reject ownership/borrowing syntax (`&`, `*`) until inference-first ownership semantics are implemented.
-Stage0 arithmetic `+`/`-` is constrained to `u8` operands, with deterministic rejection for non-`u8` operands and overflow/underflow outcomes.
+Stage0 arithmetic (`+`, `-`, `*`, `/`) is constrained to `u8` operands, with deterministic rejection for non-`u8` operands, deterministic overflow/underflow checks, explicit division-by-zero rejection, and parenthesized grouping support for precedence control.
 
 ## Alternatives
 
@@ -86,6 +95,6 @@ Compatibility impact must be documented before Implemented status.
 Current checks:
 
 1. `tests/conformance/verify_stage0_grammar.ps1` validates valid and invalid fixtures for literals, bindings, mutation, and comments, with deterministic message-substring assertions for missing entrypoint, undefined identifier use, and immutable assignment rejection.
-2. `tests/conformance/verify_stage0_grammar.ps1` validates stage0 `u8` arithmetic (`+`/`-`) success paths and deterministic diagnostics for non-`u8` operands and overflow/underflow constraints.
+2. `tests/conformance/verify_stage0_grammar.ps1` validates stage0 `u8` arithmetic (`+`, `-`, `*`, `/`) and parenthesized grouping with deterministic diagnostics for non-`u8` operands, overflow/underflow, division-by-zero, and empty parenthesized expressions.
 3. Parser rejects non-`main` entrypoint patterns for stage0 subset.
 4. Parser rejects undefined identifiers and assignment to immutable `let` bindings.

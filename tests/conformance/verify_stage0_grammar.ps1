@@ -76,6 +76,10 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_signature_u
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_add_literals.fn" -ExpectedExit 21
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_add_identifier_literal.fn" -ExpectedExit 42
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_sub_literals.fn" -ExpectedExit 57
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_mul_literals.fn" -ExpectedExit 63
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_div_literals.fn" -ExpectedExit 66
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_mul_precedence.fn" -ExpectedExit 65
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_mul_grouped.fn" -ExpectedExit 80
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_literal.fn" -ExpectedExit 11
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_identifier.fn" -ExpectedExit 12
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_ok_result.fn" -ExpectedExit 13
@@ -114,6 +118,10 @@ Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_assig
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_add_non_u8_operand.fn" -ExpectedMessagePart "operator '+' expects u8 operands in stage0, found Result<u8,u8> and u8"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_add_overflow.fn" -ExpectedMessagePart "u8 overflow in '+' expression"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_sub_underflow.fn" -ExpectedMessagePart "u8 underflow in '-' expression"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_mul_non_u8_operand.fn" -ExpectedMessagePart "operator '*' expects u8 operands in stage0, found Result<u8,u8> and u8"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_mul_overflow.fn" -ExpectedMessagePart "u8 overflow in '*' expression"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_div_by_zero.fn" -ExpectedMessagePart "division by zero in '/' expression"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_empty_parenthesized_expr.fn" -ExpectedMessagePart "parenthesized expression must not be empty"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_unsupported_type_annotation.fn" -ExpectedMessagePart "unsupported type annotation 'i32'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_unsupported_return_annotation.fn" -ExpectedMessagePart "unsupported type annotation 'i32'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_result_return_annotation.fn" -ExpectedMessagePart "entrypoint return type must be u8 in stage0 bootstrap, found Result<u8,u8>"

@@ -62,8 +62,75 @@ function Parse-TypeAnnotation {
     Fail-Parse "unsupported type annotation '$typeName'"
 }
 
-function Find-TopLevelBinaryOperator {
+function Assert-BalancedParentheses {
     param([string]$Expr)
+
+    $depth = 0
+    for ($i = 0; $i -lt $Expr.Length; $i++) {
+        $ch = $Expr[$i]
+        if ($ch -eq '(') {
+            $depth += 1
+            continue
+        }
+        if ($ch -eq ')') {
+            $depth -= 1
+            if ($depth -lt 0) {
+                Fail-Parse ("unbalanced parentheses in expression '{0}'" -f $Expr)
+            }
+        }
+    }
+
+    if ($depth -ne 0) {
+        Fail-Parse ("unbalanced parentheses in expression '{0}'" -f $Expr)
+    }
+}
+
+function Strip-OuterParentheses {
+    param([string]$Expr)
+
+    $current = $Expr.Trim()
+    while ($current.StartsWith("(") -and $current.EndsWith(")")) {
+        $depth = 0
+        $enclosesWholeExpression = $true
+        for ($i = 0; $i -lt $current.Length; $i++) {
+            $ch = $current[$i]
+            if ($ch -eq '(') {
+                $depth += 1
+                continue
+            }
+            if ($ch -eq ')') {
+                $depth -= 1
+                if ($depth -lt 0) {
+                    Fail-Parse ("unbalanced parentheses in expression '{0}'" -f $Expr)
+                }
+                if (($depth -eq 0) -and ($i -lt ($current.Length - 1))) {
+                    $enclosesWholeExpression = $false
+                    break
+                }
+            }
+        }
+
+        if ($depth -ne 0) {
+            Fail-Parse ("unbalanced parentheses in expression '{0}'" -f $Expr)
+        }
+        if (-not $enclosesWholeExpression) {
+            break
+        }
+
+        $current = $current.Substring(1, $current.Length - 2).Trim()
+        if ([string]::IsNullOrWhiteSpace($current)) {
+            Fail-Parse "parenthesized expression must not be empty"
+        }
+    }
+
+    return $current
+}
+
+function Find-TopLevelBinaryOperator {
+    param(
+        [string]$Expr,
+        [string[]]$Operators
+    )
 
     $depth = 0
     for ($i = $Expr.Length - 1; $i -ge 0; $i--) {
@@ -79,7 +146,7 @@ function Find-TopLevelBinaryOperator {
             }
             continue
         }
-        if (($depth -eq 0) -and (($ch -eq '+') -or ($ch -eq '-'))) {
+        if (($depth -eq 0) -and ($Operators -contains [string]$ch)) {
             return [pscustomobject]@{
                 Index = $i
                 Operator = [string]$ch
@@ -104,6 +171,9 @@ function Parse-Expr {
     )
 
     $trimmedExpr = $Expr.Trim()
+    Assert-BalancedParentheses -Expr $trimmedExpr
+    $trimmedExpr = Strip-OuterParentheses -Expr $trimmedExpr
+
     if ($trimmedExpr -match '^&') {
         Fail-Parse "borrow/reference expressions are not available in stage0 bootstrap"
     }
@@ -111,7 +181,10 @@ function Parse-Expr {
         Fail-Parse "dereference expressions are not available in stage0 bootstrap"
     }
 
-    $binaryOperator = Find-TopLevelBinaryOperator -Expr $trimmedExpr
+    $binaryOperator = Find-TopLevelBinaryOperator -Expr $trimmedExpr -Operators @("+", "-")
+    if ($null -eq $binaryOperator) {
+        $binaryOperator = Find-TopLevelBinaryOperator -Expr $trimmedExpr -Operators @("*", "/")
+    }
     if ($null -ne $binaryOperator) {
         $leftExpr = $trimmedExpr.Substring(0, [int]$binaryOperator.Index).Trim()
         $rightExpr = $trimmedExpr.Substring(([int]$binaryOperator.Index + 1)).Trim()
@@ -133,11 +206,23 @@ function Parse-Expr {
                 Fail-Parse "u8 overflow in '+' expression"
             }
         }
-        else {
+        elseif ($operatorText -eq "-") {
             $result = [int]$leftValue.Value - [int]$rightValue.Value
             if ($result -lt 0) {
                 Fail-Parse "u8 underflow in '-' expression"
             }
+        }
+        elseif ($operatorText -eq "*") {
+            $result = [int]$leftValue.Value * [int]$rightValue.Value
+            if ($result -gt 255) {
+                Fail-Parse "u8 overflow in '*' expression"
+            }
+        }
+        else {
+            if ([int]$rightValue.Value -eq 0) {
+                Fail-Parse "division by zero in '/' expression"
+            }
+            $result = [int]([int]$leftValue.Value / [int]$rightValue.Value)
         }
 
         return [pscustomobject]@{
@@ -272,7 +357,7 @@ function Parse-Expr {
 #     drop(<ident>);
 #     exit(<expr>);
 #   }
-# <expr> := <u8-literal> | <ident> | move(<ident>) | ok(<expr>) | err(<expr>) | try(<expr>) | <expr> + <expr> | <expr> - <expr>
+# <expr> := <u8-literal> | <ident> | move(<ident>) | ok(<expr>) | err(<expr>) | try(<expr>) | (<expr>) | <expr> + <expr> | <expr> - <expr> | <expr> * <expr> | <expr> / <expr>
 # <type> := u8 | Result<u8,u8>
 # with optional semicolons and line comments (# or //).
 $programPattern = '(?s)^\s*fn\s+main\s*\(\s*\)\s*(?:->\s*([^\{]+?))?\s*\{\s*(.*?)\s*\}\s*$'
