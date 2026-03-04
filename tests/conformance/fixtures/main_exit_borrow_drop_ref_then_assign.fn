@@ -2,7 +2,6 @@ fn main() {
   var value = 1
   let ref_value = &value
   drop(ref_value)
-  value = 153
-  let ref_value_after = &value
-  exit(*ref_value_after)
+  value = 155
+  exit(value)
 }
