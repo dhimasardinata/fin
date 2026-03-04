@@ -144,6 +144,9 @@ if (-not $SkipDoctor) {
 & $fin build --src tests/conformance/fixtures/main_exit_try_postfix_ok_result.fn --out artifacts/test-exit135
 & $fin build --src tests/conformance/fixtures/main_exit_try_postfix_move_ok_result.fn --out artifacts/test-exit136
 & $fin build --src tests/conformance/fixtures/main_exit_try_postfix_arithmetic.fn --out artifacts/test-exit137
+& $fin build --src tests/conformance/fixtures/main_exit_try_space_ok_result.fn --out artifacts/test-exit138
+& $fin build --src tests/conformance/fixtures/main_exit_try_space_move_ok_result.fn --out artifacts/test-exit139
+& $fin build --src tests/conformance/fixtures/main_exit_try_space_arithmetic.fn --out artifacts/test-exit140
 & $fin build --src tests/conformance/fixtures/main_drop_unused.fn --out artifacts/test-exit15
 & $fin build --src tests/conformance/fixtures/main_move_binding.fn --out artifacts/test-exit16
 & $fin build --src tests/conformance/fixtures/main_move_reinit_var.fn --out artifacts/test-exit17
@@ -241,6 +244,9 @@ if (-not $SkipRun) {
         & $fin run --no-build --out artifacts/test-exit135 --expect-exit 135
         & $fin run --no-build --out artifacts/test-exit136 --expect-exit 136
         & $fin run --no-build --out artifacts/test-exit137 --expect-exit 137
+        & $fin run --no-build --out artifacts/test-exit138 --expect-exit 138
+        & $fin run --no-build --out artifacts/test-exit139 --expect-exit 139
+        & $fin run --no-build --out artifacts/test-exit140 --expect-exit 140
         & $fin run --no-build --out artifacts/test-exit15 --expect-exit 15
         & $fin run --no-build --out artifacts/test-exit16 --expect-exit 16
         & $fin run --no-build --out artifacts/test-exit17 --expect-exit 17

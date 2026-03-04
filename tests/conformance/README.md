@@ -84,6 +84,9 @@ Stage0 conformance checks:
 - `fixtures/main_exit_try_postfix_ok_result.fn`: valid source with postfix `?` unwrap on an `ok` `Result<u8,u8>` binding.
 - `fixtures/main_exit_try_postfix_move_ok_result.fn`: valid source with postfix `?` unwrap on `move(<result-ident>)`.
 - `fixtures/main_exit_try_postfix_arithmetic.fn`: valid source proving postfix `?` unwrap composes with arithmetic expressions.
+- `fixtures/main_exit_try_space_ok_result.fn`: valid source with prefix keyword unwrap `try <expr>` on an `ok` `Result<u8,u8>` binding.
+- `fixtures/main_exit_try_space_move_ok_result.fn`: valid source with prefix keyword unwrap `try move(<result-ident>)`.
+- `fixtures/main_exit_try_space_arithmetic.fn`: valid source proving prefix keyword unwrap `try <expr>` composes with arithmetic expressions.
 - `fixtures/main_exit_err_unused.fn`: valid source confirming stage0 `err(<expr>)` result construction is accepted without hidden control flow.
 - `fixtures/main_exit_err_binding_ok_path.fn`: valid source with typed `Result<u8,u8>` `err` binding alongside an explicit `ok` `try` success path.
 - `fixtures/main_drop_unused.fn`: valid source with stage0 `drop(<ident>)` followed by independent literal exit.
@@ -185,6 +188,10 @@ Stage0 conformance checks:
 - `fixtures/invalid_try_postfix_non_result_identifier.fn`: invalid source, parser must reject postfix `?` when operand type is non-result (`u8`).
 - `fixtures/invalid_try_postfix_err_identifier.fn`: invalid source, parser must reject postfix `?` on `err` state in stage0 bootstrap semantics.
 - `fixtures/invalid_try_postfix_move_use_after_move_source.fn`: invalid source, parser must reject source reuse after postfix `?` unwrap consumes `move(<ident>)`.
+- `fixtures/invalid_try_space_missing_expression.fn`: invalid source, parser must reject bare `try` keyword usage without unwrap operand.
+- `fixtures/invalid_try_space_non_result_identifier.fn`: invalid source, parser must reject `try <expr>` when operand type is non-result (`u8`).
+- `fixtures/invalid_try_space_err_identifier.fn`: invalid source, parser must reject `try <expr>` on `err` state in stage0 bootstrap semantics.
+- `fixtures/invalid_try_space_move_use_after_move_source.fn`: invalid source, parser must reject source reuse after `try move(<ident>)` consumes the source.
 - Error-model invalid fixtures above are also assertion-checked for deterministic diagnostic message text in `verify_stage0_grammar.ps1` (empty `try/ok/err`, hidden-control-flow `try(err(...))`, and non-result `try(...)` paths).
 - `fixtures/invalid_result_annotation_mismatch.fn`: invalid source, parser must reject annotation/expression mismatch for `Result<u8,u8>`.
 - `fixtures/invalid_unsupported_result_annotation.fn`: invalid source, parser must reject unsupported generic result annotations.

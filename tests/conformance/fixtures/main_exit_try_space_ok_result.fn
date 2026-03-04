@@ -1,0 +1,4 @@
+fn main() {
+    let wrapped = ok(138)
+    exit(try wrapped)
+}
