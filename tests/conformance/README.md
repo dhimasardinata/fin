@@ -35,6 +35,9 @@ Stage0 conformance checks:
 - `fixtures/main_exit_binary_literal.fn`: valid source with stage0 binary `u8` literal parsing (`0b..`).
 - `fixtures/main_exit_binary_arithmetic.fn`: valid source proving binary literals compose with arithmetic expressions.
 - `fixtures/main_exit_binary_bitwise_mix.fn`: valid source proving binary literals compose with bitwise expressions.
+- `fixtures/main_return_literal.fn`: valid source with stage0 terminal `return <expr>` statement on literal expression.
+- `fixtures/main_return_expression.fn`: valid source with stage0 terminal `return <expr>` statement on arithmetic expression.
+- `fixtures/main_return_parenthesized.fn`: valid source with stage0 terminal `return(<expr>)` statement form.
 - `fixtures/main_exit_mul_precedence.fn`: valid source proving stage0 arithmetic precedence (`*` before `+`).
 - `fixtures/main_exit_mul_grouped.fn`: valid source proving stage0 parenthesized grouping overrides arithmetic precedence.
 - `fixtures/main_exit_cmp_eq_true.fn`: valid source with stage0 equality operator `==` yielding `u8` predicate values.
@@ -119,6 +122,10 @@ Stage0 conformance checks:
 - `fixtures/invalid_binary_literal_non_binary_digit.fn`: invalid source, parser must reject binary literals containing non-binary digits.
 - `fixtures/invalid_binary_literal_prefix_only.fn`: invalid source, parser must reject binary prefix-only literals (`0b`/`0B`).
 - `fixtures/invalid_binary_literal_out_of_range.fn`: invalid source, parser must reject binary literals outside `u8` range (`0..255`).
+- `fixtures/invalid_return_missing_expression.fn`: invalid source, parser must reject `return` statements without an expression.
+- `fixtures/invalid_return_empty_parenthesized.fn`: invalid source, parser must reject `return()` statements with empty expression payload.
+- `fixtures/invalid_return_non_u8_expression.fn`: invalid source, parser must reject non-`u8` return expressions in stage0 entrypoint.
+- `fixtures/invalid_statement_after_return.fn`: invalid source, parser must reject statements that appear after terminal `return`.
 - `fixtures/invalid_empty_parenthesized_expr.fn`: invalid source, parser must reject empty parenthesized expressions.
 - `fixtures/invalid_cmp_non_u8_operand.fn`: invalid source, parser must reject comparison operands that are not `u8`.
 - `fixtures/invalid_cmp_missing_rhs.fn`: invalid source, parser must reject comparison operators missing right-hand operands.

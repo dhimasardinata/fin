@@ -125,6 +125,9 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_hex_bitwise
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_binary_literal.fn" -ExpectedExit 131
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_binary_arithmetic.fn" -ExpectedExit 131
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_binary_bitwise_mix.fn" -ExpectedExit 131
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_return_literal.fn" -ExpectedExit 132
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_return_expression.fn" -ExpectedExit 133
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_return_parenthesized.fn" -ExpectedExit 134
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_literal.fn" -ExpectedExit 11
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_identifier.fn" -ExpectedExit 12
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_ok_result.fn" -ExpectedExit 13
@@ -184,6 +187,10 @@ Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_hex_l
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_binary_literal_non_binary_digit.fn" -ExpectedMessagePart "invalid binary literal '0b102'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_binary_literal_prefix_only.fn" -ExpectedMessagePart "invalid binary literal '0b'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_binary_literal_out_of_range.fn" -ExpectedMessagePart "exit/value literal must be in range 0..255"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_return_missing_expression.fn" -ExpectedMessagePart "return statement requires expression"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_return_empty_parenthesized.fn" -ExpectedMessagePart "return statement requires expression"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_return_non_u8_expression.fn" -ExpectedMessagePart "return expression type must be u8, found Result<u8,u8>"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_statement_after_return.fn" -ExpectedMessagePart "statements after terminal exit/return are not allowed in stage0"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_empty_parenthesized_expr.fn" -ExpectedMessagePart "parenthesized expression must not be empty"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_cmp_non_u8_operand.fn" -ExpectedMessagePart "operator '==' expects u8 operands in stage0, found Result<u8,u8> and u8"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_cmp_missing_rhs.fn" -ExpectedMessagePart "binary operator '<' requires both operands"

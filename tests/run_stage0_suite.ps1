@@ -121,6 +121,9 @@ if (-not $SkipDoctor) {
 & $fin build --src tests/conformance/fixtures/main_exit_binary_literal.fn --out artifacts/test-exit131a
 & $fin build --src tests/conformance/fixtures/main_exit_binary_arithmetic.fn --out artifacts/test-exit131b
 & $fin build --src tests/conformance/fixtures/main_exit_binary_bitwise_mix.fn --out artifacts/test-exit131c
+& $fin build --src tests/conformance/fixtures/main_return_literal.fn --out artifacts/test-exit132
+& $fin build --src tests/conformance/fixtures/main_return_expression.fn --out artifacts/test-exit133
+& $fin build --src tests/conformance/fixtures/main_return_parenthesized.fn --out artifacts/test-exit134
 & $fin build --src tests/conformance/fixtures/main_exit_try_literal.fn --out artifacts/test-exit11
 & $fin build --src tests/conformance/fixtures/main_exit_try_identifier.fn --out artifacts/test-exit12
 & $fin build --src tests/conformance/fixtures/main_exit_try_ok_result.fn --out artifacts/test-exit13
@@ -212,6 +215,9 @@ if (-not $SkipRun) {
         & $fin run --no-build --out artifacts/test-exit131a --expect-exit 131
         & $fin run --no-build --out artifacts/test-exit131b --expect-exit 131
         & $fin run --no-build --out artifacts/test-exit131c --expect-exit 131
+        & $fin run --no-build --out artifacts/test-exit132 --expect-exit 132
+        & $fin run --no-build --out artifacts/test-exit133 --expect-exit 133
+        & $fin run --no-build --out artifacts/test-exit134 --expect-exit 134
         & $fin run --no-build --out artifacts/test-exit11 --expect-exit 11
         & $fin run --no-build --out artifacts/test-exit12 --expect-exit 12
         & $fin run --no-build --out artifacts/test-exit13 --expect-exit 13

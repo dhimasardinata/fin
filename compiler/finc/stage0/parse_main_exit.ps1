@@ -702,6 +702,7 @@ function Parse-Expr {
 #     <ident> = <expr>;
 #     drop(<ident>);
 #     exit(<expr>);
+#     return <expr>;
 #   }
 # <expr> := <u8-literal> | true | false | <ident> | move(<ident>) | ok(<expr>) | err(<expr>) | try(<expr>) | if(<expr>, <expr>, <expr>) | !<expr> | (<expr>) | <expr> + <expr> | <expr> - <expr> | <expr> * <expr> | <expr> / <expr> | <expr> % <expr> | <expr> == <expr> | <expr> != <expr> | <expr> < <expr> | <expr> <= <expr> | <expr> > <expr> | <expr> >= <expr> | <expr> && <expr> | <expr> || <expr>
 # <type> := u8 | Result<u8,u8>
@@ -749,7 +750,7 @@ $haveExit = $false
 
 foreach ($stmt in $statements) {
     if ($haveExit) {
-        Fail-Parse "statements after exit(...) are not allowed in stage0"
+        Fail-Parse "statements after terminal exit/return are not allowed in stage0"
     }
 
     if ($stmt -match '^let\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([^=]+?))?\s*=\s*(.+)$') {
@@ -894,11 +895,31 @@ foreach ($stmt in $statements) {
         continue
     }
 
+    if (($stmt -match '^return\s*$') -or ($stmt -match '^return\s*\(\s*\)\s*$')) {
+        Fail-Parse "return statement requires expression"
+    }
+
+    if (($stmt -match '^return\s+(.+)$') -or ($stmt -match '^return\s*\(\s*(.+)\s*\)$')) {
+        $exprValue = Parse-Expr -Expr $Matches[1] -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates
+        $expectedReturnType = if ([string]::IsNullOrWhiteSpace($declaredMainReturnType)) {
+            "u8"
+        }
+        else {
+            [string]$declaredMainReturnType
+        }
+        if ([string]$exprValue.Type -ne $expectedReturnType) {
+            Fail-Parse ("return expression type must be {0}, found {1}" -f $expectedReturnType, $exprValue.Type)
+        }
+        $exitCode = [int]$exprValue.Value
+        $haveExit = $true
+        continue
+    }
+
     Fail-Parse "unsupported statement '$stmt'"
 }
 
 if (-not $haveExit) {
-    Fail-Parse "missing exit(<expr>) statement"
+    Fail-Parse "missing terminal statement (exit(<expr>) or return <expr>)"
 }
 
 Write-Output $exitCode
