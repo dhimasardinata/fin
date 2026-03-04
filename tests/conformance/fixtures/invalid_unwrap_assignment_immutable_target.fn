@@ -1,0 +1,5 @@
+fn main() {
+    let code = 0
+    code ?= ok(1)
+    exit(code)
+}
