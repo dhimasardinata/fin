@@ -95,6 +95,11 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_logic_or_tr
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_logic_precedence.fn" -ExpectedExit 99
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_logic_and_short_circuit_move_rhs.fn" -ExpectedExit 100
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_logic_or_short_circuit_move_rhs.fn" -ExpectedExit 101
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_logic_not_true.fn" -ExpectedExit 102
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_logic_not_false.fn" -ExpectedExit 103
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_logic_not_eq.fn" -ExpectedExit 104
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_logic_not_or_chain.fn" -ExpectedExit 105
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_logic_not_add_precedence.fn" -ExpectedExit 106
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_literal.fn" -ExpectedExit 11
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_identifier.fn" -ExpectedExit 12
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_ok_result.fn" -ExpectedExit 13
@@ -148,6 +153,9 @@ Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_logic
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_logic_missing_rhs.fn" -ExpectedMessagePart "binary operator '&&' requires both operands"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_logic_and_use_after_move_rhs_selected.fn" -ExpectedMessagePart "use after move for identifier 'value'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_logic_or_use_after_move_rhs_selected.fn" -ExpectedMessagePart "use after move for identifier 'value'"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_logic_not_non_u8_operand.fn" -ExpectedMessagePart "operator '!' expects u8 operand in stage0, found Result<u8,u8>"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_logic_not_missing_operand.fn" -ExpectedMessagePart "logical not '!' requires an operand"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_logic_not_use_after_move.fn" -ExpectedMessagePart "use after move for identifier 'value'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_unsupported_type_annotation.fn" -ExpectedMessagePart "unsupported type annotation 'i32'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_unsupported_return_annotation.fn" -ExpectedMessagePart "unsupported type annotation 'i32'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_result_return_annotation.fn" -ExpectedMessagePart "entrypoint return type must be u8 in stage0 bootstrap, found Result<u8,u8>"

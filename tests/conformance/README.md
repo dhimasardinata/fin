@@ -31,6 +31,11 @@ Stage0 conformance checks:
 - `fixtures/main_exit_logic_precedence.fn`: valid source proving stage0 precedence order across logical-or, logical-and, and comparison forms (`||` lower than `&&`, both below comparison/arithmetic tiers).
 - `fixtures/main_exit_logic_and_short_circuit_move_rhs.fn`: valid source proving `&&` short-circuit skips RHS move side effects when left operand is `0`.
 - `fixtures/main_exit_logic_or_short_circuit_move_rhs.fn`: valid source proving `||` short-circuit skips RHS move side effects when left operand is non-zero.
+- `fixtures/main_exit_logic_not_true.fn`: valid source with stage0 unary logical-not `!` for zero-to-one predicate normalization.
+- `fixtures/main_exit_logic_not_false.fn`: valid source with stage0 unary logical-not `!` for non-zero-to-zero predicate normalization.
+- `fixtures/main_exit_logic_not_eq.fn`: valid source proving unary `!` composition with comparison expressions.
+- `fixtures/main_exit_logic_not_or_chain.fn`: valid source proving unary `!` composition with logical `||` chain expressions.
+- `fixtures/main_exit_logic_not_add_precedence.fn`: valid source proving unary `!` binds tighter than additive expressions (`!x + y` parses as `(!x) + y`).
 - `fixtures/main_exit_result_typed_binding.fn`: valid source with explicit `Result<u8,u8>` binding annotation and `try` unwrap.
 - `fixtures/main_exit_try_literal.fn`: valid source with stage0 bootstrap `try(ok(<expr>))` on literal expression.
 - `fixtures/main_exit_try_identifier.fn`: valid source with stage0 bootstrap `try(<expr>)` on identifier `Result<u8,u8>` binding.
@@ -83,6 +88,9 @@ Stage0 conformance checks:
 - `fixtures/invalid_logic_missing_rhs.fn`: invalid source, parser must reject logical operators missing right-hand operands.
 - `fixtures/invalid_logic_and_use_after_move_rhs_selected.fn`: invalid source, parser must reject use-after-move when `&&` evaluates selected RHS `move(...)`.
 - `fixtures/invalid_logic_or_use_after_move_rhs_selected.fn`: invalid source, parser must reject use-after-move when `||` evaluates selected RHS `move(...)`.
+- `fixtures/invalid_logic_not_non_u8_operand.fn`: invalid source, parser must reject unary `!` operands that are not `u8`.
+- `fixtures/invalid_logic_not_missing_operand.fn`: invalid source, parser must reject unary `!` expressions with missing operands.
+- `fixtures/invalid_logic_not_use_after_move.fn`: invalid source, parser must reject use-after-move after unary `!move(...)` consumes a binding.
 - Core grammar invalid fixtures above are also assertion-checked for deterministic diagnostic message text in `verify_stage0_grammar.ps1`.
 - `fixtures/invalid_unsupported_type_annotation.fn`: invalid source, parser must reject unsupported type annotations.
 - `fixtures/invalid_unsupported_return_annotation.fn`: invalid source, parser must reject unsupported entrypoint return annotations.

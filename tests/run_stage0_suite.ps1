@@ -91,6 +91,11 @@ if (-not $SkipDoctor) {
 & $fin build --src tests/conformance/fixtures/main_exit_logic_precedence.fn --out artifacts/test-exit99
 & $fin build --src tests/conformance/fixtures/main_exit_logic_and_short_circuit_move_rhs.fn --out artifacts/test-exit100
 & $fin build --src tests/conformance/fixtures/main_exit_logic_or_short_circuit_move_rhs.fn --out artifacts/test-exit101
+& $fin build --src tests/conformance/fixtures/main_exit_logic_not_true.fn --out artifacts/test-exit102
+& $fin build --src tests/conformance/fixtures/main_exit_logic_not_false.fn --out artifacts/test-exit103
+& $fin build --src tests/conformance/fixtures/main_exit_logic_not_eq.fn --out artifacts/test-exit104
+& $fin build --src tests/conformance/fixtures/main_exit_logic_not_or_chain.fn --out artifacts/test-exit105
+& $fin build --src tests/conformance/fixtures/main_exit_logic_not_add_precedence.fn --out artifacts/test-exit106
 & $fin build --src tests/conformance/fixtures/main_exit_try_literal.fn --out artifacts/test-exit11
 & $fin build --src tests/conformance/fixtures/main_exit_try_identifier.fn --out artifacts/test-exit12
 & $fin build --src tests/conformance/fixtures/main_exit_try_ok_result.fn --out artifacts/test-exit13
@@ -152,6 +157,11 @@ if (-not $SkipRun) {
         & $fin run --no-build --out artifacts/test-exit99 --expect-exit 99
         & $fin run --no-build --out artifacts/test-exit100 --expect-exit 100
         & $fin run --no-build --out artifacts/test-exit101 --expect-exit 101
+        & $fin run --no-build --out artifacts/test-exit102 --expect-exit 102
+        & $fin run --no-build --out artifacts/test-exit103 --expect-exit 103
+        & $fin run --no-build --out artifacts/test-exit104 --expect-exit 104
+        & $fin run --no-build --out artifacts/test-exit105 --expect-exit 105
+        & $fin run --no-build --out artifacts/test-exit106 --expect-exit 106
         & $fin run --no-build --out artifacts/test-exit11 --expect-exit 11
         & $fin run --no-build --out artifacts/test-exit12 --expect-exit 12
         & $fin run --no-build --out artifacts/test-exit13 --expect-exit 13
