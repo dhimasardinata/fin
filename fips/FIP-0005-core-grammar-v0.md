@@ -79,6 +79,9 @@
   - tests/conformance/fixtures/main_exit_unwrap_assignment_ok.fn
   - tests/conformance/fixtures/main_exit_unwrap_assignment_move_ok.fn
   - tests/conformance/fixtures/main_exit_unwrap_assignment_arithmetic.fn
+  - tests/conformance/fixtures/main_exit_var_unwrap_binding_ok.fn
+  - tests/conformance/fixtures/main_exit_var_unwrap_binding_move_ok.fn
+  - tests/conformance/fixtures/main_exit_var_unwrap_binding_arithmetic.fn
   - tests/conformance/fixtures/invalid_add_non_u8_operand.fn
   - tests/conformance/fixtures/invalid_add_overflow.fn
   - tests/conformance/fixtures/invalid_sub_underflow.fn
@@ -141,6 +144,11 @@
   - tests/conformance/fixtures/invalid_unwrap_assignment_err_identifier.fn
   - tests/conformance/fixtures/invalid_unwrap_assignment_immutable_target.fn
   - tests/conformance/fixtures/invalid_unwrap_assignment_move_use_after_move_source.fn
+  - tests/conformance/fixtures/invalid_var_unwrap_binding_missing_expression.fn
+  - tests/conformance/fixtures/invalid_var_unwrap_binding_non_result_identifier.fn
+  - tests/conformance/fixtures/invalid_var_unwrap_binding_err_identifier.fn
+  - tests/conformance/fixtures/invalid_var_unwrap_binding_move_use_after_move_source.fn
+  - tests/conformance/fixtures/invalid_var_unwrap_binding_duplicate.fn
 - acceptance:
   - Parser conformance suite passes canonical grammar fixtures.
 
@@ -163,10 +171,11 @@ Current stage0 subset grammar:
 1. `let <ident> = <expr>`
 2. `var <ident> = <expr>`
 3. `let <ident> ?= <expr>` (stage0 bootstrap unwrap-binding sugar; equivalent to `let <ident> = try <expr>`)
-4. `<ident> ?= <expr>` (stage0 mutable unwrap-assignment sugar; equivalent to `<ident> = try <expr>`)
-5. `<ident> = <expr>` (only for `var`)
-6. `drop(<ident>)`
-7. `exit(<expr>)` and `return <expr>` / `return(<expr>)` (terminal statement forms)
+4. `var <ident> ?= <expr>` (stage0 mutable-declaration unwrap sugar; equivalent to `var <ident> = try <expr>`)
+5. `<ident> ?= <expr>` (stage0 mutable unwrap-assignment sugar; equivalent to `<ident> = try <expr>`)
+6. `<ident> = <expr>` (only for `var`)
+7. `drop(<ident>)`
+8. `exit(<expr>)` and `return <expr>` / `return(<expr>)` (terminal statement forms)
 
 `<expr>` (stage0):
 
@@ -198,7 +207,7 @@ Accepted stage0 tolerances:
 
 This subset is intentionally minimal and acts as the first executable parser checkpoint.
 
-Note: stage0 optional binding type-annotation forms (`let/var <ident>: u8 = <expr>` and `let/var <ident>: Result<u8,u8> = <expr>`) plus optional entrypoint return annotation (`fn main() -> u8`) are introduced under `FIP-0006`. Stage0 bootstrap unwrap syntax (`try(<expr>)`, prefix `try <expr>`, and postfix `<expr>?`) is introduced under `FIP-0008`, where stage0 unwrap inputs are constrained to `Result<u8,u8>`. Stage0 unwrap-binding sugar (`let <ident> ?= <expr>`) desugars to `let <ident> = try <expr>` under the same deterministic bootstrap constraints and diagnostics, and stage0 mutable unwrap-assignment sugar (`<ident> ?= <expr>`) desugars to `<ident> = try <expr>` under existing mutable-assignment lifecycle and type constraints. Stage0 `drop(<ident>)` and `move(<ident>)` bootstrap ownership forms are introduced under `FIP-0007`; stage0 parser semantics now track `alive/moved/dropped` lifecycle states, allow mutable moved/dropped binding re-initialization via assignment, reject immutable moved/dropped binding re-initialization, and continue to reject ownership/borrowing syntax (`&`, `*`) until inference-first ownership semantics are implemented.
+Note: stage0 optional binding type-annotation forms (`let/var <ident>: u8 = <expr>` and `let/var <ident>: Result<u8,u8> = <expr>`) plus optional entrypoint return annotation (`fn main() -> u8`) are introduced under `FIP-0006`. Stage0 bootstrap unwrap syntax (`try(<expr>)`, prefix `try <expr>`, and postfix `<expr>?`) is introduced under `FIP-0008`, where stage0 unwrap inputs are constrained to `Result<u8,u8>`. Stage0 unwrap-binding sugars (`let <ident> ?= <expr>` and `var <ident> ?= <expr>`) desugar to `let/var <ident> = try <expr>` under the same deterministic bootstrap constraints and diagnostics, and stage0 mutable unwrap-assignment sugar (`<ident> ?= <expr>`) desugars to `<ident> = try <expr>` under existing mutable-assignment lifecycle and type constraints. Stage0 `drop(<ident>)` and `move(<ident>)` bootstrap ownership forms are introduced under `FIP-0007`; stage0 parser semantics now track `alive/moved/dropped` lifecycle states, allow mutable moved/dropped binding re-initialization via assignment, reject immutable moved/dropped binding re-initialization, and continue to reject ownership/borrowing syntax (`&`, `*`) until inference-first ownership semantics are implemented.
 Stage0 arithmetic (`+`, `-`, `*`, `/`, `%`), comparison operators, shift operators (`<<`, `>>`), bitwise operators (`&`, `^`, `|`), unary operators (`!`, `~`), and binary logical operators (`&&`, `||`) are constrained to `u8` operands, with deterministic rejection for non-`u8` operands, deterministic overflow/underflow checks, explicit division/modulo-by-zero rejection, explicit shift-count range checks (`0..7`) and left-shift overflow rejection, parenthesized grouping support for precedence control, deterministic binary-operator parse errors when operands are missing, explicit unary-operator parse errors when `!` or `~` has no operand, deterministic bootstrap-unwrap parse/type/state diagnostics when prefix `try` has no operand or when prefix/postfix unwrap is applied to unsupported/non-`ok` result inputs, deterministic hexadecimal/binary literal validation (invalid digit rejection, prefix-only `0x`/`0X`/`0b`/`0B` rejection, and range rejection beyond `0..255`), terminal statement parity for `exit(<expr>)` and `return` forms with deterministic missing-expression and post-terminal-statement rejection diagnostics, explicit `if(cond, then, else)` conditional expressions that enforce `u8` conditions plus branch type matching, boolean literal aliases `true`/`false` mapped to `u8` (`1`/`0`), reserved-keyword identifier rejection for `true`/`false`, stage0 shift precedence below additive/multiplicative arithmetic and above comparisons, stage0 bitwise precedence (`| < ^ < &`) below comparison/shift/arithmetic and above logical `&&`/`||`, and short-circuit logical evaluation that preserves side-effect/lifecycle behavior on the non-selected RHS while still enforcing deterministic RHS type checks.
 
 ## Alternatives
@@ -218,6 +227,6 @@ Compatibility impact must be documented before Implemented status.
 Current checks:
 
 1. `tests/conformance/verify_stage0_grammar.ps1` validates valid and invalid fixtures for literals, bindings, mutation, and comments, with deterministic message-substring assertions for missing entrypoint, undefined identifier use, and immutable assignment rejection.
-2. `tests/conformance/verify_stage0_grammar.ps1` validates stage0 `u8` arithmetic (`+`, `-`, `*`, `/`, `%`), comparisons (`==`, `!=`, `<`, `<=`, `>`, `>=`), shifts (`<<`, `>>`), bitwise operators (`&`, `^`, `|`), unary/binary logical operators (`!`, `~`, `&&`, `||`), bootstrap unwrap forms (`try(<expr>)`, `try <expr>`, and postfix `<expr>?`), unwrap-binding sugar (`let <ident> ?= <expr>`), unwrap-assignment sugar (`<ident> ?= <expr>`), decimal/hexadecimal/binary literals, boolean literals (`true`, `false`), terminal `exit`/`return` forms, parenthesized grouping, and `if(cond, then, else)` with deterministic diagnostics for non-`u8` operands, overflow/underflow, division/modulo-by-zero, shift-count range violations, left-shift overflow, missing binary-operator operands, missing unary `!`/`~` operands, malformed/out-of-range hex/binary literals, missing return expressions, statements after terminal exit/return, empty parenthesized expressions, invalid/missing `if` arguments, non-`u8` conditions, reserved-keyword identifier misuse (`true`/`false`), branch type mismatches, invalid bootstrap unwrap forms, invalid unwrap-binding/unwrap-assignment forms, and selected-operand ownership misuse in logical expressions.
+2. `tests/conformance/verify_stage0_grammar.ps1` validates stage0 `u8` arithmetic (`+`, `-`, `*`, `/`, `%`), comparisons (`==`, `!=`, `<`, `<=`, `>`, `>=`), shifts (`<<`, `>>`), bitwise operators (`&`, `^`, `|`), unary/binary logical operators (`!`, `~`, `&&`, `||`), bootstrap unwrap forms (`try(<expr>)`, `try <expr>`, and postfix `<expr>?`), unwrap-binding sugars (`let <ident> ?= <expr>` and `var <ident> ?= <expr>`), unwrap-assignment sugar (`<ident> ?= <expr>`), decimal/hexadecimal/binary literals, boolean literals (`true`, `false`), terminal `exit`/`return` forms, parenthesized grouping, and `if(cond, then, else)` with deterministic diagnostics for non-`u8` operands, overflow/underflow, division/modulo-by-zero, shift-count range violations, left-shift overflow, missing binary-operator operands, missing unary `!`/`~` operands, malformed/out-of-range hex/binary literals, missing return expressions, statements after terminal exit/return, empty parenthesized expressions, invalid/missing `if` arguments, non-`u8` conditions, reserved-keyword identifier misuse (`true`/`false`), branch type mismatches, invalid bootstrap unwrap forms, invalid unwrap-binding/unwrap-assignment forms, and selected-operand ownership misuse in logical expressions.
 3. Parser rejects non-`main` entrypoint patterns for stage0 subset.
 4. Parser rejects undefined identifiers and assignment to immutable `let` bindings.

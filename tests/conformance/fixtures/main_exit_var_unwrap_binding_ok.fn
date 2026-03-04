@@ -1,0 +1,4 @@
+fn main() {
+    var code ?= ok(147)
+    exit(code)
+}
