@@ -1,0 +1,4 @@
+fn main() {
+    let wrapped = ok(7)
+    exit(wrapped << 1)
+}

@@ -22,6 +22,10 @@ Stage0 conformance checks:
 - `fixtures/main_exit_bitwise_xor_literals.fn`: valid source with stage0 bitwise-xor `^` over `u8` operands.
 - `fixtures/main_exit_bitwise_precedence.fn`: valid source proving stage0 bitwise precedence order `|` lower than `^` lower than `&`.
 - `fixtures/main_exit_bitwise_cmp_precedence.fn`: valid source proving stage0 comparison expressions bind tighter than bitwise operators.
+- `fixtures/main_exit_shift_left_literals.fn`: valid source with stage0 left-shift `<<` over `u8` operands.
+- `fixtures/main_exit_shift_right_literals.fn`: valid source with stage0 right-shift `>>` over `u8` operands.
+- `fixtures/main_exit_shift_precedence.fn`: valid source proving stage0 additive expressions bind tighter than shift expressions.
+- `fixtures/main_exit_shift_cmp_precedence.fn`: valid source proving stage0 shift expressions bind tighter than comparison operators.
 - `fixtures/main_exit_mul_precedence.fn`: valid source proving stage0 arithmetic precedence (`*` before `+`).
 - `fixtures/main_exit_mul_grouped.fn`: valid source proving stage0 parenthesized grouping overrides arithmetic precedence.
 - `fixtures/main_exit_cmp_eq_true.fn`: valid source with stage0 equality operator `==` yielding `u8` predicate values.
@@ -93,6 +97,11 @@ Stage0 conformance checks:
 - `fixtures/invalid_mod_missing_rhs.fn`: invalid source, parser must reject `%` operators missing right-hand operands.
 - `fixtures/invalid_bitwise_non_u8_operand.fn`: invalid source, parser must reject bitwise operands that are not `u8`.
 - `fixtures/invalid_bitwise_missing_rhs.fn`: invalid source, parser must reject bitwise operators missing right-hand operands.
+- `fixtures/invalid_shift_non_u8_operand.fn`: invalid source, parser must reject shift operands that are not `u8`.
+- `fixtures/invalid_shift_missing_rhs.fn`: invalid source, parser must reject shift operators missing right-hand operands.
+- `fixtures/invalid_shift_left_count_out_of_range.fn`: invalid source, parser must reject left-shift counts outside `0..7`.
+- `fixtures/invalid_shift_right_count_out_of_range.fn`: invalid source, parser must reject right-shift counts outside `0..7`.
+- `fixtures/invalid_shift_left_overflow.fn`: invalid source, parser must reject `u8` overflow in stage0 left-shift expressions.
 - `fixtures/invalid_empty_parenthesized_expr.fn`: invalid source, parser must reject empty parenthesized expressions.
 - `fixtures/invalid_cmp_non_u8_operand.fn`: invalid source, parser must reject comparison operands that are not `u8`.
 - `fixtures/invalid_cmp_missing_rhs.fn`: invalid source, parser must reject comparison operators missing right-hand operands.

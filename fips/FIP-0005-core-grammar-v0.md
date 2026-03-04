@@ -25,6 +25,10 @@
   - tests/conformance/fixtures/main_exit_bitwise_xor_literals.fn
   - tests/conformance/fixtures/main_exit_bitwise_precedence.fn
   - tests/conformance/fixtures/main_exit_bitwise_cmp_precedence.fn
+  - tests/conformance/fixtures/main_exit_shift_left_literals.fn
+  - tests/conformance/fixtures/main_exit_shift_right_literals.fn
+  - tests/conformance/fixtures/main_exit_shift_precedence.fn
+  - tests/conformance/fixtures/main_exit_shift_cmp_precedence.fn
   - tests/conformance/fixtures/main_exit_mul_precedence.fn
   - tests/conformance/fixtures/main_exit_mul_grouped.fn
   - tests/conformance/fixtures/main_exit_cmp_eq_true.fn
@@ -62,6 +66,11 @@
   - tests/conformance/fixtures/invalid_mod_missing_rhs.fn
   - tests/conformance/fixtures/invalid_bitwise_non_u8_operand.fn
   - tests/conformance/fixtures/invalid_bitwise_missing_rhs.fn
+  - tests/conformance/fixtures/invalid_shift_non_u8_operand.fn
+  - tests/conformance/fixtures/invalid_shift_missing_rhs.fn
+  - tests/conformance/fixtures/invalid_shift_left_count_out_of_range.fn
+  - tests/conformance/fixtures/invalid_shift_right_count_out_of_range.fn
+  - tests/conformance/fixtures/invalid_shift_left_overflow.fn
   - tests/conformance/fixtures/invalid_empty_parenthesized_expr.fn
   - tests/conformance/fixtures/invalid_cmp_non_u8_operand.fn
   - tests/conformance/fixtures/invalid_cmp_missing_rhs.fn
@@ -115,9 +124,10 @@ Current stage0 subset grammar:
 7. `(<expr>)` (parenthesized expression grouping)
 8. `<expr> + <expr>`, `<expr> - <expr>`, `<expr> * <expr>`, `<expr> / <expr>`, and `<expr> % <expr>` (stage0 `u8` arithmetic forms, with `*`/`/`/`%` higher precedence than `+`/`-`)
 9. `<expr> == <expr>`, `<expr> != <expr>`, `<expr> < <expr>`, `<expr> <= <expr>`, `<expr> > <expr>`, and `<expr> >= <expr>` (stage0 comparison forms yielding `u8` predicates `0`/`1`, with lower precedence than arithmetic)
-10. `<expr> & <expr>`, `<expr> ^ <expr>`, and `<expr> | <expr>` (stage0 `u8` bitwise forms; precedence is `|` lower than `^` lower than `&`, and all three are lower than comparison/arithmetic but higher than logical `&&`/`||`)
-11. `if(<expr>, <expr>, <expr>)` (stage0 conditional expression; condition must be `u8`, then/else branches must type-match)
-12. `<expr> && <expr>` and `<expr> || <expr>` (stage0 logical forms yielding normalized `u8` predicates `0`/`1`; precedence is `||` lower than `&&`, both lower than bitwise/comparison/arithmetic)
+10. `<expr> << <expr>` and `<expr> >> <expr>` (stage0 `u8` shift forms; shift counts must be in `0..7`, and shifts are lower precedence than additive/multiplicative arithmetic and higher precedence than comparisons)
+11. `<expr> & <expr>`, `<expr> ^ <expr>`, and `<expr> | <expr>` (stage0 `u8` bitwise forms; precedence is `|` lower than `^` lower than `&`, and all three are lower than comparison/shift/arithmetic but higher than logical `&&`/`||`)
+12. `if(<expr>, <expr>, <expr>)` (stage0 conditional expression; condition must be `u8`, then/else branches must type-match)
+13. `<expr> && <expr>` and `<expr> || <expr>` (stage0 logical forms yielding normalized `u8` predicates `0`/`1`; precedence is `||` lower than `&&`, both lower than bitwise/comparison/shift/arithmetic)
 
 `<type>` (stage0):
 
@@ -134,7 +144,7 @@ Accepted stage0 tolerances:
 This subset is intentionally minimal and acts as the first executable parser checkpoint.
 
 Note: stage0 optional binding type-annotation forms (`let/var <ident>: u8 = <expr>` and `let/var <ident>: Result<u8,u8> = <expr>`) plus optional entrypoint return annotation (`fn main() -> u8`) are introduced under `FIP-0006`. Stage0 bootstrap `try(<expr>)` syntax is introduced under `FIP-0008`, where stage0 `try` is constrained to `Result<u8,u8>` inputs. Stage0 `drop(<ident>)` and `move(<ident>)` bootstrap ownership forms are introduced under `FIP-0007`; stage0 parser semantics now track `alive/moved/dropped` lifecycle states, allow mutable moved/dropped binding re-initialization via assignment, reject immutable moved/dropped binding re-initialization, and continue to reject ownership/borrowing syntax (`&`, `*`) until inference-first ownership semantics are implemented.
-Stage0 arithmetic (`+`, `-`, `*`, `/`, `%`), comparison operators, bitwise operators (`&`, `^`, `|`), unary logical-not (`!`), and binary logical operators (`&&`, `||`) are constrained to `u8` operands, with deterministic rejection for non-`u8` operands, deterministic overflow/underflow checks, explicit division/modulo-by-zero rejection, parenthesized grouping support for precedence control, deterministic binary-operator parse errors when operands are missing, explicit unary-operator parse errors when `!` has no operand, explicit `if(cond, then, else)` conditional expressions that enforce `u8` conditions plus branch type matching, boolean literal aliases `true`/`false` mapped to `u8` (`1`/`0`), reserved-keyword identifier rejection for `true`/`false`, stage0 bitwise precedence (`| < ^ < &`) below comparison/arithmetic and above logical `&&`/`||`, and short-circuit logical evaluation that preserves side-effect/lifecycle behavior on the non-selected RHS while still enforcing deterministic RHS type checks.
+Stage0 arithmetic (`+`, `-`, `*`, `/`, `%`), comparison operators, shift operators (`<<`, `>>`), bitwise operators (`&`, `^`, `|`), unary logical-not (`!`), and binary logical operators (`&&`, `||`) are constrained to `u8` operands, with deterministic rejection for non-`u8` operands, deterministic overflow/underflow checks, explicit division/modulo-by-zero rejection, explicit shift-count range checks (`0..7`) and left-shift overflow rejection, parenthesized grouping support for precedence control, deterministic binary-operator parse errors when operands are missing, explicit unary-operator parse errors when `!` has no operand, explicit `if(cond, then, else)` conditional expressions that enforce `u8` conditions plus branch type matching, boolean literal aliases `true`/`false` mapped to `u8` (`1`/`0`), reserved-keyword identifier rejection for `true`/`false`, stage0 shift precedence below additive/multiplicative arithmetic and above comparisons, stage0 bitwise precedence (`| < ^ < &`) below comparison/shift/arithmetic and above logical `&&`/`||`, and short-circuit logical evaluation that preserves side-effect/lifecycle behavior on the non-selected RHS while still enforcing deterministic RHS type checks.
 
 ## Alternatives
 
@@ -153,6 +163,6 @@ Compatibility impact must be documented before Implemented status.
 Current checks:
 
 1. `tests/conformance/verify_stage0_grammar.ps1` validates valid and invalid fixtures for literals, bindings, mutation, and comments, with deterministic message-substring assertions for missing entrypoint, undefined identifier use, and immutable assignment rejection.
-2. `tests/conformance/verify_stage0_grammar.ps1` validates stage0 `u8` arithmetic (`+`, `-`, `*`, `/`, `%`), comparisons (`==`, `!=`, `<`, `<=`, `>`, `>=`), bitwise operators (`&`, `^`, `|`), unary/binary logical operators (`!`, `&&`, `||`), boolean literals (`true`, `false`), parenthesized grouping, and `if(cond, then, else)` with deterministic diagnostics for non-`u8` operands, overflow/underflow, division/modulo-by-zero, missing binary-operator operands, missing unary-`!` operands, empty parenthesized expressions, invalid/missing `if` arguments, non-`u8` conditions, reserved-keyword identifier misuse (`true`/`false`), branch type mismatches, and selected-operand ownership misuse in logical expressions.
+2. `tests/conformance/verify_stage0_grammar.ps1` validates stage0 `u8` arithmetic (`+`, `-`, `*`, `/`, `%`), comparisons (`==`, `!=`, `<`, `<=`, `>`, `>=`), shifts (`<<`, `>>`), bitwise operators (`&`, `^`, `|`), unary/binary logical operators (`!`, `&&`, `||`), boolean literals (`true`, `false`), parenthesized grouping, and `if(cond, then, else)` with deterministic diagnostics for non-`u8` operands, overflow/underflow, division/modulo-by-zero, shift-count range violations, left-shift overflow, missing binary-operator operands, missing unary-`!` operands, empty parenthesized expressions, invalid/missing `if` arguments, non-`u8` conditions, reserved-keyword identifier misuse (`true`/`false`), branch type mismatches, and selected-operand ownership misuse in logical expressions.
 3. Parser rejects non-`main` entrypoint patterns for stage0 subset.
 4. Parser rejects undefined identifiers and assignment to immutable `let` bindings.

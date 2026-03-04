@@ -219,6 +219,16 @@ function Find-TopLevelBinaryOperator {
                     continue
                 }
                 if ($Expr.Substring($start, $opLength) -eq $op) {
+                    if ($op -eq "<") {
+                        if (($start -gt 0 -and $Expr[$start - 1] -eq '<') -or ((($start + 1) -lt $Expr.Length) -and $Expr[$start + 1] -eq '<')) {
+                            continue
+                        }
+                    }
+                    if ($op -eq ">") {
+                        if (($start -gt 0 -and $Expr[$start - 1] -eq '>') -or ((($start + 1) -lt $Expr.Length) -and $Expr[$start + 1] -eq '>')) {
+                            continue
+                        }
+                    }
                     return [pscustomobject]@{
                         Index = $start
                         Operator = $op
@@ -306,6 +316,9 @@ function Parse-Expr {
     }
     if ($null -eq $binaryOperator) {
         $binaryOperator = Find-TopLevelBinaryOperator -Expr $trimmedExpr -Operators @("==", "!=", "<=", ">=", "<", ">")
+    }
+    if ($null -eq $binaryOperator) {
+        $binaryOperator = Find-TopLevelBinaryOperator -Expr $trimmedExpr -Operators @("<<", ">>")
     }
     if ($null -eq $binaryOperator) {
         $binaryOperator = Find-TopLevelBinaryOperator -Expr $trimmedExpr -Operators @("+", "-")
@@ -400,6 +413,21 @@ function Parse-Expr {
         }
         elseif ($operatorText -eq "|") {
             $result = [int]$leftValue.Value -bor [int]$rightValue.Value
+        }
+        elseif ($operatorText -eq "<<") {
+            if (([int]$rightValue.Value -lt 0) -or ([int]$rightValue.Value -gt 7)) {
+                Fail-Parse "shift count out of range 0..7 in '<<' expression"
+            }
+            $result = [int]$leftValue.Value -shl [int]$rightValue.Value
+            if ($result -gt 255) {
+                Fail-Parse "u8 overflow in '<<' expression"
+            }
+        }
+        elseif ($operatorText -eq ">>") {
+            if (([int]$rightValue.Value -lt 0) -or ([int]$rightValue.Value -gt 7)) {
+                Fail-Parse "shift count out of range 0..7 in '>>' expression"
+            }
+            $result = [int]$leftValue.Value -shr [int]$rightValue.Value
         }
         elseif ($operatorText -eq "==") {
             $result = if ([int]$leftValue.Value -eq [int]$rightValue.Value) { 1 } else { 0 }
