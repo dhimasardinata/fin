@@ -1,0 +1,6 @@
+fn main() {
+  var value = 1
+  let ref_value = &value
+  value = 2
+  exit(value)
+}

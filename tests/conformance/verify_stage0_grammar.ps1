@@ -165,6 +165,7 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_borrow_type
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_borrow_result_try.fn" -ExpectedExit 152
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_borrow_reflects_reassign.fn" -ExpectedExit 153
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_borrow_drop_ref_then_move.fn" -ExpectedExit 154
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_borrow_drop_ref_then_assign.fn" -ExpectedExit 155
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_drop_unused.fn" -ExpectedExit 15
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_move_binding.fn" -ExpectedExit 16
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_move_reinit_var.fn" -ExpectedExit 17
@@ -294,6 +295,7 @@ Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_deref
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_borrow_type_annotation.fn" -ExpectedMessagePart "type mismatch for binding 'value': expected &u8, found u8"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_borrow_after_move.fn" -ExpectedMessagePart "borrow after move for identifier 'value'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_move_while_borrowed.fn" -ExpectedMessagePart "cannot move identifier 'value' while borrowed by 'ref_value'"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_assign_while_borrowed.fn" -ExpectedMessagePart "cannot assign identifier 'value' while borrowed by 'ref_value'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_dereference_missing_operand.fn" -ExpectedMessagePart "dereference '*' requires an operand"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_dereference_non_reference.fn" -ExpectedMessagePart "dereference expects reference operand in stage0, found u8"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_use_after_drop.fn" -ExpectedMessagePart "use after drop for identifier 'value'"
