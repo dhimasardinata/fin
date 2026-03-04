@@ -167,6 +167,7 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_borrow_refl
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_borrow_drop_ref_then_move.fn" -ExpectedExit 154
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_borrow_drop_ref_then_assign.fn" -ExpectedExit 155
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_assign_after_rhs_releases_borrow.fn" -ExpectedExit 156
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_unwrap_assignment_after_rhs_releases_borrow.fn" -ExpectedExit 157
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_drop_unused.fn" -ExpectedExit 15
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_move_binding.fn" -ExpectedExit 16
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_move_reinit_var.fn" -ExpectedExit 17
@@ -298,6 +299,7 @@ Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_borro
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_move_while_borrowed.fn" -ExpectedMessagePart "cannot move identifier 'value' while borrowed by 'ref_value'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_assign_while_borrowed.fn" -ExpectedMessagePart "cannot assign identifier 'value' while borrowed by 'ref_value'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_assign_after_rhs_still_borrowed.fn" -ExpectedMessagePart "cannot assign identifier 'value' while borrowed by 'ref_b'"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_unwrap_assignment_after_rhs_still_borrowed.fn" -ExpectedMessagePart "cannot assign identifier 'value' while borrowed by 'ref_b'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_dereference_missing_operand.fn" -ExpectedMessagePart "dereference '*' requires an operand"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_dereference_non_reference.fn" -ExpectedMessagePart "dereference expects reference operand in stage0, found u8"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_use_after_drop.fn" -ExpectedMessagePart "use after drop for identifier 'value'"
