@@ -148,6 +148,9 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_err_try_mov
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_postfix_ok_result.fn" -ExpectedExit 135
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_postfix_move_ok_result.fn" -ExpectedExit 136
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_postfix_arithmetic.fn" -ExpectedExit 137
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_space_ok_result.fn" -ExpectedExit 138
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_space_move_ok_result.fn" -ExpectedExit 139
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_space_arithmetic.fn" -ExpectedExit 140
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_drop_unused.fn" -ExpectedExit 15
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_move_binding.fn" -ExpectedExit 16
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_move_reinit_var.fn" -ExpectedExit 17
@@ -252,6 +255,10 @@ Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_p
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_postfix_non_result_identifier.fn" -ExpectedMessagePart "postfix '?' expects Result<u8,u8> in stage0 bootstrap, found u8"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_postfix_err_identifier.fn" -ExpectedMessagePart "postfix '?' on err(...) is not supported in stage0 bootstrap (would require hidden control flow)"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_postfix_move_use_after_move_source.fn" -ExpectedMessagePart "use after move for identifier 'source'"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_space_missing_expression.fn" -ExpectedMessagePart "try keyword requires expression"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_space_non_result_identifier.fn" -ExpectedMessagePart "try keyword expects Result<u8,u8> in stage0 bootstrap, found u8"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_space_err_identifier.fn" -ExpectedMessagePart "try keyword on err(...) is not supported in stage0 bootstrap (would require hidden control flow)"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_space_move_use_after_move_source.fn" -ExpectedMessagePart "use after move for identifier 'source'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_result_annotation_mismatch.fn" -ExpectedMessagePart "type mismatch for binding 'value': expected Result<u8,u8>, found u8"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_unsupported_result_annotation.fn" -ExpectedMessagePart "unsupported type annotation 'Result<u8,i32>'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_borrow_reference_expr.fn" -ExpectedMessagePart "borrow/reference expressions are not available in stage0 bootstrap"

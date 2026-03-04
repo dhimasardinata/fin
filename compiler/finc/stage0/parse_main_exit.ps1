@@ -653,6 +653,34 @@ function Parse-Expr {
         Fail-Parse ("try(...) expects Result<u8,u8> in stage0 bootstrap, found {0}" -f $innerValue.Type)
     }
 
+    if ($trimmedExpr -eq "try") {
+        Fail-Parse "try keyword requires expression"
+    }
+
+    if ($trimmedExpr -match '^try\s+(.+)$') {
+        $innerExpr = $Matches[1].Trim()
+        if ([string]::IsNullOrWhiteSpace($innerExpr)) {
+            Fail-Parse "try keyword requires expression"
+        }
+
+        $innerValue = Parse-Expr -Expr $innerExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates
+        if ([string]$innerValue.Type -eq "Result<u8,u8>") {
+            if ([string]$innerValue.ResultState -eq "ok") {
+                return [pscustomobject]@{
+                    Type = "u8"
+                    Value = [int]$innerValue.Value
+                    ResultState = "none"
+                }
+            }
+            if ([string]$innerValue.ResultState -eq "err") {
+                Fail-Parse "try keyword on err(...) is not supported in stage0 bootstrap (would require hidden control flow)"
+            }
+            Fail-Parse "try keyword requires known result state (ok/err) in stage0 bootstrap"
+        }
+
+        Fail-Parse ("try keyword expects Result<u8,u8> in stage0 bootstrap, found {0}" -f $innerValue.Type)
+    }
+
     if ($trimmedExpr.EndsWith("?")) {
         $innerExpr = $trimmedExpr.Substring(0, $trimmedExpr.Length - 1).Trim()
         if ([string]::IsNullOrWhiteSpace($innerExpr)) {
@@ -728,7 +756,7 @@ function Parse-Expr {
 #     exit(<expr>);
 #     return <expr>;
 #   }
-# <expr> := <u8-literal> | true | false | <ident> | move(<ident>) | ok(<expr>) | err(<expr>) | try(<expr>) | <expr>? | if(<expr>, <expr>, <expr>) | !<expr> | (<expr>) | <expr> + <expr> | <expr> - <expr> | <expr> * <expr> | <expr> / <expr> | <expr> % <expr> | <expr> == <expr> | <expr> != <expr> | <expr> < <expr> | <expr> <= <expr> | <expr> > <expr> | <expr> >= <expr> | <expr> && <expr> | <expr> || <expr>
+# <expr> := <u8-literal> | true | false | <ident> | move(<ident>) | ok(<expr>) | err(<expr>) | try(<expr>) | try <expr> | <expr>? | if(<expr>, <expr>, <expr>) | !<expr> | (<expr>) | <expr> + <expr> | <expr> - <expr> | <expr> * <expr> | <expr> / <expr> | <expr> % <expr> | <expr> == <expr> | <expr> != <expr> | <expr> < <expr> | <expr> <= <expr> | <expr> > <expr> | <expr> >= <expr> | <expr> && <expr> | <expr> || <expr>
 # <type> := u8 | Result<u8,u8>
 # with optional semicolons and line comments (# or //).
 $programPattern = '(?s)^\s*fn\s+main\s*\(\s*\)\s*(?:->\s*([^\{]+?))?\s*\{\s*(.*?)\s*\}\s*$'
