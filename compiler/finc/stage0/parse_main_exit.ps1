@@ -62,6 +62,38 @@ function Parse-TypeAnnotation {
     Fail-Parse "unsupported type annotation '$typeName'"
 }
 
+function Find-TopLevelBinaryOperator {
+    param([string]$Expr)
+
+    $depth = 0
+    for ($i = $Expr.Length - 1; $i -ge 0; $i--) {
+        $ch = $Expr[$i]
+        if ($ch -eq ')') {
+            $depth += 1
+            continue
+        }
+        if ($ch -eq '(') {
+            $depth -= 1
+            if ($depth -lt 0) {
+                Fail-Parse ("unbalanced parentheses in expression '{0}'" -f $Expr)
+            }
+            continue
+        }
+        if (($depth -eq 0) -and (($ch -eq '+') -or ($ch -eq '-'))) {
+            return [pscustomobject]@{
+                Index = $i
+                Operator = [string]$ch
+            }
+        }
+    }
+
+    if ($depth -ne 0) {
+        Fail-Parse ("unbalanced parentheses in expression '{0}'" -f $Expr)
+    }
+
+    return $null
+}
+
 function Parse-Expr {
     param(
         [string]$Expr,
@@ -78,6 +110,43 @@ function Parse-Expr {
     if ($trimmedExpr -match '^\*') {
         Fail-Parse "dereference expressions are not available in stage0 bootstrap"
     }
+
+    $binaryOperator = Find-TopLevelBinaryOperator -Expr $trimmedExpr
+    if ($null -ne $binaryOperator) {
+        $leftExpr = $trimmedExpr.Substring(0, [int]$binaryOperator.Index).Trim()
+        $rightExpr = $trimmedExpr.Substring(([int]$binaryOperator.Index + 1)).Trim()
+        $operatorText = [string]$binaryOperator.Operator
+        if ([string]::IsNullOrWhiteSpace($leftExpr) -or [string]::IsNullOrWhiteSpace($rightExpr)) {
+            Fail-Parse ("binary operator '{0}' requires both operands" -f $operatorText)
+        }
+
+        $leftValue = Parse-Expr -Expr $leftExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates
+        $rightValue = Parse-Expr -Expr $rightExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates
+        if (([string]$leftValue.Type -ne "u8") -or ([string]$rightValue.Type -ne "u8")) {
+            Fail-Parse ("operator '{0}' expects u8 operands in stage0, found {1} and {2}" -f $operatorText, $leftValue.Type, $rightValue.Type)
+        }
+
+        $result = 0
+        if ($operatorText -eq "+") {
+            $result = [int]$leftValue.Value + [int]$rightValue.Value
+            if ($result -gt 255) {
+                Fail-Parse "u8 overflow in '+' expression"
+            }
+        }
+        else {
+            $result = [int]$leftValue.Value - [int]$rightValue.Value
+            if ($result -lt 0) {
+                Fail-Parse "u8 underflow in '-' expression"
+            }
+        }
+
+        return [pscustomobject]@{
+            Type = "u8"
+            Value = [int]$result
+            ResultState = "none"
+        }
+    }
+
     if ($trimmedExpr -match '^move\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)$') {
         $name = $Matches[1]
         if (-not $Values.ContainsKey($name)) {
@@ -203,7 +272,7 @@ function Parse-Expr {
 #     drop(<ident>);
 #     exit(<expr>);
 #   }
-# <expr> := <u8-literal> | <ident> | move(<ident>) | ok(<expr>) | err(<expr>) | try(<expr>)
+# <expr> := <u8-literal> | <ident> | move(<ident>) | ok(<expr>) | err(<expr>) | try(<expr>) | <expr> + <expr> | <expr> - <expr>
 # <type> := u8 | Result<u8,u8>
 # with optional semicolons and line comments (# or //).
 $programPattern = '(?s)^\s*fn\s+main\s*\(\s*\)\s*(?:->\s*([^\{]+?))?\s*\{\s*(.*?)\s*\}\s*$'

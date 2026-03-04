@@ -73,6 +73,9 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_var_assign.
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_comments.fn" -ExpectedExit 9
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_typed_u8.fn" -ExpectedExit 9
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_signature_u8.fn" -ExpectedExit 10
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_add_literals.fn" -ExpectedExit 21
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_add_identifier_literal.fn" -ExpectedExit 42
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_sub_literals.fn" -ExpectedExit 57
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_literal.fn" -ExpectedExit 11
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_identifier.fn" -ExpectedExit 12
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_ok_result.fn" -ExpectedExit 13
@@ -108,6 +111,9 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_err_binding
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_missing_main.fn" -ExpectedMessagePart "expected entrypoint pattern fn main()"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_undefined_identifier.fn" -ExpectedMessagePart "undefined identifier 'code'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_assign_immutable.fn" -ExpectedMessagePart "cannot assign to immutable binding 'code'"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_add_non_u8_operand.fn" -ExpectedMessagePart "operator '+' expects u8 operands in stage0, found Result<u8,u8> and u8"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_add_overflow.fn" -ExpectedMessagePart "u8 overflow in '+' expression"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_sub_underflow.fn" -ExpectedMessagePart "u8 underflow in '-' expression"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_unsupported_type_annotation.fn" -ExpectedMessagePart "unsupported type annotation 'i32'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_unsupported_return_annotation.fn" -ExpectedMessagePart "unsupported type annotation 'i32'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_result_return_annotation.fn" -ExpectedMessagePart "entrypoint return type must be u8 in stage0 bootstrap, found Result<u8,u8>"
