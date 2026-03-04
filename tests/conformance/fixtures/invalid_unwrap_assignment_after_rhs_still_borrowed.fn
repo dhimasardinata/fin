@@ -1,0 +1,7 @@
+fn main() {
+  var value = 1
+  var ref_a = &value
+  var ref_b = &value
+  value ?= ok(*(move(ref_a)))
+  exit(value)
+}

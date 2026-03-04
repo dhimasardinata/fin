@@ -93,6 +93,7 @@ Stage0 conformance checks:
 - `fixtures/main_exit_unwrap_assignment_ok.fn`: valid source with mutable unwrap-assignment sugar `<ident> ?= <expr>` on an `ok` result binding.
 - `fixtures/main_exit_unwrap_assignment_move_ok.fn`: valid source with mutable unwrap-assignment sugar over moved result operand (`<ident> ?= move(<result-ident>)`).
 - `fixtures/main_exit_unwrap_assignment_arithmetic.fn`: valid source proving unwrap-assignment sugar composes with downstream arithmetic use.
+- `fixtures/main_exit_unwrap_assignment_after_rhs_releases_borrow.fn`: valid source proving unwrap-assignment is allowed when RHS releases an active borrow before assignment commit.
 - `fixtures/main_exit_var_unwrap_binding_ok.fn`: valid source with mutable declaration unwrap sugar `var <ident> ?= <expr>` on an `ok` result binding.
 - `fixtures/main_exit_var_unwrap_binding_move_ok.fn`: valid source with mutable declaration unwrap sugar over moved result operand (`var <ident> ?= move(<result-ident>)`).
 - `fixtures/main_exit_var_unwrap_binding_arithmetic.fn`: valid source proving `var` unwrap-binding sugar composes with downstream arithmetic use.
@@ -217,6 +218,7 @@ Stage0 conformance checks:
 - `fixtures/invalid_unwrap_assignment_err_identifier.fn`: invalid source, parser must reject unwrap-assignment sugar when RHS result state is `err`.
 - `fixtures/invalid_unwrap_assignment_immutable_target.fn`: invalid source, parser must reject unwrap-assignment sugar on immutable assignment targets.
 - `fixtures/invalid_unwrap_assignment_move_use_after_move_source.fn`: invalid source, parser must reject source reuse after unwrap-assignment sugar consumes `move(<ident>)`.
+- `fixtures/invalid_unwrap_assignment_after_rhs_still_borrowed.fn`: invalid source, parser must reject unwrap-assignment when RHS releases only some borrows and another active reference remains.
 - `fixtures/invalid_var_unwrap_binding_missing_expression.fn`: invalid source, parser must reject mutable declaration unwrap sugar without RHS expression.
 - `fixtures/invalid_var_unwrap_binding_non_result_identifier.fn`: invalid source, parser must reject mutable declaration unwrap sugar when RHS type is non-result (`u8`).
 - `fixtures/invalid_var_unwrap_binding_err_identifier.fn`: invalid source, parser must reject mutable declaration unwrap sugar when RHS result state is `err`.

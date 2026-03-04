@@ -79,6 +79,7 @@
   - tests/conformance/fixtures/main_exit_unwrap_assignment_ok.fn
   - tests/conformance/fixtures/main_exit_unwrap_assignment_move_ok.fn
   - tests/conformance/fixtures/main_exit_unwrap_assignment_arithmetic.fn
+  - tests/conformance/fixtures/main_exit_unwrap_assignment_after_rhs_releases_borrow.fn
   - tests/conformance/fixtures/main_exit_var_unwrap_binding_ok.fn
   - tests/conformance/fixtures/main_exit_var_unwrap_binding_move_ok.fn
   - tests/conformance/fixtures/main_exit_var_unwrap_binding_arithmetic.fn
@@ -151,6 +152,7 @@
   - tests/conformance/fixtures/invalid_unwrap_assignment_err_identifier.fn
   - tests/conformance/fixtures/invalid_unwrap_assignment_immutable_target.fn
   - tests/conformance/fixtures/invalid_unwrap_assignment_move_use_after_move_source.fn
+  - tests/conformance/fixtures/invalid_unwrap_assignment_after_rhs_still_borrowed.fn
   - tests/conformance/fixtures/invalid_var_unwrap_binding_missing_expression.fn
   - tests/conformance/fixtures/invalid_var_unwrap_binding_non_result_identifier.fn
   - tests/conformance/fixtures/invalid_var_unwrap_binding_err_identifier.fn
