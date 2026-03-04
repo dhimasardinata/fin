@@ -1,6 +1,5 @@
 fn main() {
-  let value = 1
+  let value = 150
   let ref_value = &value
-  drop(value)
   exit(*ref_value)
 }

@@ -108,8 +108,20 @@ function Parse-TypeAnnotation {
 
     $normalizedType = [regex]::Replace($typeName, '\s+', '')
 
-    if ($normalizedType -match '^[&*]') {
-        Fail-Parse "ownership/borrowing type annotations are not available in stage0 bootstrap"
+    if ($normalizedType.StartsWith("&")) {
+        $inner = $normalizedType.Substring(1)
+        if ($inner -eq "u8") {
+            return "&u8"
+        }
+        if ($inner -eq "Result<u8,u8>") {
+            return "&Result<u8,u8>"
+        }
+
+        Fail-Parse "unsupported type annotation '$typeName'"
+    }
+
+    if ($normalizedType.StartsWith("*")) {
+        Fail-Parse "unsupported type annotation '$typeName'"
     }
 
     if ($normalizedType -eq "u8") {
@@ -131,6 +143,31 @@ function Copy-Hashtable {
         $copy[$key] = $Table[$key]
     }
     return $copy
+}
+
+function Set-ReferenceMetadata {
+    param(
+        [string]$Name,
+        [psobject]$ExprValue,
+        [hashtable]$ReferenceTargets
+    )
+
+    if (([string]$ExprValue.Type).StartsWith("&")) {
+        if (-not ($ExprValue.PSObject.Properties.Name -contains "ReferenceTarget")) {
+            Fail-Parse ("reference expression for binding '{0}' is missing reference target metadata" -f $Name)
+        }
+
+        $target = [string]$ExprValue.ReferenceTarget
+        if ([string]::IsNullOrWhiteSpace($target)) {
+            Fail-Parse ("reference expression for binding '{0}' is missing reference target metadata" -f $Name)
+        }
+        $ReferenceTargets[$Name] = $target
+        return
+    }
+
+    if ($ReferenceTargets.ContainsKey($Name)) {
+        $ReferenceTargets.Remove($Name) | Out-Null
+    }
 }
 
 function Split-TopLevelArguments {
@@ -291,18 +328,95 @@ function Parse-Expr {
         [hashtable]$Values,
         [hashtable]$Types,
         [hashtable]$ResultStates,
-        [hashtable]$LifecycleStates
+        [hashtable]$LifecycleStates,
+        [hashtable]$ReferenceTargets
     )
 
     $trimmedExpr = $Expr.Trim()
     Assert-BalancedParentheses -Expr $trimmedExpr
     $trimmedExpr = Strip-OuterParentheses -Expr $trimmedExpr
 
-    if ($trimmedExpr -match '^&') {
-        Fail-Parse "borrow/reference expressions are not available in stage0 bootstrap"
+    if ($trimmedExpr -match '^&\s*$') {
+        Fail-Parse "borrow '&' requires an identifier operand"
     }
-    if ($trimmedExpr -match '^\*') {
-        Fail-Parse "dereference expressions are not available in stage0 bootstrap"
+    if ($trimmedExpr -match '^&\s*([A-Za-z_][A-Za-z0-9_]*)$') {
+        $name = $Matches[1]
+        if (-not $Values.ContainsKey($name)) {
+            Fail-Parse "borrow for undefined identifier '$name'"
+        }
+
+        $state = [string]$LifecycleStates[$name]
+        if ($state -eq "moved") {
+            Fail-Parse "borrow after move for identifier '$name'"
+        }
+        if ($state -eq "dropped") {
+            Fail-Parse "borrow after drop for identifier '$name'"
+        }
+        if ($state -ne "alive") {
+            Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $state, $name)
+        }
+
+        $sourceType = [string]$Types[$name]
+        if ($sourceType.StartsWith("&")) {
+            Fail-Parse "nested borrow/reference expressions are not available in stage0 bootstrap"
+        }
+
+        return [pscustomobject]@{
+            Type = "&$sourceType"
+            Value = [int]$Values[$name]
+            ResultState = [string]$ResultStates[$name]
+            ReferenceTarget = $name
+        }
+    }
+    if ($trimmedExpr.StartsWith("&")) {
+        Fail-Parse "borrow '&' expects identifier operand in stage0"
+    }
+    if ($trimmedExpr -match '^\*\s*$') {
+        Fail-Parse "dereference '*' requires an operand"
+    }
+    if (($trimmedExpr -match '^\*\s*([A-Za-z_][A-Za-z0-9_]*)$') -or ($trimmedExpr -match '^\*\s*\((.+)\)$')) {
+        $innerExpr = $Matches[1].Trim()
+        if ([string]::IsNullOrWhiteSpace($innerExpr)) {
+            Fail-Parse "dereference '*' requires an operand"
+        }
+
+        $innerValue = Parse-Expr -Expr $innerExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates -ReferenceTargets $ReferenceTargets
+        if (-not ([string]$innerValue.Type).StartsWith("&")) {
+            Fail-Parse ("dereference expects reference operand in stage0, found {0}" -f $innerValue.Type)
+        }
+
+        $innerType = [string]$innerValue.Type
+        $underlyingType = $innerType.Substring(1)
+        if ([string]::IsNullOrWhiteSpace($underlyingType)) {
+            Fail-Parse "dereference target type must not be empty"
+        }
+
+        if ($innerValue.PSObject.Properties.Name -contains "ReferenceTarget") {
+            $target = [string]$innerValue.ReferenceTarget
+            if (-not [string]::IsNullOrWhiteSpace($target)) {
+                if (-not $LifecycleStates.ContainsKey($target)) {
+                    Fail-Parse ("dereference has unknown reference target '{0}'" -f $target)
+                }
+                $targetState = [string]$LifecycleStates[$target]
+                if ($targetState -ne "alive") {
+                    Fail-Parse ("dereference of target '{0}' is invalid because target is {1}" -f $target, $targetState)
+                }
+
+                return [pscustomobject]@{
+                    Type = $underlyingType
+                    Value = [int]$Values[$target]
+                    ResultState = [string]$ResultStates[$target]
+                    ReferenceTarget = ""
+                }
+            }
+        }
+
+        return [pscustomobject]@{
+            Type = $underlyingType
+            Value = [int]$innerValue.Value
+            ResultState = [string]$innerValue.ResultState
+            ReferenceTarget = ""
+        }
     }
     if ($trimmedExpr -match '^if\s*\(\s*(.*)\s*\)$') {
         $argText = $Matches[1]
@@ -324,21 +438,21 @@ function Parse-Expr {
         $thenExpr = [string]$parts[1]
         $elseExpr = [string]$parts[2]
 
-        $conditionValue = Parse-Expr -Expr $conditionExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates
+        $conditionValue = Parse-Expr -Expr $conditionExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates -ReferenceTargets $ReferenceTargets
         if ([string]$conditionValue.Type -ne "u8") {
             Fail-Parse ("if(...) condition expects u8 in stage0, found {0}" -f $conditionValue.Type)
         }
 
-        $thenValueTypeCheck = Parse-Expr -Expr $thenExpr -Values (Copy-Hashtable -Table $Values) -Types (Copy-Hashtable -Table $Types) -ResultStates (Copy-Hashtable -Table $ResultStates) -LifecycleStates (Copy-Hashtable -Table $LifecycleStates)
-        $elseValueTypeCheck = Parse-Expr -Expr $elseExpr -Values (Copy-Hashtable -Table $Values) -Types (Copy-Hashtable -Table $Types) -ResultStates (Copy-Hashtable -Table $ResultStates) -LifecycleStates (Copy-Hashtable -Table $LifecycleStates)
+        $thenValueTypeCheck = Parse-Expr -Expr $thenExpr -Values (Copy-Hashtable -Table $Values) -Types (Copy-Hashtable -Table $Types) -ResultStates (Copy-Hashtable -Table $ResultStates) -LifecycleStates (Copy-Hashtable -Table $LifecycleStates) -ReferenceTargets (Copy-Hashtable -Table $ReferenceTargets)
+        $elseValueTypeCheck = Parse-Expr -Expr $elseExpr -Values (Copy-Hashtable -Table $Values) -Types (Copy-Hashtable -Table $Types) -ResultStates (Copy-Hashtable -Table $ResultStates) -LifecycleStates (Copy-Hashtable -Table $LifecycleStates) -ReferenceTargets (Copy-Hashtable -Table $ReferenceTargets)
         if ([string]$thenValueTypeCheck.Type -ne [string]$elseValueTypeCheck.Type) {
             Fail-Parse ("if(...) branch type mismatch: then is {0}, else is {1}" -f $thenValueTypeCheck.Type, $elseValueTypeCheck.Type)
         }
 
         if ([int]$conditionValue.Value -ne 0) {
-            return Parse-Expr -Expr $thenExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates
+            return Parse-Expr -Expr $thenExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates -ReferenceTargets $ReferenceTargets
         }
-        return Parse-Expr -Expr $elseExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates
+        return Parse-Expr -Expr $elseExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates -ReferenceTargets $ReferenceTargets
     }
 
     $binaryOperator = Find-TopLevelBinaryOperator -Expr $trimmedExpr -Operators @("||")
@@ -375,16 +489,16 @@ function Parse-Expr {
             Fail-Parse ("binary operator '{0}' requires both operands" -f $operatorText)
         }
 
-        $leftValue = Parse-Expr -Expr $leftExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates
+        $leftValue = Parse-Expr -Expr $leftExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates -ReferenceTargets $ReferenceTargets
 
         if ($operatorText -eq "&&") {
             if ([string]$leftValue.Type -ne "u8") {
-                $rightProbe = Parse-Expr -Expr $rightExpr -Values (Copy-Hashtable -Table $Values) -Types (Copy-Hashtable -Table $Types) -ResultStates (Copy-Hashtable -Table $ResultStates) -LifecycleStates (Copy-Hashtable -Table $LifecycleStates)
+                $rightProbe = Parse-Expr -Expr $rightExpr -Values (Copy-Hashtable -Table $Values) -Types (Copy-Hashtable -Table $Types) -ResultStates (Copy-Hashtable -Table $ResultStates) -LifecycleStates (Copy-Hashtable -Table $LifecycleStates) -ReferenceTargets (Copy-Hashtable -Table $ReferenceTargets)
                 Fail-Parse ("operator '{0}' expects u8 operands in stage0, found {1} and {2}" -f $operatorText, $leftValue.Type, $rightProbe.Type)
             }
 
             if ([int]$leftValue.Value -eq 0) {
-                $rightTypeCheck = Parse-Expr -Expr $rightExpr -Values (Copy-Hashtable -Table $Values) -Types (Copy-Hashtable -Table $Types) -ResultStates (Copy-Hashtable -Table $ResultStates) -LifecycleStates (Copy-Hashtable -Table $LifecycleStates)
+                $rightTypeCheck = Parse-Expr -Expr $rightExpr -Values (Copy-Hashtable -Table $Values) -Types (Copy-Hashtable -Table $Types) -ResultStates (Copy-Hashtable -Table $ResultStates) -LifecycleStates (Copy-Hashtable -Table $LifecycleStates) -ReferenceTargets (Copy-Hashtable -Table $ReferenceTargets)
                 if ([string]$rightTypeCheck.Type -ne "u8") {
                     Fail-Parse ("operator '{0}' expects u8 operands in stage0, found {1} and {2}" -f $operatorText, $leftValue.Type, $rightTypeCheck.Type)
                 }
@@ -396,7 +510,7 @@ function Parse-Expr {
                 }
             }
 
-            $rightValue = Parse-Expr -Expr $rightExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates
+            $rightValue = Parse-Expr -Expr $rightExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates -ReferenceTargets $ReferenceTargets
             if ([string]$rightValue.Type -ne "u8") {
                 Fail-Parse ("operator '{0}' expects u8 operands in stage0, found {1} and {2}" -f $operatorText, $leftValue.Type, $rightValue.Type)
             }
@@ -410,12 +524,12 @@ function Parse-Expr {
 
         if ($operatorText -eq "||") {
             if ([string]$leftValue.Type -ne "u8") {
-                $rightProbe = Parse-Expr -Expr $rightExpr -Values (Copy-Hashtable -Table $Values) -Types (Copy-Hashtable -Table $Types) -ResultStates (Copy-Hashtable -Table $ResultStates) -LifecycleStates (Copy-Hashtable -Table $LifecycleStates)
+                $rightProbe = Parse-Expr -Expr $rightExpr -Values (Copy-Hashtable -Table $Values) -Types (Copy-Hashtable -Table $Types) -ResultStates (Copy-Hashtable -Table $ResultStates) -LifecycleStates (Copy-Hashtable -Table $LifecycleStates) -ReferenceTargets (Copy-Hashtable -Table $ReferenceTargets)
                 Fail-Parse ("operator '{0}' expects u8 operands in stage0, found {1} and {2}" -f $operatorText, $leftValue.Type, $rightProbe.Type)
             }
 
             if ([int]$leftValue.Value -ne 0) {
-                $rightTypeCheck = Parse-Expr -Expr $rightExpr -Values (Copy-Hashtable -Table $Values) -Types (Copy-Hashtable -Table $Types) -ResultStates (Copy-Hashtable -Table $ResultStates) -LifecycleStates (Copy-Hashtable -Table $LifecycleStates)
+                $rightTypeCheck = Parse-Expr -Expr $rightExpr -Values (Copy-Hashtable -Table $Values) -Types (Copy-Hashtable -Table $Types) -ResultStates (Copy-Hashtable -Table $ResultStates) -LifecycleStates (Copy-Hashtable -Table $LifecycleStates) -ReferenceTargets (Copy-Hashtable -Table $ReferenceTargets)
                 if ([string]$rightTypeCheck.Type -ne "u8") {
                     Fail-Parse ("operator '{0}' expects u8 operands in stage0, found {1} and {2}" -f $operatorText, $leftValue.Type, $rightTypeCheck.Type)
                 }
@@ -427,7 +541,7 @@ function Parse-Expr {
                 }
             }
 
-            $rightValue = Parse-Expr -Expr $rightExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates
+            $rightValue = Parse-Expr -Expr $rightExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates -ReferenceTargets $ReferenceTargets
             if ([string]$rightValue.Type -ne "u8") {
                 Fail-Parse ("operator '{0}' expects u8 operands in stage0, found {1} and {2}" -f $operatorText, $leftValue.Type, $rightValue.Type)
             }
@@ -439,7 +553,7 @@ function Parse-Expr {
             }
         }
 
-        $rightValue = Parse-Expr -Expr $rightExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates
+        $rightValue = Parse-Expr -Expr $rightExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates -ReferenceTargets $ReferenceTargets
         if (([string]$leftValue.Type -ne "u8") -or ([string]$rightValue.Type -ne "u8")) {
             Fail-Parse ("operator '{0}' expects u8 operands in stage0, found {1} and {2}" -f $operatorText, $leftValue.Type, $rightValue.Type)
         }
@@ -540,7 +654,7 @@ function Parse-Expr {
             Fail-Parse "logical not '!' requires an operand"
         }
 
-        $innerValue = Parse-Expr -Expr $innerExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates
+        $innerValue = Parse-Expr -Expr $innerExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates -ReferenceTargets $ReferenceTargets
         if ([string]$innerValue.Type -ne "u8") {
             Fail-Parse ("operator '!' expects u8 operand in stage0, found {0}" -f $innerValue.Type)
         }
@@ -557,7 +671,7 @@ function Parse-Expr {
             Fail-Parse "bitwise not '~' requires an operand"
         }
 
-        $innerValue = Parse-Expr -Expr $innerExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates
+        $innerValue = Parse-Expr -Expr $innerExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates -ReferenceTargets $ReferenceTargets
         if ([string]$innerValue.Type -ne "u8") {
             Fail-Parse ("operator '~' expects u8 operand in stage0, found {0}" -f $innerValue.Type)
         }
@@ -585,11 +699,39 @@ function Parse-Expr {
             Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $state, $name)
         }
 
+        $moveType = [string]$Types[$name]
+        $moveValue = [int]$Values[$name]
+        $moveResultState = [string]$ResultStates[$name]
+        $moveReferenceTarget = ""
+        if ($moveType.StartsWith("&")) {
+            if (-not $ReferenceTargets.ContainsKey($name)) {
+                Fail-Parse ("reference binding '{0}' is missing target metadata" -f $name)
+            }
+
+            $target = [string]$ReferenceTargets[$name]
+            if ([string]::IsNullOrWhiteSpace($target)) {
+                Fail-Parse ("reference binding '{0}' is missing target metadata" -f $name)
+            }
+            if (-not $LifecycleStates.ContainsKey($target)) {
+                Fail-Parse ("reference binding '{0}' points to unknown target '{1}'" -f $name, $target)
+            }
+
+            $targetState = [string]$LifecycleStates[$target]
+            if ($targetState -ne "alive") {
+                Fail-Parse ("reference target '{0}' is not alive for binding '{1}' (state: {2})" -f $target, $name, $targetState)
+            }
+
+            $moveValue = [int]$Values[$target]
+            $moveResultState = [string]$ResultStates[$target]
+            $moveReferenceTarget = $target
+        }
+
         $LifecycleStates[$name] = "moved"
         return [pscustomobject]@{
-            Type = [string]$Types[$name]
-            Value = [int]$Values[$name]
-            ResultState = [string]$ResultStates[$name]
+            Type = $moveType
+            Value = $moveValue
+            ResultState = $moveResultState
+            ReferenceTarget = $moveReferenceTarget
         }
     }
 
@@ -599,7 +741,7 @@ function Parse-Expr {
             Fail-Parse "ok(...) requires an inner expression"
         }
 
-        $innerValue = Parse-Expr -Expr $innerExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates
+        $innerValue = Parse-Expr -Expr $innerExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates -ReferenceTargets $ReferenceTargets
         if ([string]$innerValue.Type -ne "u8") {
             Fail-Parse ("ok(...) expects u8 expression in stage0, found {0}" -f $innerValue.Type)
         }
@@ -617,7 +759,7 @@ function Parse-Expr {
             Fail-Parse "err(...) requires an inner expression"
         }
 
-        $innerValue = Parse-Expr -Expr $innerExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates
+        $innerValue = Parse-Expr -Expr $innerExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates -ReferenceTargets $ReferenceTargets
         if ([string]$innerValue.Type -ne "u8") {
             Fail-Parse ("err(...) expects u8 expression in stage0, found {0}" -f $innerValue.Type)
         }
@@ -635,7 +777,7 @@ function Parse-Expr {
             Fail-Parse "try(...) requires an inner expression"
         }
 
-        $innerValue = Parse-Expr -Expr $innerExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates
+        $innerValue = Parse-Expr -Expr $innerExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates -ReferenceTargets $ReferenceTargets
         if ([string]$innerValue.Type -eq "Result<u8,u8>") {
             if ([string]$innerValue.ResultState -eq "ok") {
                 return [pscustomobject]@{
@@ -663,7 +805,7 @@ function Parse-Expr {
             Fail-Parse "try keyword requires expression"
         }
 
-        $innerValue = Parse-Expr -Expr $innerExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates
+        $innerValue = Parse-Expr -Expr $innerExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates -ReferenceTargets $ReferenceTargets
         if ([string]$innerValue.Type -eq "Result<u8,u8>") {
             if ([string]$innerValue.ResultState -eq "ok") {
                 return [pscustomobject]@{
@@ -687,7 +829,7 @@ function Parse-Expr {
             Fail-Parse "postfix '?' requires an operand"
         }
 
-        $innerValue = Parse-Expr -Expr $innerExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates
+        $innerValue = Parse-Expr -Expr $innerExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates -ReferenceTargets $ReferenceTargets
         if ([string]$innerValue.Type -eq "Result<u8,u8>") {
             if ([string]$innerValue.ResultState -eq "ok") {
                 return [pscustomobject]@{
@@ -741,10 +883,38 @@ function Parse-Expr {
         Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $state, $name)
     }
 
+    $resolvedType = [string]$Types[$name]
+    $resolvedValue = [int]$Values[$name]
+    $resolvedResultState = [string]$ResultStates[$name]
+    $resolvedReferenceTarget = ""
+    if ($resolvedType.StartsWith("&")) {
+        if (-not $ReferenceTargets.ContainsKey($name)) {
+            Fail-Parse ("reference binding '{0}' is missing target metadata" -f $name)
+        }
+
+        $target = [string]$ReferenceTargets[$name]
+        if ([string]::IsNullOrWhiteSpace($target)) {
+            Fail-Parse ("reference binding '{0}' is missing target metadata" -f $name)
+        }
+        if (-not $LifecycleStates.ContainsKey($target)) {
+            Fail-Parse ("reference binding '{0}' points to unknown target '{1}'" -f $name, $target)
+        }
+
+        $targetState = [string]$LifecycleStates[$target]
+        if ($targetState -ne "alive") {
+            Fail-Parse ("reference target '{0}' is not alive for binding '{1}' (state: {2})" -f $target, $name, $targetState)
+        }
+
+        $resolvedValue = [int]$Values[$target]
+        $resolvedResultState = [string]$ResultStates[$target]
+        $resolvedReferenceTarget = $target
+    }
+
     return [pscustomobject]@{
-        Type = [string]$Types[$name]
-        Value = [int]$Values[$name]
-        ResultState = [string]$ResultStates[$name]
+        Type = $resolvedType
+        Value = $resolvedValue
+        ResultState = $resolvedResultState
+        ReferenceTarget = $resolvedReferenceTarget
     }
 }
 
@@ -759,8 +929,8 @@ function Parse-Expr {
 #     exit(<expr>);
 #     return <expr>;
 #   }
-# <expr> := <u8-literal> | true | false | <ident> | move(<ident>) | ok(<expr>) | err(<expr>) | try(<expr>) | try <expr> | <expr>? | if(<expr>, <expr>, <expr>) | !<expr> | (<expr>) | <expr> + <expr> | <expr> - <expr> | <expr> * <expr> | <expr> / <expr> | <expr> % <expr> | <expr> == <expr> | <expr> != <expr> | <expr> < <expr> | <expr> <= <expr> | <expr> > <expr> | <expr> >= <expr> | <expr> && <expr> | <expr> || <expr>
-# <type> := u8 | Result<u8,u8>
+# <expr> := <u8-literal> | true | false | <ident> | &<ident> | *<expr> | move(<ident>) | ok(<expr>) | err(<expr>) | try(<expr>) | try <expr> | <expr>? | if(<expr>, <expr>, <expr>) | !<expr> | (<expr>) | <expr> + <expr> | <expr> - <expr> | <expr> * <expr> | <expr> / <expr> | <expr> % <expr> | <expr> == <expr> | <expr> != <expr> | <expr> < <expr> | <expr> <= <expr> | <expr> > <expr> | <expr> >= <expr> | <expr> && <expr> | <expr> || <expr>
+# <type> := u8 | Result<u8,u8> | &u8 | &Result<u8,u8>
 # with optional semicolons and line comments (# or //).
 $programPattern = '(?s)^\s*fn\s+main\s*\(\s*\)\s*(?:->\s*([^\{]+?))?\s*\{\s*(.*?)\s*\}\s*$'
 $programMatch = [regex]::Match($raw, $programPattern)
@@ -800,6 +970,7 @@ $mutable = @{}
 $types = @{}
 $resultStates = @{}
 $lifecycleStates = @{}
+$referenceTargets = @{}
 $haveExit = $false
 [int]$exitCode = -1
 
@@ -822,7 +993,7 @@ foreach ($stmt in $statements) {
         }
 
         # Sugar: let x ?= rhs  => let x = try rhs
-        $exprValue = Parse-Expr -Expr ("try " + $expr) -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates
+        $exprValue = Parse-Expr -Expr ("try " + $expr) -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets
         $declaredType = if ([string]::IsNullOrWhiteSpace($declaredTypeRaw)) {
             [string]$exprValue.Type
         }
@@ -838,6 +1009,7 @@ foreach ($stmt in $statements) {
         $types[$name] = $declaredType
         $resultStates[$name] = [string]$exprValue.ResultState
         $lifecycleStates[$name] = "alive"
+        Set-ReferenceMetadata -Name $name -ExprValue $exprValue -ReferenceTargets $referenceTargets
         continue
     }
 
@@ -850,7 +1022,7 @@ foreach ($stmt in $statements) {
             Fail-Parse "duplicate binding '$name'"
         }
 
-        $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates
+        $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets
         $declaredType = if ([string]::IsNullOrWhiteSpace($declaredTypeRaw)) {
             [string]$exprValue.Type
         }
@@ -866,6 +1038,7 @@ foreach ($stmt in $statements) {
         $types[$name] = $declaredType
         $resultStates[$name] = [string]$exprValue.ResultState
         $lifecycleStates[$name] = "alive"
+        Set-ReferenceMetadata -Name $name -ExprValue $exprValue -ReferenceTargets $referenceTargets
         continue
     }
 
@@ -878,7 +1051,7 @@ foreach ($stmt in $statements) {
             Fail-Parse "duplicate binding '$name'"
         }
 
-        $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates
+        $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets
         $declaredType = if ([string]::IsNullOrWhiteSpace($declaredTypeRaw)) {
             [string]$exprValue.Type
         }
@@ -894,6 +1067,7 @@ foreach ($stmt in $statements) {
         $types[$name] = $declaredType
         $resultStates[$name] = [string]$exprValue.ResultState
         $lifecycleStates[$name] = "alive"
+        Set-ReferenceMetadata -Name $name -ExprValue $exprValue -ReferenceTargets $referenceTargets
         continue
     }
 
@@ -911,7 +1085,7 @@ foreach ($stmt in $statements) {
         }
 
         # Sugar: var x ?= rhs  => var x = try rhs
-        $exprValue = Parse-Expr -Expr ("try " + $expr) -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates
+        $exprValue = Parse-Expr -Expr ("try " + $expr) -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets
         $declaredType = if ([string]::IsNullOrWhiteSpace($declaredTypeRaw)) {
             [string]$exprValue.Type
         }
@@ -927,6 +1101,7 @@ foreach ($stmt in $statements) {
         $types[$name] = $declaredType
         $resultStates[$name] = [string]$exprValue.ResultState
         $lifecycleStates[$name] = "alive"
+        Set-ReferenceMetadata -Name $name -ExprValue $exprValue -ReferenceTargets $referenceTargets
         continue
     }
 
@@ -956,7 +1131,7 @@ foreach ($stmt in $statements) {
         }
 
         # Sugar: x ?= rhs  => x = try rhs
-        $exprValue = Parse-Expr -Expr ("try " + $expr) -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates
+        $exprValue = Parse-Expr -Expr ("try " + $expr) -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets
         $postExprTargetState = [string]$lifecycleStates[$name]
         if (($targetState -eq "alive") -and (($postExprTargetState -eq "dropped") -or ($postExprTargetState -eq "moved"))) {
             Fail-Parse ("assignment target '{0}' moved or dropped during expression evaluation" -f $name)
@@ -983,6 +1158,7 @@ foreach ($stmt in $statements) {
         $values[$name] = [int]$exprValue.Value
         $resultStates[$name] = [string]$exprValue.ResultState
         $lifecycleStates[$name] = "alive"
+        Set-ReferenceMetadata -Name $name -ExprValue $exprValue -ReferenceTargets $referenceTargets
         continue
     }
 
@@ -1007,7 +1183,7 @@ foreach ($stmt in $statements) {
             Fail-Parse "cannot assign to immutable binding '$name'"
         }
 
-        $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates
+        $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets
         $postExprTargetState = [string]$lifecycleStates[$name]
         if (($targetState -eq "alive") -and (($postExprTargetState -eq "dropped") -or ($postExprTargetState -eq "moved"))) {
             Fail-Parse ("assignment target '{0}' moved or dropped during expression evaluation" -f $name)
@@ -1034,6 +1210,7 @@ foreach ($stmt in $statements) {
         $values[$name] = [int]$exprValue.Value
         $resultStates[$name] = [string]$exprValue.ResultState
         $lifecycleStates[$name] = "alive"
+        Set-ReferenceMetadata -Name $name -ExprValue $exprValue -ReferenceTargets $referenceTargets
         continue
     }
 
@@ -1057,7 +1234,7 @@ foreach ($stmt in $statements) {
     }
 
     if ($stmt -match '^exit\s*\(\s*(.+)\s*\)$') {
-        $exprValue = Parse-Expr -Expr $Matches[1] -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates
+        $exprValue = Parse-Expr -Expr $Matches[1] -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets
         $expectedExitType = if ([string]::IsNullOrWhiteSpace($declaredMainReturnType)) {
             "u8"
         }
@@ -1077,7 +1254,7 @@ foreach ($stmt in $statements) {
     }
 
     if (($stmt -match '^return\s+(.+)$') -or ($stmt -match '^return\s*\(\s*(.+)\s*\)$')) {
-        $exprValue = Parse-Expr -Expr $Matches[1] -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates
+        $exprValue = Parse-Expr -Expr $Matches[1] -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets
         $expectedReturnType = if ([string]::IsNullOrWhiteSpace($declaredMainReturnType)) {
             "u8"
         }
