@@ -145,6 +145,9 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_err_try_mov
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_ok_try_move_ok_reinit_source.fn" -ExpectedExit 51
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_ok_try_move_ok_reinit_drop_reinit_source.fn" -ExpectedExit 55
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_err_try_move_ok_reinit_drop_reinit_source.fn" -ExpectedExit 59
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_postfix_ok_result.fn" -ExpectedExit 135
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_postfix_move_ok_result.fn" -ExpectedExit 136
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_postfix_arithmetic.fn" -ExpectedExit 137
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_drop_unused.fn" -ExpectedExit 15
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_move_binding.fn" -ExpectedExit 16
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_move_reinit_var.fn" -ExpectedExit 17
@@ -245,6 +248,10 @@ Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_m
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_move_result_assign_after_move_immutable.fn" -ExpectedMessagePart "cannot reinitialize moved immutable binding 'wrapped'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_move_result_drop_after_move.fn" -ExpectedMessagePart "drop after move for identifier 'wrapped'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_move_result_self_assignment.fn" -ExpectedMessagePart "assignment target 'wrapped' moved or dropped during expression evaluation"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_postfix_missing_operand.fn" -ExpectedMessagePart "postfix '?' requires an operand"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_postfix_non_result_identifier.fn" -ExpectedMessagePart "postfix '?' expects Result<u8,u8> in stage0 bootstrap, found u8"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_postfix_err_identifier.fn" -ExpectedMessagePart "postfix '?' on err(...) is not supported in stage0 bootstrap (would require hidden control flow)"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_postfix_move_use_after_move_source.fn" -ExpectedMessagePart "use after move for identifier 'source'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_result_annotation_mismatch.fn" -ExpectedMessagePart "type mismatch for binding 'value': expected Result<u8,u8>, found u8"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_unsupported_result_annotation.fn" -ExpectedMessagePart "unsupported type annotation 'Result<u8,i32>'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_borrow_reference_expr.fn" -ExpectedMessagePart "borrow/reference expressions are not available in stage0 bootstrap"
