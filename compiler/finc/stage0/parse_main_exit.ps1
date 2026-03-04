@@ -1166,14 +1166,6 @@ foreach ($stmt in $statements) {
             }
             Fail-Parse "cannot assign to immutable binding '$name'"
         }
-        $targetType = [string]$types[$name]
-        if (-not $targetType.StartsWith("&")) {
-            $activeBorrowers = @(Get-LiveReferenceAliasesForTarget -Target $name -Types $types -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets)
-            if ($activeBorrowers.Count -gt 0) {
-                Fail-Parse ("cannot assign identifier '{0}' while borrowed by '{1}'" -f $name, [string]$activeBorrowers[0])
-            }
-        }
-
         # Sugar: x ?= rhs  => x = try rhs
         $exprValue = Parse-Expr -Expr ("try " + $expr) -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets
         $postExprTargetState = [string]$lifecycleStates[$name]
@@ -1193,6 +1185,13 @@ foreach ($stmt in $statements) {
         else {
             if (($postExprTargetState -ne "dropped") -and ($postExprTargetState -ne "alive")) {
                 Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $postExprTargetState, $name)
+            }
+        }
+        $targetType = [string]$types[$name]
+        if (-not $targetType.StartsWith("&")) {
+            $activeBorrowers = @(Get-LiveReferenceAliasesForTarget -Target $name -Types $types -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets)
+            if ($activeBorrowers.Count -gt 0) {
+                Fail-Parse ("cannot assign identifier '{0}' while borrowed by '{1}'" -f $name, [string]$activeBorrowers[0])
             }
         }
         if ([string]$exprValue.Type -ne $targetType) {
@@ -1225,14 +1224,6 @@ foreach ($stmt in $statements) {
             }
             Fail-Parse "cannot assign to immutable binding '$name'"
         }
-        $targetType = [string]$types[$name]
-        if (-not $targetType.StartsWith("&")) {
-            $activeBorrowers = @(Get-LiveReferenceAliasesForTarget -Target $name -Types $types -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets)
-            if ($activeBorrowers.Count -gt 0) {
-                Fail-Parse ("cannot assign identifier '{0}' while borrowed by '{1}'" -f $name, [string]$activeBorrowers[0])
-            }
-        }
-
         $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets
         $postExprTargetState = [string]$lifecycleStates[$name]
         if (($targetState -eq "alive") -and (($postExprTargetState -eq "dropped") -or ($postExprTargetState -eq "moved"))) {
@@ -1251,6 +1242,13 @@ foreach ($stmt in $statements) {
         else {
             if (($postExprTargetState -ne "dropped") -and ($postExprTargetState -ne "alive")) {
                 Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $postExprTargetState, $name)
+            }
+        }
+        $targetType = [string]$types[$name]
+        if (-not $targetType.StartsWith("&")) {
+            $activeBorrowers = @(Get-LiveReferenceAliasesForTarget -Target $name -Types $types -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets)
+            if ($activeBorrowers.Count -gt 0) {
+                Fail-Parse ("cannot assign identifier '{0}' while borrowed by '{1}'" -f $name, [string]$activeBorrowers[0])
             }
         }
         if ([string]$exprValue.Type -ne $targetType) {

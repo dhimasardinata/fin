@@ -1,0 +1,6 @@
+fn main() {
+  var value = 1
+  var ref_value = &value
+  value = if(*(move(ref_value)), 156, 0)
+  exit(value)
+}

@@ -102,6 +102,7 @@ Stage0 conformance checks:
 - `fixtures/main_exit_borrow_reflects_reassign.fn`: valid source proving reassignment is visible through a later borrow after releasing an earlier borrow.
 - `fixtures/main_exit_borrow_drop_ref_then_move.fn`: valid source proving dropping a reference binding releases borrow restrictions, allowing later `move(<target>)`.
 - `fixtures/main_exit_borrow_drop_ref_then_assign.fn`: valid source proving dropping a reference binding releases borrow restrictions, allowing later mutable assignment to the target.
+- `fixtures/main_exit_assign_after_rhs_releases_borrow.fn`: valid source proving assignment is allowed when the RHS expression first releases the active borrow (for example via `move(<ref-ident>)`).
 - `fixtures/main_exit_err_unused.fn`: valid source confirming stage0 `err(<expr>)` result construction is accepted without hidden control flow.
 - `fixtures/main_exit_err_binding_ok_path.fn`: valid source with typed `Result<u8,u8>` `err` binding alongside an explicit `ok` `try` success path.
 - `fixtures/main_drop_unused.fn`: valid source with stage0 `drop(<ident>)` followed by independent literal exit.
@@ -243,6 +244,7 @@ Stage0 conformance checks:
 - `fixtures/invalid_borrow_after_move.fn`: invalid source, parser must reject borrowing an identifier after it was moved.
 - `fixtures/invalid_move_while_borrowed.fn`: invalid source, parser must reject moving a target while an active reference points to it.
 - `fixtures/invalid_assign_while_borrowed.fn`: invalid source, parser must reject assigning a target while an active reference points to it.
+- `fixtures/invalid_assign_after_rhs_still_borrowed.fn`: invalid source, parser must reject assignment when RHS only releases some borrows and at least one active reference still points to the target.
 - `fixtures/invalid_dereference_missing_operand.fn`: invalid source, parser must reject dereference `*` with missing operand.
 - `fixtures/invalid_dereference_non_reference.fn`: invalid source, parser must reject dereference when operand type is non-reference (`u8`).
 - Borrow/operator invalid fixtures above are also assertion-checked for deterministic diagnostic message text in `verify_stage0_grammar.ps1`.
