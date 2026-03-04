@@ -107,6 +107,11 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_bool_logic_
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_mod_literals.fn" -ExpectedExit 111
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_mod_precedence.fn" -ExpectedExit 112
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_mod_grouped.fn" -ExpectedExit 113
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_bitwise_and_literals.fn" -ExpectedExit 114
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_bitwise_or_literals.fn" -ExpectedExit 115
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_bitwise_xor_literals.fn" -ExpectedExit 116
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_bitwise_precedence.fn" -ExpectedExit 117
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_bitwise_cmp_precedence.fn" -ExpectedExit 118
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_literal.fn" -ExpectedExit 11
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_identifier.fn" -ExpectedExit 12
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_ok_result.fn" -ExpectedExit 13
@@ -151,6 +156,8 @@ Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_div_b
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_mod_non_u8_operand.fn" -ExpectedMessagePart "operator '%' expects u8 operands in stage0, found Result<u8,u8> and u8"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_mod_by_zero.fn" -ExpectedMessagePart "modulo by zero in '%' expression"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_mod_missing_rhs.fn" -ExpectedMessagePart "binary operator '%' requires both operands"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_bitwise_non_u8_operand.fn" -ExpectedMessagePart "operator '|' expects u8 operands in stage0, found Result<u8,u8> and u8"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_bitwise_missing_rhs.fn" -ExpectedMessagePart "binary operator '^' requires both operands"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_empty_parenthesized_expr.fn" -ExpectedMessagePart "parenthesized expression must not be empty"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_cmp_non_u8_operand.fn" -ExpectedMessagePart "operator '==' expects u8 operands in stage0, found Result<u8,u8> and u8"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_cmp_missing_rhs.fn" -ExpectedMessagePart "binary operator '<' requires both operands"

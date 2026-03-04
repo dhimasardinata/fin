@@ -296,6 +296,15 @@ function Parse-Expr {
         $binaryOperator = Find-TopLevelBinaryOperator -Expr $trimmedExpr -Operators @("&&")
     }
     if ($null -eq $binaryOperator) {
+        $binaryOperator = Find-TopLevelBinaryOperator -Expr $trimmedExpr -Operators @("|")
+    }
+    if ($null -eq $binaryOperator) {
+        $binaryOperator = Find-TopLevelBinaryOperator -Expr $trimmedExpr -Operators @("^")
+    }
+    if ($null -eq $binaryOperator) {
+        $binaryOperator = Find-TopLevelBinaryOperator -Expr $trimmedExpr -Operators @("&")
+    }
+    if ($null -eq $binaryOperator) {
         $binaryOperator = Find-TopLevelBinaryOperator -Expr $trimmedExpr -Operators @("==", "!=", "<=", ">=", "<", ">")
     }
     if ($null -eq $binaryOperator) {
@@ -383,7 +392,16 @@ function Parse-Expr {
         }
 
         $result = 0
-        if ($operatorText -eq "==") {
+        if ($operatorText -eq "&") {
+            $result = [int]$leftValue.Value -band [int]$rightValue.Value
+        }
+        elseif ($operatorText -eq "^") {
+            $result = [int]$leftValue.Value -bxor [int]$rightValue.Value
+        }
+        elseif ($operatorText -eq "|") {
+            $result = [int]$leftValue.Value -bor [int]$rightValue.Value
+        }
+        elseif ($operatorText -eq "==") {
             $result = if ([int]$leftValue.Value -eq [int]$rightValue.Value) { 1 } else { 0 }
         }
         elseif ($operatorText -eq "!=") {
@@ -425,11 +443,14 @@ function Parse-Expr {
             }
             $result = [int]([int]$leftValue.Value / [int]$rightValue.Value)
         }
-        else {
+        elseif ($operatorText -eq "%") {
             if ([int]$rightValue.Value -eq 0) {
                 Fail-Parse "modulo by zero in '%' expression"
             }
             $result = [int]([int]$leftValue.Value % [int]$rightValue.Value)
+        }
+        else {
+            Fail-Parse ("unsupported binary operator '{0}'" -f $operatorText)
         }
 
         return [pscustomobject]@{
