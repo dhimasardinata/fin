@@ -29,6 +29,9 @@
   - tests/conformance/fixtures/main_exit_hex_literal.fn
   - tests/conformance/fixtures/main_exit_hex_arithmetic.fn
   - tests/conformance/fixtures/main_exit_hex_bitwise_mix.fn
+  - tests/conformance/fixtures/main_exit_binary_literal.fn
+  - tests/conformance/fixtures/main_exit_binary_arithmetic.fn
+  - tests/conformance/fixtures/main_exit_binary_bitwise_mix.fn
   - tests/conformance/fixtures/main_exit_if_cmp_condition.fn
   - tests/conformance/fixtures/main_exit_if_result_branches_try.fn
   - tests/conformance/fixtures/main_exit_logic_precedence.fn
@@ -57,6 +60,9 @@
   - tests/conformance/fixtures/invalid_hex_literal_non_hex_digit.fn
   - tests/conformance/fixtures/invalid_hex_literal_prefix_only.fn
   - tests/conformance/fixtures/invalid_hex_literal_out_of_range.fn
+  - tests/conformance/fixtures/invalid_binary_literal_non_binary_digit.fn
+  - tests/conformance/fixtures/invalid_binary_literal_prefix_only.fn
+  - tests/conformance/fixtures/invalid_binary_literal_out_of_range.fn
   - tests/conformance/fixtures/invalid_logic_non_u8_operand_and.fn
   - tests/conformance/fixtures/invalid_logic_non_u8_operand_or_short_circuit.fn
   - tests/conformance/fixtures/invalid_logic_not_non_u8_operand.fn
@@ -83,7 +89,7 @@ This proposal is part of the Fin independent-toolchain baseline and is required 
 
 Current stage0 implementation delta:
 
-1. Local binding inference is active for stage0 expressions (`u8` literals in decimal/hex forms, boolean literals `true`/`false`, and identifiers).
+1. Local binding inference is active for stage0 expressions (`u8` literals in decimal/hex/binary forms, boolean literals `true`/`false`, and identifiers).
 2. Optional explicit annotation is accepted on bindings:
    - `let <ident>: u8 = <expr>`
    - `var <ident>: u8 = <expr>`
@@ -97,7 +103,7 @@ Current stage0 implementation delta:
 7. Unsupported entrypoint return annotations are rejected with deterministic parse diagnostics.
 8. `fn main() -> Result<u8,u8>` is explicitly rejected in stage0 with deterministic boundary diagnostic; entrypoint return remains `u8` only.
 9. Conformance now asserts deterministic message substrings for type mismatch and unsupported type/return annotations.
-10. Stage0 arithmetic, comparison, shift, bitwise, and logical operator typing is enforced in inference paths: `+`/`-`/`*`/`/`/`%`/`==`/`!=`/`<`/`<=`/`>`/`>=`/`<<`/`>>`/`&`/`^`/`|`/`!`/`~`/`&&`/`||` require inferred `u8` operands and reject non-`u8` inferred types deterministically; decimal and hexadecimal literals infer to `u8` values, boolean literals `true`/`false` infer to `u8` values `1`/`0`; comparison/logical expressions infer normalized `u8` predicate values (`0`/`1`); shift/bitwise expressions infer direct `u8` value results, with shift count range enforcement (`0..7`), shift precedence between additive arithmetic and comparisons, bitwise precedence `| < ^ < &` below comparison/shift and above logical operators, and unary `~` inference to `u8` complement values.
+10. Stage0 arithmetic, comparison, shift, bitwise, and logical operator typing is enforced in inference paths: `+`/`-`/`*`/`/`/`%`/`==`/`!=`/`<`/`<=`/`>`/`>=`/`<<`/`>>`/`&`/`^`/`|`/`!`/`~`/`&&`/`||` require inferred `u8` operands and reject non-`u8` inferred types deterministically; decimal, hexadecimal, and binary literals infer to `u8` values, boolean literals `true`/`false` infer to `u8` values `1`/`0`; comparison/logical expressions infer normalized `u8` predicate values (`0`/`1`); shift/bitwise expressions infer direct `u8` value results, with shift count range enforcement (`0..7`), shift precedence between additive arithmetic and comparisons, bitwise precedence `| < ^ < &` below comparison/shift and above logical operators, and unary `~` inference to `u8` complement values.
 11. Stage0 conditional inference in `if(cond, then, else)` enforces `u8` condition typing and exact then/else branch type matching; the expression type is inferred from matched branch type (`u8` or `Result<u8,u8>` in current stage0 set).
 12. Logical short-circuit still preserves deterministic operand typing rules in inference: non-selected RHS branches do not mutate runtime lifecycle state but are type-checked using copied state to preserve deterministic diagnostics.
 
@@ -117,7 +123,7 @@ Compatibility impact must be documented before Implemented status.
 
 Current checks:
 
-1. `tests/conformance/verify_stage0_grammar.ps1` validates typed binding/signature success, `Result<u8,u8>` typed binding success, `Result<u8,u8>` entrypoint return rejection, annotation mismatch failure, unsupported annotation rejection, non-`u8` inferred operator-operand rejection (`invalid_add_non_u8_operand.fn`, `invalid_mul_non_u8_operand.fn`, `invalid_mod_non_u8_operand.fn`, `invalid_cmp_non_u8_operand.fn`, `invalid_shift_non_u8_operand.fn`, `invalid_bitwise_non_u8_operand.fn`, `invalid_bitwise_not_non_u8_operand.fn`, `invalid_logic_non_u8_operand_and.fn`, `invalid_logic_non_u8_operand_or_short_circuit.fn`, `invalid_logic_not_non_u8_operand.fn`), shift-count range rejection (`invalid_shift_left_count_out_of_range.fn`, `invalid_shift_right_count_out_of_range.fn`), missing unary `~` operand rejection (`invalid_bitwise_not_missing_operand.fn`), malformed/out-of-range hexadecimal literal rejection (`invalid_hex_literal_non_hex_digit.fn`, `invalid_hex_literal_prefix_only.fn`, `invalid_hex_literal_out_of_range.fn`), non-`u8` `if` condition rejection (`invalid_if_non_u8_condition.fn`), and `if` branch-type mismatch rejection (`invalid_if_branch_type_mismatch.fn`) with deterministic message-substring assertions.
-2. `tests/run_stage0_suite.ps1` compiles typed fixtures (`main_exit_typed_u8.fn`, `main_exit_signature_u8.fn`, `main_exit_result_typed_binding.fn`, `main_exit_add_identifier_literal.fn`, `main_exit_mul_precedence.fn`, `main_exit_mod_precedence.fn`, `main_exit_cmp_precedence.fn`, `main_exit_shift_left_literals.fn`, `main_exit_shift_right_literals.fn`, `main_exit_shift_precedence.fn`, `main_exit_shift_cmp_precedence.fn`, `main_exit_bitwise_not_literal.fn`, `main_exit_bitwise_not_bitwise_mix.fn`, `main_exit_bitwise_not_shift_precedence.fn`, `main_exit_hex_literal.fn`, `main_exit_hex_arithmetic.fn`, `main_exit_hex_bitwise_mix.fn`, `main_exit_bitwise_precedence.fn`, `main_exit_bitwise_cmp_precedence.fn`, `main_exit_logic_precedence.fn`, `main_exit_logic_and_true.fn`, `main_exit_logic_or_true.fn`, `main_exit_logic_not_true.fn`, `main_exit_logic_not_false.fn`, `main_exit_logic_not_eq.fn`, `main_exit_logic_not_or_chain.fn`, `main_exit_logic_not_add_precedence.fn`, `main_exit_bool_true_literal.fn`, `main_exit_bool_false_literal.fn`, `main_exit_bool_if_condition.fn`, `main_exit_bool_logic_mix.fn`, `main_exit_if_cmp_condition.fn`, `main_exit_if_result_branches_try.fn`) in aggregated stage0 flow.
+1. `tests/conformance/verify_stage0_grammar.ps1` validates typed binding/signature success, `Result<u8,u8>` typed binding success, `Result<u8,u8>` entrypoint return rejection, annotation mismatch failure, unsupported annotation rejection, non-`u8` inferred operator-operand rejection (`invalid_add_non_u8_operand.fn`, `invalid_mul_non_u8_operand.fn`, `invalid_mod_non_u8_operand.fn`, `invalid_cmp_non_u8_operand.fn`, `invalid_shift_non_u8_operand.fn`, `invalid_bitwise_non_u8_operand.fn`, `invalid_bitwise_not_non_u8_operand.fn`, `invalid_logic_non_u8_operand_and.fn`, `invalid_logic_non_u8_operand_or_short_circuit.fn`, `invalid_logic_not_non_u8_operand.fn`), shift-count range rejection (`invalid_shift_left_count_out_of_range.fn`, `invalid_shift_right_count_out_of_range.fn`), missing unary `~` operand rejection (`invalid_bitwise_not_missing_operand.fn`), malformed/out-of-range hex/binary literal rejection (`invalid_hex_literal_non_hex_digit.fn`, `invalid_hex_literal_prefix_only.fn`, `invalid_hex_literal_out_of_range.fn`, `invalid_binary_literal_non_binary_digit.fn`, `invalid_binary_literal_prefix_only.fn`, `invalid_binary_literal_out_of_range.fn`), non-`u8` `if` condition rejection (`invalid_if_non_u8_condition.fn`), and `if` branch-type mismatch rejection (`invalid_if_branch_type_mismatch.fn`) with deterministic message-substring assertions.
+2. `tests/run_stage0_suite.ps1` compiles typed fixtures (`main_exit_typed_u8.fn`, `main_exit_signature_u8.fn`, `main_exit_result_typed_binding.fn`, `main_exit_add_identifier_literal.fn`, `main_exit_mul_precedence.fn`, `main_exit_mod_precedence.fn`, `main_exit_cmp_precedence.fn`, `main_exit_shift_left_literals.fn`, `main_exit_shift_right_literals.fn`, `main_exit_shift_precedence.fn`, `main_exit_shift_cmp_precedence.fn`, `main_exit_bitwise_not_literal.fn`, `main_exit_bitwise_not_bitwise_mix.fn`, `main_exit_bitwise_not_shift_precedence.fn`, `main_exit_hex_literal.fn`, `main_exit_hex_arithmetic.fn`, `main_exit_hex_bitwise_mix.fn`, `main_exit_binary_literal.fn`, `main_exit_binary_arithmetic.fn`, `main_exit_binary_bitwise_mix.fn`, `main_exit_bitwise_precedence.fn`, `main_exit_bitwise_cmp_precedence.fn`, `main_exit_logic_precedence.fn`, `main_exit_logic_and_true.fn`, `main_exit_logic_or_true.fn`, `main_exit_logic_not_true.fn`, `main_exit_logic_not_false.fn`, `main_exit_logic_not_eq.fn`, `main_exit_logic_not_or_chain.fn`, `main_exit_logic_not_add_precedence.fn`, `main_exit_bool_true_literal.fn`, `main_exit_bool_false_literal.fn`, `main_exit_bool_if_condition.fn`, `main_exit_bool_logic_mix.fn`, `main_exit_if_cmp_condition.fn`, `main_exit_if_result_branches_try.fn`) in aggregated stage0 flow.
 
 Acceptance criteria listed above remain normative for Implemented status.
