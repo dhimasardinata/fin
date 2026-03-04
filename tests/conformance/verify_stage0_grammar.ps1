@@ -119,6 +119,9 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_shift_cmp_p
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_bitwise_not_literal.fn" -ExpectedExit 124
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_bitwise_not_bitwise_mix.fn" -ExpectedExit 126
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_bitwise_not_shift_precedence.fn" -ExpectedExit 127
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_hex_literal.fn" -ExpectedExit 128
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_hex_arithmetic.fn" -ExpectedExit 129
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_hex_bitwise_mix.fn" -ExpectedExit 130
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_literal.fn" -ExpectedExit 11
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_identifier.fn" -ExpectedExit 12
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_ok_result.fn" -ExpectedExit 13
@@ -172,6 +175,9 @@ Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_shift
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_shift_left_overflow.fn" -ExpectedMessagePart "u8 overflow in '<<' expression"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_bitwise_not_non_u8_operand.fn" -ExpectedMessagePart "operator '~' expects u8 operand in stage0, found Result<u8,u8>"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_bitwise_not_missing_operand.fn" -ExpectedMessagePart "bitwise not '~' requires an operand"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_hex_literal_non_hex_digit.fn" -ExpectedMessagePart "invalid hex literal '0xG1'"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_hex_literal_prefix_only.fn" -ExpectedMessagePart "invalid hex literal '0x'"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_hex_literal_out_of_range.fn" -ExpectedMessagePart "exit/value literal must be in range 0..255"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_empty_parenthesized_expr.fn" -ExpectedMessagePart "parenthesized expression must not be empty"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_cmp_non_u8_operand.fn" -ExpectedMessagePart "operator '==' expects u8 operands in stage0, found Result<u8,u8> and u8"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_cmp_missing_rhs.fn" -ExpectedMessagePart "binary operator '<' requires both operands"
