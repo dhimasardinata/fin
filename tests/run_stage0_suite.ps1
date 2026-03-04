@@ -85,6 +85,7 @@ if (-not $SkipDoctor) {
 & $fin build --src tests/conformance/fixtures/main_exit_err_try_move_ok_reinit_source.fn --out artifacts/test-exit48
 & $fin build --src tests/conformance/fixtures/main_exit_ok_try_move_ok_reinit_source.fn --out artifacts/test-exit51
 & $fin build --src tests/conformance/fixtures/main_exit_ok_try_move_ok_reinit_drop_reinit_source.fn --out artifacts/test-exit55
+& $fin build --src tests/conformance/fixtures/main_exit_err_try_move_ok_reinit_drop_reinit_source.fn --out artifacts/test-exit59
 & $fin build --src tests/conformance/fixtures/main_drop_unused.fn --out artifacts/test-exit15
 & $fin build --src tests/conformance/fixtures/main_move_binding.fn --out artifacts/test-exit16
 & $fin build --src tests/conformance/fixtures/main_move_reinit_var.fn --out artifacts/test-exit17
@@ -123,6 +124,7 @@ if (-not $SkipRun) {
         & $fin run --no-build --out artifacts/test-exit48 --expect-exit 48
         & $fin run --no-build --out artifacts/test-exit51 --expect-exit 51
         & $fin run --no-build --out artifacts/test-exit55 --expect-exit 55
+        & $fin run --no-build --out artifacts/test-exit59 --expect-exit 59
         & $fin run --no-build --out artifacts/test-exit15 --expect-exit 15
         & $fin run --no-build --out artifacts/test-exit16 --expect-exit 16
         & $fin run --no-build --out artifacts/test-exit17 --expect-exit 17
