@@ -58,6 +58,8 @@ Stage0 conformance checks:
 - `fixtures/invalid_try_non_result_literal.fn`: invalid source, parser must reject `try(<expr>)` when `<expr>` is not `Result<u8,u8>`.
 - `fixtures/invalid_try_err_identifier.fn`: invalid source, parser must reject `try(<ident>)` when the bound `Result<u8,u8>` state is `err` in stage0 bootstrap semantics.
 - `fixtures/invalid_try_move_err_identifier.fn`: invalid source, parser must reject `try(move(<ident>))` when moved `Result<u8,u8>` state is `err` in stage0 bootstrap semantics.
+- `fixtures/invalid_ok_try_err_identifier.fn`: invalid source, parser must reject nested `ok(try(<ident>))` when the bound `Result<u8,u8>` state is `err`.
+- `fixtures/invalid_err_try_err_identifier.fn`: invalid source, parser must reject nested `err(try(<ident>))` when the bound `Result<u8,u8>` state is `err`.
 - `fixtures/invalid_ok_try_move_err_identifier.fn`: invalid source, parser must reject nested `ok(try(move(<ident>)))` when moved `Result<u8,u8>` state is `err`.
 - `fixtures/invalid_err_try_move_err_identifier.fn`: invalid source, parser must reject nested `err(try(move(<ident>)))` when moved `Result<u8,u8>` state is `err`.
 - `fixtures/invalid_err_try_move_use_after_move_source.fn`: invalid source, parser must reject source identifier use after nested `err(try(move(<ident>)))` consumes it.
