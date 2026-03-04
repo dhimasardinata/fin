@@ -1,0 +1,6 @@
+fn main() {
+  let value = 1
+  let ref_value = &value
+  let moved = move(value)
+  exit(0)
+}
