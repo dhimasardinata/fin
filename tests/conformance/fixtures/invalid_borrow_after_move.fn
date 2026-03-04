@@ -1,6 +1,6 @@
 fn main() {
   let value = 1
+  let moved = move(value)
   let ref_value = &value
-  drop(value)
-  exit(*ref_value)
+  exit(0)
 }

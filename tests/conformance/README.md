@@ -96,6 +96,10 @@ Stage0 conformance checks:
 - `fixtures/main_exit_var_unwrap_binding_ok.fn`: valid source with mutable declaration unwrap sugar `var <ident> ?= <expr>` on an `ok` result binding.
 - `fixtures/main_exit_var_unwrap_binding_move_ok.fn`: valid source with mutable declaration unwrap sugar over moved result operand (`var <ident> ?= move(<result-ident>)`).
 - `fixtures/main_exit_var_unwrap_binding_arithmetic.fn`: valid source proving `var` unwrap-binding sugar composes with downstream arithmetic use.
+- `fixtures/main_exit_borrow_deref.fn`: valid source with stage0 borrow expression `&<ident>` and dereference expression `*<expr>` returning the borrowed `u8` value.
+- `fixtures/main_exit_borrow_typed_u8.fn`: valid source with explicit reference annotation `&u8` on a borrowed local binding.
+- `fixtures/main_exit_borrow_result_try.fn`: valid source with explicit reference annotation `&Result<u8,u8>` and unwrap via `try(*<ref-ident>)`.
+- `fixtures/main_exit_borrow_reflects_reassign.fn`: valid source proving borrowed references read latest source value after mutable reassignment.
 - `fixtures/main_exit_err_unused.fn`: valid source confirming stage0 `err(<expr>)` result construction is accepted without hidden control flow.
 - `fixtures/main_exit_err_binding_ok_path.fn`: valid source with typed `Result<u8,u8>` `err` binding alongside an explicit `ok` `try` success path.
 - `fixtures/main_drop_unused.fn`: valid source with stage0 `drop(<ident>)` followed by independent literal exit.
@@ -231,9 +235,12 @@ Stage0 conformance checks:
 - `fixtures/invalid_result_self_move_assignment.fn`: invalid source, parser must reject self-move assignment hazards for `Result<u8,u8>` bindings.
 - `fixtures/invalid_result_drop_undefined.fn`: invalid source, parser must reject `drop(<ident>)` for undefined identifiers in `Result<u8,u8>` usage contexts.
 - `fixtures/invalid_result_move_undefined.fn`: invalid source, parser must reject `move(<ident>)` for undefined identifiers in `Result<u8,u8>` usage contexts.
-- `fixtures/invalid_borrow_reference_expr.fn`: invalid source, parser must reject stage0 borrow/reference expression syntax (`&x`).
-- `fixtures/invalid_dereference_expr.fn`: invalid source, parser must reject stage0 dereference expression syntax (`*x`).
-- `fixtures/invalid_borrow_type_annotation.fn`: invalid source, parser must reject ownership/borrowing type annotations in stage0 (`&u8`).
+- `fixtures/invalid_borrow_reference_expr.fn`: invalid source, parser must reject borrow expressions where operand is not an identifier (`&(expr)`).
+- `fixtures/invalid_dereference_expr.fn`: invalid source, parser must reject dereference of a reference whose target was dropped.
+- `fixtures/invalid_borrow_type_annotation.fn`: invalid source, parser must reject `&u8` annotation mismatches when initializer is non-reference.
+- `fixtures/invalid_borrow_after_move.fn`: invalid source, parser must reject borrowing an identifier after it was moved.
+- `fixtures/invalid_dereference_missing_operand.fn`: invalid source, parser must reject dereference `*` with missing operand.
+- `fixtures/invalid_dereference_non_reference.fn`: invalid source, parser must reject dereference when operand type is non-reference (`u8`).
 - Borrow/operator invalid fixtures above are also assertion-checked for deterministic diagnostic message text in `verify_stage0_grammar.ps1`.
 - `fixtures/invalid_use_after_drop.fn`: invalid source, parser must reject identifier usage after `drop(<ident>)`.
 - `fixtures/invalid_use_after_redrop.fn`: invalid source, parser must reject identifier usage after a second drop in repeated lifecycle cycles.

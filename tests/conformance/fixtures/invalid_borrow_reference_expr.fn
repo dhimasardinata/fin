@@ -1,5 +1,5 @@
 fn main() {
   let value = 1
-  let ref_value = &value
+  let ref_value = &(value + 1)
   exit(0)
 }

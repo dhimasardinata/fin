@@ -1,0 +1,5 @@
+fn main() {
+  let value = 151
+  let ref_value: &u8 = &value
+  exit(*ref_value)
+}

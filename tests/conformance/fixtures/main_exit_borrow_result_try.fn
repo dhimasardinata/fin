@@ -1,0 +1,5 @@
+fn main() {
+  let wrapped = ok(152)
+  let ref_wrapped: &Result<u8,u8> = &wrapped
+  exit(try(*ref_wrapped))
+}

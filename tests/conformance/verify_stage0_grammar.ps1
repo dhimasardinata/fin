@@ -160,6 +160,10 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_unwrap_assi
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_var_unwrap_binding_ok.fn" -ExpectedExit 147
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_var_unwrap_binding_move_ok.fn" -ExpectedExit 148
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_var_unwrap_binding_arithmetic.fn" -ExpectedExit 149
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_borrow_deref.fn" -ExpectedExit 150
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_borrow_typed_u8.fn" -ExpectedExit 151
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_borrow_result_try.fn" -ExpectedExit 152
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_borrow_reflects_reassign.fn" -ExpectedExit 153
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_drop_unused.fn" -ExpectedExit 15
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_move_binding.fn" -ExpectedExit 16
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_move_reinit_var.fn" -ExpectedExit 17
@@ -284,9 +288,12 @@ Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_var_u
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_var_unwrap_binding_duplicate.fn" -ExpectedMessagePart "duplicate binding 'code'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_result_annotation_mismatch.fn" -ExpectedMessagePart "type mismatch for binding 'value': expected Result<u8,u8>, found u8"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_unsupported_result_annotation.fn" -ExpectedMessagePart "unsupported type annotation 'Result<u8,i32>'"
-Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_borrow_reference_expr.fn" -ExpectedMessagePart "borrow/reference expressions are not available in stage0 bootstrap"
-Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_dereference_expr.fn" -ExpectedMessagePart "dereference expressions are not available in stage0 bootstrap"
-Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_borrow_type_annotation.fn" -ExpectedMessagePart "ownership/borrowing type annotations are not available in stage0 bootstrap"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_borrow_reference_expr.fn" -ExpectedMessagePart "borrow '&' expects identifier operand in stage0"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_dereference_expr.fn" -ExpectedMessagePart "reference target 'value' is not alive for binding 'ref_value' (state: dropped)"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_borrow_type_annotation.fn" -ExpectedMessagePart "type mismatch for binding 'value': expected &u8, found u8"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_borrow_after_move.fn" -ExpectedMessagePart "borrow after move for identifier 'value'"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_dereference_missing_operand.fn" -ExpectedMessagePart "dereference '*' requires an operand"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_dereference_non_reference.fn" -ExpectedMessagePart "dereference expects reference operand in stage0, found u8"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_use_after_drop.fn" -ExpectedMessagePart "use after drop for identifier 'value'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_use_after_redrop.fn" -ExpectedMessagePart "use after drop for identifier 'value'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_double_drop.fn" -ExpectedMessagePart "double drop for identifier 'value'"
