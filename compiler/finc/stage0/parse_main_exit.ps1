@@ -302,7 +302,7 @@ function Parse-Expr {
         $binaryOperator = Find-TopLevelBinaryOperator -Expr $trimmedExpr -Operators @("+", "-")
     }
     if ($null -eq $binaryOperator) {
-        $binaryOperator = Find-TopLevelBinaryOperator -Expr $trimmedExpr -Operators @("*", "/")
+        $binaryOperator = Find-TopLevelBinaryOperator -Expr $trimmedExpr -Operators @("*", "/", "%")
     }
     if ($null -ne $binaryOperator) {
         $operatorText = [string]$binaryOperator.Operator
@@ -419,11 +419,17 @@ function Parse-Expr {
                 Fail-Parse "u8 overflow in '*' expression"
             }
         }
-        else {
+        elseif ($operatorText -eq "/") {
             if ([int]$rightValue.Value -eq 0) {
                 Fail-Parse "division by zero in '/' expression"
             }
             $result = [int]([int]$leftValue.Value / [int]$rightValue.Value)
+        }
+        else {
+            if ([int]$rightValue.Value -eq 0) {
+                Fail-Parse "modulo by zero in '%' expression"
+            }
+            $result = [int]([int]$leftValue.Value % [int]$rightValue.Value)
         }
 
         return [pscustomobject]@{
@@ -588,7 +594,7 @@ function Parse-Expr {
 #     drop(<ident>);
 #     exit(<expr>);
 #   }
-# <expr> := <u8-literal> | true | false | <ident> | move(<ident>) | ok(<expr>) | err(<expr>) | try(<expr>) | if(<expr>, <expr>, <expr>) | !<expr> | (<expr>) | <expr> + <expr> | <expr> - <expr> | <expr> * <expr> | <expr> / <expr> | <expr> == <expr> | <expr> != <expr> | <expr> < <expr> | <expr> <= <expr> | <expr> > <expr> | <expr> >= <expr> | <expr> && <expr> | <expr> || <expr>
+# <expr> := <u8-literal> | true | false | <ident> | move(<ident>) | ok(<expr>) | err(<expr>) | try(<expr>) | if(<expr>, <expr>, <expr>) | !<expr> | (<expr>) | <expr> + <expr> | <expr> - <expr> | <expr> * <expr> | <expr> / <expr> | <expr> % <expr> | <expr> == <expr> | <expr> != <expr> | <expr> < <expr> | <expr> <= <expr> | <expr> > <expr> | <expr> >= <expr> | <expr> && <expr> | <expr> || <expr>
 # <type> := u8 | Result<u8,u8>
 # with optional semicolons and line comments (# or //).
 $programPattern = '(?s)^\s*fn\s+main\s*\(\s*\)\s*(?:->\s*([^\{]+?))?\s*\{\s*(.*?)\s*\}\s*$'
