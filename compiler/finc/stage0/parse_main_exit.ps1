@@ -412,6 +412,27 @@ function Parse-Expr {
         }
     }
 
+    if ($trimmedExpr -match '^!\s*$') {
+        Fail-Parse "logical not '!' requires an operand"
+    }
+    if ($trimmedExpr.StartsWith("!")) {
+        $innerExpr = $trimmedExpr.Substring(1).Trim()
+        if ([string]::IsNullOrWhiteSpace($innerExpr)) {
+            Fail-Parse "logical not '!' requires an operand"
+        }
+
+        $innerValue = Parse-Expr -Expr $innerExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates
+        if ([string]$innerValue.Type -ne "u8") {
+            Fail-Parse ("operator '!' expects u8 operand in stage0, found {0}" -f $innerValue.Type)
+        }
+
+        return [pscustomobject]@{
+            Type = "u8"
+            Value = if ([int]$innerValue.Value -eq 0) { 1 } else { 0 }
+            ResultState = "none"
+        }
+    }
+
     if ($trimmedExpr -match '^move\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)$') {
         $name = $Matches[1]
         if (-not $Values.ContainsKey($name)) {
@@ -537,7 +558,7 @@ function Parse-Expr {
 #     drop(<ident>);
 #     exit(<expr>);
 #   }
-# <expr> := <u8-literal> | <ident> | move(<ident>) | ok(<expr>) | err(<expr>) | try(<expr>) | if(<expr>, <expr>, <expr>) | (<expr>) | <expr> + <expr> | <expr> - <expr> | <expr> * <expr> | <expr> / <expr> | <expr> == <expr> | <expr> != <expr> | <expr> < <expr> | <expr> <= <expr> | <expr> > <expr> | <expr> >= <expr> | <expr> && <expr> | <expr> || <expr>
+# <expr> := <u8-literal> | <ident> | move(<ident>) | ok(<expr>) | err(<expr>) | try(<expr>) | if(<expr>, <expr>, <expr>) | !<expr> | (<expr>) | <expr> + <expr> | <expr> - <expr> | <expr> * <expr> | <expr> / <expr> | <expr> == <expr> | <expr> != <expr> | <expr> < <expr> | <expr> <= <expr> | <expr> > <expr> | <expr> >= <expr> | <expr> && <expr> | <expr> || <expr>
 # <type> := u8 | Result<u8,u8>
 # with optional semicolons and line comments (# or //).
 $programPattern = '(?s)^\s*fn\s+main\s*\(\s*\)\s*(?:->\s*([^\{]+?))?\s*\{\s*(.*?)\s*\}\s*$'
