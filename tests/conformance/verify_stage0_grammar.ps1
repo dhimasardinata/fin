@@ -112,6 +112,10 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_bitwise_or_
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_bitwise_xor_literals.fn" -ExpectedExit 116
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_bitwise_precedence.fn" -ExpectedExit 117
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_bitwise_cmp_precedence.fn" -ExpectedExit 118
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_shift_left_literals.fn" -ExpectedExit 120
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_shift_right_literals.fn" -ExpectedExit 121
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_shift_precedence.fn" -ExpectedExit 123
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_shift_cmp_precedence.fn" -ExpectedExit 123
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_literal.fn" -ExpectedExit 11
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_identifier.fn" -ExpectedExit 12
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_ok_result.fn" -ExpectedExit 13
@@ -158,6 +162,11 @@ Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_mod_b
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_mod_missing_rhs.fn" -ExpectedMessagePart "binary operator '%' requires both operands"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_bitwise_non_u8_operand.fn" -ExpectedMessagePart "operator '|' expects u8 operands in stage0, found Result<u8,u8> and u8"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_bitwise_missing_rhs.fn" -ExpectedMessagePart "binary operator '^' requires both operands"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_shift_non_u8_operand.fn" -ExpectedMessagePart "operator '<<' expects u8 operands in stage0, found Result<u8,u8> and u8"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_shift_missing_rhs.fn" -ExpectedMessagePart "binary operator '<<' requires both operands"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_shift_left_count_out_of_range.fn" -ExpectedMessagePart "shift count out of range 0..7 in '<<' expression"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_shift_right_count_out_of_range.fn" -ExpectedMessagePart "shift count out of range 0..7 in '>>' expression"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_shift_left_overflow.fn" -ExpectedMessagePart "u8 overflow in '<<' expression"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_empty_parenthesized_expr.fn" -ExpectedMessagePart "parenthesized expression must not be empty"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_cmp_non_u8_operand.fn" -ExpectedMessagePart "operator '==' expects u8 operands in stage0, found Result<u8,u8> and u8"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_cmp_missing_rhs.fn" -ExpectedMessagePart "binary operator '<' requires both operands"
