@@ -130,6 +130,8 @@ Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_err_t
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_ok_try_move_use_after_move_source.fn" -ExpectedMessagePart "use after move for identifier 'source'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_ok_try_move_drop_after_move_source.fn" -ExpectedMessagePart "drop after move for identifier 'source'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_err_try_move_drop_after_move_source.fn" -ExpectedMessagePart "drop after move for identifier 'source'"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_ok_try_move_assign_after_move_immutable_source.fn" -ExpectedMessagePart "cannot reinitialize moved immutable binding 'source'"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_err_try_move_assign_after_move_immutable_source.fn" -ExpectedMessagePart "cannot reinitialize moved immutable binding 'source'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_non_result_literal.fn" -ExpectedMessagePart "try(...) expects Result<u8,u8> in stage0 bootstrap, found u8"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_non_result_identifier.fn" -ExpectedMessagePart "try(...) expects Result<u8,u8> in stage0 bootstrap, found u8"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_move_non_result_identifier.fn" -ExpectedMessagePart "try(...) expects Result<u8,u8> in stage0 bootstrap, found u8"
