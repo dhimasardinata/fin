@@ -14,6 +14,9 @@ Stage0 conformance checks:
 - `fixtures/main_exit_sub_literals.fn`: valid source with stage0 `u8` arithmetic subtraction on literals.
 - `fixtures/main_exit_mul_literals.fn`: valid source with stage0 `u8` arithmetic multiplication on literals.
 - `fixtures/main_exit_div_literals.fn`: valid source with stage0 `u8` arithmetic division on literals.
+- `fixtures/main_exit_mod_literals.fn`: valid source with stage0 `u8` arithmetic modulo on literals.
+- `fixtures/main_exit_mod_precedence.fn`: valid source proving stage0 `%` precedence aligns with multiplicative tier above additive operators.
+- `fixtures/main_exit_mod_grouped.fn`: valid source proving grouped expressions compose with `%` deterministically.
 - `fixtures/main_exit_mul_precedence.fn`: valid source proving stage0 arithmetic precedence (`*` before `+`).
 - `fixtures/main_exit_mul_grouped.fn`: valid source proving stage0 parenthesized grouping overrides arithmetic precedence.
 - `fixtures/main_exit_cmp_eq_true.fn`: valid source with stage0 equality operator `==` yielding `u8` predicate values.
@@ -80,6 +83,9 @@ Stage0 conformance checks:
 - `fixtures/invalid_mul_non_u8_operand.fn`: invalid source, parser must reject `*` operand typing when a non-`u8` value participates.
 - `fixtures/invalid_mul_overflow.fn`: invalid source, parser must reject `u8` overflow in stage0 `*` expressions.
 - `fixtures/invalid_div_by_zero.fn`: invalid source, parser must reject division by zero in stage0 `/` expressions.
+- `fixtures/invalid_mod_non_u8_operand.fn`: invalid source, parser must reject `%` operand typing when a non-`u8` value participates.
+- `fixtures/invalid_mod_by_zero.fn`: invalid source, parser must reject modulo by zero in stage0 `%` expressions.
+- `fixtures/invalid_mod_missing_rhs.fn`: invalid source, parser must reject `%` operators missing right-hand operands.
 - `fixtures/invalid_empty_parenthesized_expr.fn`: invalid source, parser must reject empty parenthesized expressions.
 - `fixtures/invalid_cmp_non_u8_operand.fn`: invalid source, parser must reject comparison operands that are not `u8`.
 - `fixtures/invalid_cmp_missing_rhs.fn`: invalid source, parser must reject comparison operators missing right-hand operands.

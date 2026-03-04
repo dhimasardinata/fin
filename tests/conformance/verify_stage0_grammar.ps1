@@ -104,6 +104,9 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_bool_true_l
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_bool_false_literal.fn" -ExpectedExit 108
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_bool_if_condition.fn" -ExpectedExit 109
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_bool_logic_mix.fn" -ExpectedExit 110
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_mod_literals.fn" -ExpectedExit 111
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_mod_precedence.fn" -ExpectedExit 112
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_mod_grouped.fn" -ExpectedExit 113
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_literal.fn" -ExpectedExit 11
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_identifier.fn" -ExpectedExit 12
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_ok_result.fn" -ExpectedExit 13
@@ -145,6 +148,9 @@ Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_sub_u
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_mul_non_u8_operand.fn" -ExpectedMessagePart "operator '*' expects u8 operands in stage0, found Result<u8,u8> and u8"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_mul_overflow.fn" -ExpectedMessagePart "u8 overflow in '*' expression"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_div_by_zero.fn" -ExpectedMessagePart "division by zero in '/' expression"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_mod_non_u8_operand.fn" -ExpectedMessagePart "operator '%' expects u8 operands in stage0, found Result<u8,u8> and u8"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_mod_by_zero.fn" -ExpectedMessagePart "modulo by zero in '%' expression"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_mod_missing_rhs.fn" -ExpectedMessagePart "binary operator '%' requires both operands"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_empty_parenthesized_expr.fn" -ExpectedMessagePart "parenthesized expression must not be empty"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_cmp_non_u8_operand.fn" -ExpectedMessagePart "operator '==' expects u8 operands in stage0, found Result<u8,u8> and u8"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_cmp_missing_rhs.fn" -ExpectedMessagePart "binary operator '<' requires both operands"
