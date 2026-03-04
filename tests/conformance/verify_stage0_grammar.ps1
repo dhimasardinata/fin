@@ -100,6 +100,10 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_logic_not_f
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_logic_not_eq.fn" -ExpectedExit 104
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_logic_not_or_chain.fn" -ExpectedExit 105
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_logic_not_add_precedence.fn" -ExpectedExit 106
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_bool_true_literal.fn" -ExpectedExit 107
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_bool_false_literal.fn" -ExpectedExit 108
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_bool_if_condition.fn" -ExpectedExit 109
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_bool_logic_mix.fn" -ExpectedExit 110
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_literal.fn" -ExpectedExit 11
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_identifier.fn" -ExpectedExit 12
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_ok_result.fn" -ExpectedExit 13
@@ -156,6 +160,8 @@ Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_logic
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_logic_not_non_u8_operand.fn" -ExpectedMessagePart "operator '!' expects u8 operand in stage0, found Result<u8,u8>"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_logic_not_missing_operand.fn" -ExpectedMessagePart "logical not '!' requires an operand"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_logic_not_use_after_move.fn" -ExpectedMessagePart "use after move for identifier 'value'"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_bool_keyword_binding_true.fn" -ExpectedMessagePart "reserved keyword cannot be used as identifier 'true'"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_bool_keyword_assignment_true.fn" -ExpectedMessagePart "reserved keyword cannot be used as identifier 'true'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_unsupported_type_annotation.fn" -ExpectedMessagePart "unsupported type annotation 'i32'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_unsupported_return_annotation.fn" -ExpectedMessagePart "unsupported type annotation 'i32'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_result_return_annotation.fn" -ExpectedMessagePart "entrypoint return type must be u8 in stage0 bootstrap, found Result<u8,u8>"

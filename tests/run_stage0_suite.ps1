@@ -96,6 +96,10 @@ if (-not $SkipDoctor) {
 & $fin build --src tests/conformance/fixtures/main_exit_logic_not_eq.fn --out artifacts/test-exit104
 & $fin build --src tests/conformance/fixtures/main_exit_logic_not_or_chain.fn --out artifacts/test-exit105
 & $fin build --src tests/conformance/fixtures/main_exit_logic_not_add_precedence.fn --out artifacts/test-exit106
+& $fin build --src tests/conformance/fixtures/main_exit_bool_true_literal.fn --out artifacts/test-exit107
+& $fin build --src tests/conformance/fixtures/main_exit_bool_false_literal.fn --out artifacts/test-exit108
+& $fin build --src tests/conformance/fixtures/main_exit_bool_if_condition.fn --out artifacts/test-exit109
+& $fin build --src tests/conformance/fixtures/main_exit_bool_logic_mix.fn --out artifacts/test-exit110
 & $fin build --src tests/conformance/fixtures/main_exit_try_literal.fn --out artifacts/test-exit11
 & $fin build --src tests/conformance/fixtures/main_exit_try_identifier.fn --out artifacts/test-exit12
 & $fin build --src tests/conformance/fixtures/main_exit_try_ok_result.fn --out artifacts/test-exit13
@@ -162,6 +166,10 @@ if (-not $SkipRun) {
         & $fin run --no-build --out artifacts/test-exit104 --expect-exit 104
         & $fin run --no-build --out artifacts/test-exit105 --expect-exit 105
         & $fin run --no-build --out artifacts/test-exit106 --expect-exit 106
+        & $fin run --no-build --out artifacts/test-exit107 --expect-exit 107
+        & $fin run --no-build --out artifacts/test-exit108 --expect-exit 108
+        & $fin run --no-build --out artifacts/test-exit109 --expect-exit 109
+        & $fin run --no-build --out artifacts/test-exit110 --expect-exit 110
         & $fin run --no-build --out artifacts/test-exit11 --expect-exit 11
         & $fin run --no-build --out artifacts/test-exit12 --expect-exit 12
         & $fin run --no-build --out artifacts/test-exit13 --expect-exit 13
