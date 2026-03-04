@@ -1,0 +1,5 @@
+fn main() {
+    let wrapped = err(1)
+    let code ?= wrapped
+    exit(code)
+}
