@@ -491,6 +491,9 @@ function Parse-Expr {
     if ($trimmedExpr -match '^!\s*$') {
         Fail-Parse "logical not '!' requires an operand"
     }
+    if ($trimmedExpr -match '^~\s*$') {
+        Fail-Parse "bitwise not '~' requires an operand"
+    }
     if ($trimmedExpr.StartsWith("!")) {
         $innerExpr = $trimmedExpr.Substring(1).Trim()
         if ([string]::IsNullOrWhiteSpace($innerExpr)) {
@@ -505,6 +508,23 @@ function Parse-Expr {
         return [pscustomobject]@{
             Type = "u8"
             Value = if ([int]$innerValue.Value -eq 0) { 1 } else { 0 }
+            ResultState = "none"
+        }
+    }
+    if ($trimmedExpr.StartsWith("~")) {
+        $innerExpr = $trimmedExpr.Substring(1).Trim()
+        if ([string]::IsNullOrWhiteSpace($innerExpr)) {
+            Fail-Parse "bitwise not '~' requires an operand"
+        }
+
+        $innerValue = Parse-Expr -Expr $innerExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates
+        if ([string]$innerValue.Type -ne "u8") {
+            Fail-Parse ("operator '~' expects u8 operand in stage0, found {0}" -f $innerValue.Type)
+        }
+
+        return [pscustomobject]@{
+            Type = "u8"
+            Value = [int]([int]$innerValue.Value -bxor 255)
             ResultState = "none"
         }
     }

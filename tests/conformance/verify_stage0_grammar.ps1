@@ -116,6 +116,9 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_shift_left_
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_shift_right_literals.fn" -ExpectedExit 121
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_shift_precedence.fn" -ExpectedExit 123
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_shift_cmp_precedence.fn" -ExpectedExit 123
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_bitwise_not_literal.fn" -ExpectedExit 124
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_bitwise_not_bitwise_mix.fn" -ExpectedExit 126
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_bitwise_not_shift_precedence.fn" -ExpectedExit 127
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_literal.fn" -ExpectedExit 11
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_identifier.fn" -ExpectedExit 12
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_ok_result.fn" -ExpectedExit 13
@@ -167,6 +170,8 @@ Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_shift
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_shift_left_count_out_of_range.fn" -ExpectedMessagePart "shift count out of range 0..7 in '<<' expression"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_shift_right_count_out_of_range.fn" -ExpectedMessagePart "shift count out of range 0..7 in '>>' expression"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_shift_left_overflow.fn" -ExpectedMessagePart "u8 overflow in '<<' expression"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_bitwise_not_non_u8_operand.fn" -ExpectedMessagePart "operator '~' expects u8 operand in stage0, found Result<u8,u8>"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_bitwise_not_missing_operand.fn" -ExpectedMessagePart "bitwise not '~' requires an operand"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_empty_parenthesized_expr.fn" -ExpectedMessagePart "parenthesized expression must not be empty"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_cmp_non_u8_operand.fn" -ExpectedMessagePart "operator '==' expects u8 operands in stage0, found Result<u8,u8> and u8"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_cmp_missing_rhs.fn" -ExpectedMessagePart "binary operator '<' requires both operands"
