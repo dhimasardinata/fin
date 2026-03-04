@@ -16,6 +16,10 @@ Stage0 conformance checks:
 - `fixtures/main_exit_div_literals.fn`: valid source with stage0 `u8` arithmetic division on literals.
 - `fixtures/main_exit_mul_precedence.fn`: valid source proving stage0 arithmetic precedence (`*` before `+`).
 - `fixtures/main_exit_mul_grouped.fn`: valid source proving stage0 parenthesized grouping overrides arithmetic precedence.
+- `fixtures/main_exit_cmp_eq_true.fn`: valid source with stage0 equality operator `==` yielding `u8` predicate values.
+- `fixtures/main_exit_cmp_lt_true.fn`: valid source with stage0 relational operator `<` yielding `u8` predicate values.
+- `fixtures/main_exit_cmp_precedence.fn`: valid source proving stage0 comparison precedence below arithmetic (`+`/`*` evaluated before `==`).
+- `fixtures/main_exit_cmp_ge_false_bias.fn`: valid source with stage0 `>=` false predicate path (`0`) used in arithmetic expression.
 - `fixtures/main_exit_result_typed_binding.fn`: valid source with explicit `Result<u8,u8>` binding annotation and `try` unwrap.
 - `fixtures/main_exit_try_literal.fn`: valid source with stage0 bootstrap `try(ok(<expr>))` on literal expression.
 - `fixtures/main_exit_try_identifier.fn`: valid source with stage0 bootstrap `try(<expr>)` on identifier `Result<u8,u8>` binding.
@@ -57,6 +61,8 @@ Stage0 conformance checks:
 - `fixtures/invalid_mul_overflow.fn`: invalid source, parser must reject `u8` overflow in stage0 `*` expressions.
 - `fixtures/invalid_div_by_zero.fn`: invalid source, parser must reject division by zero in stage0 `/` expressions.
 - `fixtures/invalid_empty_parenthesized_expr.fn`: invalid source, parser must reject empty parenthesized expressions.
+- `fixtures/invalid_cmp_non_u8_operand.fn`: invalid source, parser must reject comparison operands that are not `u8`.
+- `fixtures/invalid_cmp_missing_rhs.fn`: invalid source, parser must reject comparison operators missing right-hand operands.
 - Core grammar invalid fixtures above are also assertion-checked for deterministic diagnostic message text in `verify_stage0_grammar.ps1`.
 - `fixtures/invalid_unsupported_type_annotation.fn`: invalid source, parser must reject unsupported type annotations.
 - `fixtures/invalid_unsupported_return_annotation.fn`: invalid source, parser must reject unsupported entrypoint return annotations.

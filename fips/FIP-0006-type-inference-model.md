@@ -15,9 +15,11 @@
   - tests/conformance/fixtures/main_exit_signature_u8.fn
   - tests/conformance/fixtures/main_exit_add_identifier_literal.fn
   - tests/conformance/fixtures/main_exit_mul_precedence.fn
+  - tests/conformance/fixtures/main_exit_cmp_precedence.fn
   - tests/conformance/fixtures/main_exit_result_typed_binding.fn
   - tests/conformance/fixtures/invalid_add_non_u8_operand.fn
   - tests/conformance/fixtures/invalid_mul_non_u8_operand.fn
+  - tests/conformance/fixtures/invalid_cmp_non_u8_operand.fn
   - tests/conformance/fixtures/invalid_result_return_annotation.fn
   - tests/conformance/fixtures/invalid_result_annotation_mismatch.fn
   - tests/conformance/fixtures/invalid_unsupported_result_annotation.fn
@@ -53,7 +55,7 @@ Current stage0 implementation delta:
 7. Unsupported entrypoint return annotations are rejected with deterministic parse diagnostics.
 8. `fn main() -> Result<u8,u8>` is explicitly rejected in stage0 with deterministic boundary diagnostic; entrypoint return remains `u8` only.
 9. Conformance now asserts deterministic message substrings for type mismatch and unsupported type/return annotations.
-10. Stage0 arithmetic operator typing is enforced in inference paths: `+`/`-`/`*`/`/` require inferred `u8` operands and reject non-`u8` inferred types deterministically.
+10. Stage0 arithmetic and comparison operator typing is enforced in inference paths: `+`/`-`/`*`/`/`/`==`/`!=`/`<`/`<=`/`>`/`>=` require inferred `u8` operands and reject non-`u8` inferred types deterministically; comparison expressions infer `u8` predicate values (`0`/`1`).
 
 ## Alternatives
 
@@ -71,7 +73,7 @@ Compatibility impact must be documented before Implemented status.
 
 Current checks:
 
-1. `tests/conformance/verify_stage0_grammar.ps1` validates typed binding/signature success, `Result<u8,u8>` typed binding success, `Result<u8,u8>` entrypoint return rejection, annotation mismatch failure, unsupported annotation rejection, and non-`u8` inferred arithmetic-operand rejection (`invalid_add_non_u8_operand.fn`, `invalid_mul_non_u8_operand.fn`) with deterministic message-substring assertions.
-2. `tests/run_stage0_suite.ps1` compiles typed fixtures (`main_exit_typed_u8.fn`, `main_exit_signature_u8.fn`, `main_exit_result_typed_binding.fn`, `main_exit_add_identifier_literal.fn`, `main_exit_mul_precedence.fn`) in aggregated stage0 flow.
+1. `tests/conformance/verify_stage0_grammar.ps1` validates typed binding/signature success, `Result<u8,u8>` typed binding success, `Result<u8,u8>` entrypoint return rejection, annotation mismatch failure, unsupported annotation rejection, and non-`u8` inferred operator-operand rejection (`invalid_add_non_u8_operand.fn`, `invalid_mul_non_u8_operand.fn`, `invalid_cmp_non_u8_operand.fn`) with deterministic message-substring assertions.
+2. `tests/run_stage0_suite.ps1` compiles typed fixtures (`main_exit_typed_u8.fn`, `main_exit_signature_u8.fn`, `main_exit_result_typed_binding.fn`, `main_exit_add_identifier_literal.fn`, `main_exit_mul_precedence.fn`, `main_exit_cmp_precedence.fn`) in aggregated stage0 flow.
 
 Acceptance criteria listed above remain normative for Implemented status.

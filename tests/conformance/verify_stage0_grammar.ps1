@@ -80,6 +80,10 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_mul_literal
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_div_literals.fn" -ExpectedExit 66
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_mul_precedence.fn" -ExpectedExit 65
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_mul_grouped.fn" -ExpectedExit 80
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_cmp_eq_true.fn" -ExpectedExit 82
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_cmp_lt_true.fn" -ExpectedExit 83
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_cmp_precedence.fn" -ExpectedExit 86
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_cmp_ge_false_bias.fn" -ExpectedExit 90
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_literal.fn" -ExpectedExit 11
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_identifier.fn" -ExpectedExit 12
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_ok_result.fn" -ExpectedExit 13
@@ -122,6 +126,8 @@ Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_mul_n
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_mul_overflow.fn" -ExpectedMessagePart "u8 overflow in '*' expression"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_div_by_zero.fn" -ExpectedMessagePart "division by zero in '/' expression"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_empty_parenthesized_expr.fn" -ExpectedMessagePart "parenthesized expression must not be empty"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_cmp_non_u8_operand.fn" -ExpectedMessagePart "operator '==' expects u8 operands in stage0, found Result<u8,u8> and u8"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_cmp_missing_rhs.fn" -ExpectedMessagePart "binary operator '<' requires both operands"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_unsupported_type_annotation.fn" -ExpectedMessagePart "unsupported type annotation 'i32'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_unsupported_return_annotation.fn" -ExpectedMessagePart "unsupported type annotation 'i32'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_result_return_annotation.fn" -ExpectedMessagePart "entrypoint return type must be u8 in stage0 bootstrap, found Result<u8,u8>"

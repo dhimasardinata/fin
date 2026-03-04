@@ -132,6 +132,7 @@ function Find-TopLevelBinaryOperator {
         [string[]]$Operators
     )
 
+    $orderedOperators = $Operators | Sort-Object { $_.Length } -Descending
     $depth = 0
     for ($i = $Expr.Length - 1; $i -ge 0; $i--) {
         $ch = $Expr[$i]
@@ -146,10 +147,19 @@ function Find-TopLevelBinaryOperator {
             }
             continue
         }
-        if (($depth -eq 0) -and ($Operators -contains [string]$ch)) {
-            return [pscustomobject]@{
-                Index = $i
-                Operator = [string]$ch
+        if ($depth -eq 0) {
+            foreach ($op in $orderedOperators) {
+                $opLength = $op.Length
+                $start = $i - $opLength + 1
+                if ($start -lt 0) {
+                    continue
+                }
+                if ($Expr.Substring($start, $opLength) -eq $op) {
+                    return [pscustomobject]@{
+                        Index = $start
+                        Operator = $op
+                    }
+                }
             }
         }
     }
@@ -181,14 +191,18 @@ function Parse-Expr {
         Fail-Parse "dereference expressions are not available in stage0 bootstrap"
     }
 
-    $binaryOperator = Find-TopLevelBinaryOperator -Expr $trimmedExpr -Operators @("+", "-")
+    $binaryOperator = Find-TopLevelBinaryOperator -Expr $trimmedExpr -Operators @("==", "!=", "<=", ">=", "<", ">")
+    if ($null -eq $binaryOperator) {
+        $binaryOperator = Find-TopLevelBinaryOperator -Expr $trimmedExpr -Operators @("+", "-")
+    }
     if ($null -eq $binaryOperator) {
         $binaryOperator = Find-TopLevelBinaryOperator -Expr $trimmedExpr -Operators @("*", "/")
     }
     if ($null -ne $binaryOperator) {
-        $leftExpr = $trimmedExpr.Substring(0, [int]$binaryOperator.Index).Trim()
-        $rightExpr = $trimmedExpr.Substring(([int]$binaryOperator.Index + 1)).Trim()
         $operatorText = [string]$binaryOperator.Operator
+        $operatorLength = $operatorText.Length
+        $leftExpr = $trimmedExpr.Substring(0, [int]$binaryOperator.Index).Trim()
+        $rightExpr = $trimmedExpr.Substring(([int]$binaryOperator.Index + $operatorLength)).Trim()
         if ([string]::IsNullOrWhiteSpace($leftExpr) -or [string]::IsNullOrWhiteSpace($rightExpr)) {
             Fail-Parse ("binary operator '{0}' requires both operands" -f $operatorText)
         }
@@ -200,7 +214,25 @@ function Parse-Expr {
         }
 
         $result = 0
-        if ($operatorText -eq "+") {
+        if ($operatorText -eq "==") {
+            $result = if ([int]$leftValue.Value -eq [int]$rightValue.Value) { 1 } else { 0 }
+        }
+        elseif ($operatorText -eq "!=") {
+            $result = if ([int]$leftValue.Value -ne [int]$rightValue.Value) { 1 } else { 0 }
+        }
+        elseif ($operatorText -eq "<") {
+            $result = if ([int]$leftValue.Value -lt [int]$rightValue.Value) { 1 } else { 0 }
+        }
+        elseif ($operatorText -eq "<=") {
+            $result = if ([int]$leftValue.Value -le [int]$rightValue.Value) { 1 } else { 0 }
+        }
+        elseif ($operatorText -eq ">") {
+            $result = if ([int]$leftValue.Value -gt [int]$rightValue.Value) { 1 } else { 0 }
+        }
+        elseif ($operatorText -eq ">=") {
+            $result = if ([int]$leftValue.Value -ge [int]$rightValue.Value) { 1 } else { 0 }
+        }
+        elseif ($operatorText -eq "+") {
             $result = [int]$leftValue.Value + [int]$rightValue.Value
             if ($result -gt 255) {
                 Fail-Parse "u8 overflow in '+' expression"
@@ -357,7 +389,7 @@ function Parse-Expr {
 #     drop(<ident>);
 #     exit(<expr>);
 #   }
-# <expr> := <u8-literal> | <ident> | move(<ident>) | ok(<expr>) | err(<expr>) | try(<expr>) | (<expr>) | <expr> + <expr> | <expr> - <expr> | <expr> * <expr> | <expr> / <expr>
+# <expr> := <u8-literal> | <ident> | move(<ident>) | ok(<expr>) | err(<expr>) | try(<expr>) | (<expr>) | <expr> + <expr> | <expr> - <expr> | <expr> * <expr> | <expr> / <expr> | <expr> == <expr> | <expr> != <expr> | <expr> < <expr> | <expr> <= <expr> | <expr> > <expr> | <expr> >= <expr>
 # <type> := u8 | Result<u8,u8>
 # with optional semicolons and line comments (# or //).
 $programPattern = '(?s)^\s*fn\s+main\s*\(\s*\)\s*(?:->\s*([^\{]+?))?\s*\{\s*(.*?)\s*\}\s*$'
