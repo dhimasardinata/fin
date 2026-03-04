@@ -1,0 +1,4 @@
+fn main() {
+    var wrapped: Result<u8,u8> = ok(136)
+    exit(move(wrapped)?)
+}
