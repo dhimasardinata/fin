@@ -751,6 +751,7 @@ function Parse-Expr {
 # Stage0 grammar subset:
 #   fn main() [-> <type>] {
 #     (let|var) <ident> [: <type>] = <expr>;
+#     let <ident> [: <type>] ?= <expr>;
 #     <ident> = <expr>;
 #     drop(<ident>);
 #     exit(<expr>);
@@ -803,6 +804,39 @@ $haveExit = $false
 foreach ($stmt in $statements) {
     if ($haveExit) {
         Fail-Parse "statements after terminal exit/return are not allowed in stage0"
+    }
+
+    if ($stmt -match '^let\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([^?=]+?))?\s*\?=\s*$') {
+        Fail-Parse "unwrap binding requires expression"
+    }
+
+    if ($stmt -match '^let\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([^?=]+?))?\s*\?=\s*(.+)$') {
+        $name = $Matches[1]
+        Assert-NonKeywordIdentifier -Name $name
+        $declaredTypeRaw = $Matches[2]
+        $expr = $Matches[3]
+        if ($values.ContainsKey($name)) {
+            Fail-Parse "duplicate binding '$name'"
+        }
+
+        # Sugar: let x ?= rhs  => let x = try rhs
+        $exprValue = Parse-Expr -Expr ("try " + $expr) -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates
+        $declaredType = if ([string]::IsNullOrWhiteSpace($declaredTypeRaw)) {
+            [string]$exprValue.Type
+        }
+        else {
+            Parse-TypeAnnotation -TypeText $declaredTypeRaw
+        }
+        if ([string]$exprValue.Type -ne $declaredType) {
+            Fail-Parse ("type mismatch for binding '{0}': expected {1}, found {2}" -f $name, $declaredType, $exprValue.Type)
+        }
+
+        $values[$name] = [int]$exprValue.Value
+        $mutable[$name] = $false
+        $types[$name] = $declaredType
+        $resultStates[$name] = [string]$exprValue.ResultState
+        $lifecycleStates[$name] = "alive"
+        continue
     }
 
     if ($stmt -match '^let\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([^=]+?))?\s*=\s*(.+)$') {

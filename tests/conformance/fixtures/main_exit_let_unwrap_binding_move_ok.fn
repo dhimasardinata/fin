@@ -1,0 +1,5 @@
+fn main() {
+    var wrapped: Result<u8,u8> = ok(142)
+    let code ?= move(wrapped)
+    exit(code)
+}

@@ -1,0 +1,5 @@
+fn main() {
+    var source: Result<u8,u8> = ok(1)
+    let code ?= move(source)
+    exit(source)
+}
