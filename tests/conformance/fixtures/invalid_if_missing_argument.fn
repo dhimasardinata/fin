@@ -1,0 +1,3 @@
+fn main() {
+    exit(if(1, 2))
+}

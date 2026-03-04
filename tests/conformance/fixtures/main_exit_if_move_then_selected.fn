@@ -1,0 +1,4 @@
+fn main() {
+    let value = 94
+    exit(if(1, move(value), 0))
+}

@@ -20,6 +20,12 @@ Stage0 conformance checks:
 - `fixtures/main_exit_cmp_lt_true.fn`: valid source with stage0 relational operator `<` yielding `u8` predicate values.
 - `fixtures/main_exit_cmp_precedence.fn`: valid source proving stage0 comparison precedence below arithmetic (`+`/`*` evaluated before `==`).
 - `fixtures/main_exit_cmp_ge_false_bias.fn`: valid source with stage0 `>=` false predicate path (`0`) used in arithmetic expression.
+- `fixtures/main_exit_if_true_literal.fn`: valid source with stage0 conditional expression `if(cond, then, else)` selecting true branch.
+- `fixtures/main_exit_if_false_literal.fn`: valid source with stage0 conditional expression selecting false branch.
+- `fixtures/main_exit_if_cmp_condition.fn`: valid source with stage0 conditional expression using comparison result as condition.
+- `fixtures/main_exit_if_move_then_selected.fn`: valid source confirming selected `if` branch can perform `move(...)` semantics.
+- `fixtures/main_exit_if_move_else_selected.fn`: valid source confirming selected false branch can perform `move(...)` semantics.
+- `fixtures/main_exit_if_result_branches_try.fn`: valid source with `if` branches producing `Result<u8,u8>` and later `try` unwrap.
 - `fixtures/main_exit_result_typed_binding.fn`: valid source with explicit `Result<u8,u8>` binding annotation and `try` unwrap.
 - `fixtures/main_exit_try_literal.fn`: valid source with stage0 bootstrap `try(ok(<expr>))` on literal expression.
 - `fixtures/main_exit_try_identifier.fn`: valid source with stage0 bootstrap `try(<expr>)` on identifier `Result<u8,u8>` binding.
@@ -63,6 +69,10 @@ Stage0 conformance checks:
 - `fixtures/invalid_empty_parenthesized_expr.fn`: invalid source, parser must reject empty parenthesized expressions.
 - `fixtures/invalid_cmp_non_u8_operand.fn`: invalid source, parser must reject comparison operands that are not `u8`.
 - `fixtures/invalid_cmp_missing_rhs.fn`: invalid source, parser must reject comparison operators missing right-hand operands.
+- `fixtures/invalid_if_missing_argument.fn`: invalid source, parser must reject `if(...)` calls with missing arguments.
+- `fixtures/invalid_if_empty_argument.fn`: invalid source, parser must reject `if(...)` calls with empty arguments.
+- `fixtures/invalid_if_non_u8_condition.fn`: invalid source, parser must reject non-`u8` `if(...)` condition expressions.
+- `fixtures/invalid_if_branch_type_mismatch.fn`: invalid source, parser must reject `if(...)` branches with mismatched result types.
 - Core grammar invalid fixtures above are also assertion-checked for deterministic diagnostic message text in `verify_stage0_grammar.ps1`.
 - `fixtures/invalid_unsupported_type_annotation.fn`: invalid source, parser must reject unsupported type annotations.
 - `fixtures/invalid_unsupported_return_annotation.fn`: invalid source, parser must reject unsupported entrypoint return annotations.

@@ -62,6 +62,49 @@ function Parse-TypeAnnotation {
     Fail-Parse "unsupported type annotation '$typeName'"
 }
 
+function Copy-Hashtable {
+    param([hashtable]$Table)
+
+    $copy = @{}
+    foreach ($key in $Table.Keys) {
+        $copy[$key] = $Table[$key]
+    }
+    return $copy
+}
+
+function Split-TopLevelArguments {
+    param([string]$Expr)
+
+    $parts = [System.Collections.Generic.List[string]]::new()
+    $depth = 0
+    $start = 0
+    for ($i = 0; $i -lt $Expr.Length; $i++) {
+        $ch = $Expr[$i]
+        if ($ch -eq '(') {
+            $depth += 1
+            continue
+        }
+        if ($ch -eq ')') {
+            $depth -= 1
+            if ($depth -lt 0) {
+                Fail-Parse ("unbalanced parentheses in expression '{0}'" -f $Expr)
+            }
+            continue
+        }
+        if (($ch -eq ',') -and ($depth -eq 0)) {
+            $parts.Add($Expr.Substring($start, $i - $start).Trim())
+            $start = $i + 1
+        }
+    }
+
+    if ($depth -ne 0) {
+        Fail-Parse ("unbalanced parentheses in expression '{0}'" -f $Expr)
+    }
+
+    $parts.Add($Expr.Substring($start).Trim())
+    return $parts
+}
+
 function Assert-BalancedParentheses {
     param([string]$Expr)
 
@@ -189,6 +232,42 @@ function Parse-Expr {
     }
     if ($trimmedExpr -match '^\*') {
         Fail-Parse "dereference expressions are not available in stage0 bootstrap"
+    }
+    if ($trimmedExpr -match '^if\s*\(\s*(.*)\s*\)$') {
+        $argText = $Matches[1]
+        if ([string]::IsNullOrWhiteSpace($argText)) {
+            Fail-Parse "if(...) requires exactly 3 arguments: condition, then, else"
+        }
+
+        $parts = Split-TopLevelArguments -Expr $argText
+        if ($parts.Count -ne 3) {
+            Fail-Parse "if(...) requires exactly 3 arguments: condition, then, else"
+        }
+        foreach ($part in $parts) {
+            if ([string]::IsNullOrWhiteSpace($part)) {
+                Fail-Parse "if(...) arguments must not be empty"
+            }
+        }
+
+        $conditionExpr = [string]$parts[0]
+        $thenExpr = [string]$parts[1]
+        $elseExpr = [string]$parts[2]
+
+        $conditionValue = Parse-Expr -Expr $conditionExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates
+        if ([string]$conditionValue.Type -ne "u8") {
+            Fail-Parse ("if(...) condition expects u8 in stage0, found {0}" -f $conditionValue.Type)
+        }
+
+        $thenValueTypeCheck = Parse-Expr -Expr $thenExpr -Values (Copy-Hashtable -Table $Values) -Types (Copy-Hashtable -Table $Types) -ResultStates (Copy-Hashtable -Table $ResultStates) -LifecycleStates (Copy-Hashtable -Table $LifecycleStates)
+        $elseValueTypeCheck = Parse-Expr -Expr $elseExpr -Values (Copy-Hashtable -Table $Values) -Types (Copy-Hashtable -Table $Types) -ResultStates (Copy-Hashtable -Table $ResultStates) -LifecycleStates (Copy-Hashtable -Table $LifecycleStates)
+        if ([string]$thenValueTypeCheck.Type -ne [string]$elseValueTypeCheck.Type) {
+            Fail-Parse ("if(...) branch type mismatch: then is {0}, else is {1}" -f $thenValueTypeCheck.Type, $elseValueTypeCheck.Type)
+        }
+
+        if ([int]$conditionValue.Value -ne 0) {
+            return Parse-Expr -Expr $thenExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates
+        }
+        return Parse-Expr -Expr $elseExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates
     }
 
     $binaryOperator = Find-TopLevelBinaryOperator -Expr $trimmedExpr -Operators @("==", "!=", "<=", ">=", "<", ">")
@@ -389,7 +468,7 @@ function Parse-Expr {
 #     drop(<ident>);
 #     exit(<expr>);
 #   }
-# <expr> := <u8-literal> | <ident> | move(<ident>) | ok(<expr>) | err(<expr>) | try(<expr>) | (<expr>) | <expr> + <expr> | <expr> - <expr> | <expr> * <expr> | <expr> / <expr> | <expr> == <expr> | <expr> != <expr> | <expr> < <expr> | <expr> <= <expr> | <expr> > <expr> | <expr> >= <expr>
+# <expr> := <u8-literal> | <ident> | move(<ident>) | ok(<expr>) | err(<expr>) | try(<expr>) | if(<expr>, <expr>, <expr>) | (<expr>) | <expr> + <expr> | <expr> - <expr> | <expr> * <expr> | <expr> / <expr> | <expr> == <expr> | <expr> != <expr> | <expr> < <expr> | <expr> <= <expr> | <expr> > <expr> | <expr> >= <expr>
 # <type> := u8 | Result<u8,u8>
 # with optional semicolons and line comments (# or //).
 $programPattern = '(?s)^\s*fn\s+main\s*\(\s*\)\s*(?:->\s*([^\{]+?))?\s*\{\s*(.*?)\s*\}\s*$'

@@ -84,6 +84,12 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_cmp_eq_true
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_cmp_lt_true.fn" -ExpectedExit 83
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_cmp_precedence.fn" -ExpectedExit 86
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_cmp_ge_false_bias.fn" -ExpectedExit 90
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_if_true_literal.fn" -ExpectedExit 91
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_if_false_literal.fn" -ExpectedExit 92
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_if_cmp_condition.fn" -ExpectedExit 93
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_if_move_then_selected.fn" -ExpectedExit 94
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_if_move_else_selected.fn" -ExpectedExit 95
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_if_result_branches_try.fn" -ExpectedExit 96
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_literal.fn" -ExpectedExit 11
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_identifier.fn" -ExpectedExit 12
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_try_ok_result.fn" -ExpectedExit 13
@@ -128,6 +134,10 @@ Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_div_b
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_empty_parenthesized_expr.fn" -ExpectedMessagePart "parenthesized expression must not be empty"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_cmp_non_u8_operand.fn" -ExpectedMessagePart "operator '==' expects u8 operands in stage0, found Result<u8,u8> and u8"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_cmp_missing_rhs.fn" -ExpectedMessagePart "binary operator '<' requires both operands"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_if_missing_argument.fn" -ExpectedMessagePart "if(...) requires exactly 3 arguments: condition, then, else"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_if_empty_argument.fn" -ExpectedMessagePart "if(...) arguments must not be empty"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_if_non_u8_condition.fn" -ExpectedMessagePart "if(...) condition expects u8 in stage0, found Result<u8,u8>"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_if_branch_type_mismatch.fn" -ExpectedMessagePart "if(...) branch type mismatch: then is u8, else is Result<u8,u8>"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_unsupported_type_annotation.fn" -ExpectedMessagePart "unsupported type annotation 'i32'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_unsupported_return_annotation.fn" -ExpectedMessagePart "unsupported type annotation 'i32'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_result_return_annotation.fn" -ExpectedMessagePart "entrypoint return type must be u8 in stage0 bootstrap, found Result<u8,u8>"
