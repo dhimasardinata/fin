@@ -37,6 +37,27 @@ function Parse-U8Literal {
     return $value
 }
 
+function Parse-BoolLiteral {
+    param([string]$Text)
+
+    $trimmed = $Text.Trim()
+    if ($trimmed -eq "true") {
+        return 1
+    }
+    if ($trimmed -eq "false") {
+        return 0
+    }
+    return $null
+}
+
+function Assert-NonKeywordIdentifier {
+    param([string]$Name)
+
+    if (($Name -eq "true") -or ($Name -eq "false")) {
+        Fail-Parse ("reserved keyword cannot be used as identifier '{0}'" -f $Name)
+    }
+}
+
 function Parse-TypeAnnotation {
     param([string]$TypeText)
 
@@ -526,6 +547,15 @@ function Parse-Expr {
         }
     }
 
+    $boolLiteral = Parse-BoolLiteral -Text $Expr
+    if ($null -ne $boolLiteral) {
+        return [pscustomobject]@{
+            Type = "u8"
+            Value = [int]$boolLiteral
+            ResultState = "none"
+        }
+    }
+
     $name = $Expr.Trim()
     if ($name -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
         Fail-Parse "unsupported expression '$Expr'"
@@ -558,7 +588,7 @@ function Parse-Expr {
 #     drop(<ident>);
 #     exit(<expr>);
 #   }
-# <expr> := <u8-literal> | <ident> | move(<ident>) | ok(<expr>) | err(<expr>) | try(<expr>) | if(<expr>, <expr>, <expr>) | !<expr> | (<expr>) | <expr> + <expr> | <expr> - <expr> | <expr> * <expr> | <expr> / <expr> | <expr> == <expr> | <expr> != <expr> | <expr> < <expr> | <expr> <= <expr> | <expr> > <expr> | <expr> >= <expr> | <expr> && <expr> | <expr> || <expr>
+# <expr> := <u8-literal> | true | false | <ident> | move(<ident>) | ok(<expr>) | err(<expr>) | try(<expr>) | if(<expr>, <expr>, <expr>) | !<expr> | (<expr>) | <expr> + <expr> | <expr> - <expr> | <expr> * <expr> | <expr> / <expr> | <expr> == <expr> | <expr> != <expr> | <expr> < <expr> | <expr> <= <expr> | <expr> > <expr> | <expr> >= <expr> | <expr> && <expr> | <expr> || <expr>
 # <type> := u8 | Result<u8,u8>
 # with optional semicolons and line comments (# or //).
 $programPattern = '(?s)^\s*fn\s+main\s*\(\s*\)\s*(?:->\s*([^\{]+?))?\s*\{\s*(.*?)\s*\}\s*$'
@@ -609,6 +639,7 @@ foreach ($stmt in $statements) {
 
     if ($stmt -match '^let\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([^=]+?))?\s*=\s*(.+)$') {
         $name = $Matches[1]
+        Assert-NonKeywordIdentifier -Name $name
         $declaredTypeRaw = $Matches[2]
         $expr = $Matches[3]
         if ($values.ContainsKey($name)) {
@@ -636,6 +667,7 @@ foreach ($stmt in $statements) {
 
     if ($stmt -match '^var\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([^=]+?))?\s*=\s*(.+)$') {
         $name = $Matches[1]
+        Assert-NonKeywordIdentifier -Name $name
         $declaredTypeRaw = $Matches[2]
         $expr = $Matches[3]
         if ($values.ContainsKey($name)) {
@@ -663,6 +695,7 @@ foreach ($stmt in $statements) {
 
     if ($stmt -match '^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$') {
         $name = $Matches[1]
+        Assert-NonKeywordIdentifier -Name $name
         $expr = $Matches[2]
         if (-not $values.ContainsKey($name)) {
             Fail-Parse "assignment to undefined identifier '$name'"

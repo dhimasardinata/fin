@@ -39,6 +39,10 @@
   - tests/conformance/fixtures/main_exit_logic_not_eq.fn
   - tests/conformance/fixtures/main_exit_logic_not_or_chain.fn
   - tests/conformance/fixtures/main_exit_logic_not_add_precedence.fn
+  - tests/conformance/fixtures/main_exit_bool_true_literal.fn
+  - tests/conformance/fixtures/main_exit_bool_false_literal.fn
+  - tests/conformance/fixtures/main_exit_bool_if_condition.fn
+  - tests/conformance/fixtures/main_exit_bool_logic_mix.fn
   - tests/conformance/fixtures/invalid_add_non_u8_operand.fn
   - tests/conformance/fixtures/invalid_add_overflow.fn
   - tests/conformance/fixtures/invalid_sub_underflow.fn
@@ -60,6 +64,8 @@
   - tests/conformance/fixtures/invalid_logic_not_non_u8_operand.fn
   - tests/conformance/fixtures/invalid_logic_not_missing_operand.fn
   - tests/conformance/fixtures/invalid_logic_not_use_after_move.fn
+  - tests/conformance/fixtures/invalid_bool_keyword_binding_true.fn
+  - tests/conformance/fixtures/invalid_bool_keyword_assignment_true.fn
 - acceptance:
   - Parser conformance suite passes canonical grammar fixtures.
 
@@ -87,7 +93,7 @@ Current stage0 subset grammar:
 
 `<expr>` (stage0):
 
-1. `<u8-literal>` (`0..255`)
+1. `<u8-literal>` (`0..255`) plus boolean literal keywords `true` and `false` (stage0 aliases for `1` and `0`)
 2. `<ident>`
 3. `move(<ident>)` (stage0 bootstrap ownership transfer form)
 4. `ok(<expr>)` / `err(<expr>)` (stage0 bootstrap result wrappers)
@@ -114,7 +120,7 @@ Accepted stage0 tolerances:
 This subset is intentionally minimal and acts as the first executable parser checkpoint.
 
 Note: stage0 optional binding type-annotation forms (`let/var <ident>: u8 = <expr>` and `let/var <ident>: Result<u8,u8> = <expr>`) plus optional entrypoint return annotation (`fn main() -> u8`) are introduced under `FIP-0006`. Stage0 bootstrap `try(<expr>)` syntax is introduced under `FIP-0008`, where stage0 `try` is constrained to `Result<u8,u8>` inputs. Stage0 `drop(<ident>)` and `move(<ident>)` bootstrap ownership forms are introduced under `FIP-0007`; stage0 parser semantics now track `alive/moved/dropped` lifecycle states, allow mutable moved/dropped binding re-initialization via assignment, reject immutable moved/dropped binding re-initialization, and continue to reject ownership/borrowing syntax (`&`, `*`) until inference-first ownership semantics are implemented.
-Stage0 arithmetic (`+`, `-`, `*`, `/`), comparison operators, unary logical-not (`!`), and binary logical operators (`&&`, `||`) are constrained to `u8` operands, with deterministic rejection for non-`u8` operands, deterministic overflow/underflow checks, explicit division-by-zero rejection, parenthesized grouping support for precedence control, deterministic binary-operator parse errors when operands are missing, explicit unary-operator parse errors when `!` has no operand, explicit `if(cond, then, else)` conditional expressions that enforce `u8` conditions plus branch type matching, and short-circuit logical evaluation that preserves side-effect/lifecycle behavior on the non-selected RHS while still enforcing deterministic RHS type checks.
+Stage0 arithmetic (`+`, `-`, `*`, `/`), comparison operators, unary logical-not (`!`), and binary logical operators (`&&`, `||`) are constrained to `u8` operands, with deterministic rejection for non-`u8` operands, deterministic overflow/underflow checks, explicit division-by-zero rejection, parenthesized grouping support for precedence control, deterministic binary-operator parse errors when operands are missing, explicit unary-operator parse errors when `!` has no operand, explicit `if(cond, then, else)` conditional expressions that enforce `u8` conditions plus branch type matching, boolean literal aliases `true`/`false` mapped to `u8` (`1`/`0`), reserved-keyword identifier rejection for `true`/`false`, and short-circuit logical evaluation that preserves side-effect/lifecycle behavior on the non-selected RHS while still enforcing deterministic RHS type checks.
 
 ## Alternatives
 
@@ -133,6 +139,6 @@ Compatibility impact must be documented before Implemented status.
 Current checks:
 
 1. `tests/conformance/verify_stage0_grammar.ps1` validates valid and invalid fixtures for literals, bindings, mutation, and comments, with deterministic message-substring assertions for missing entrypoint, undefined identifier use, and immutable assignment rejection.
-2. `tests/conformance/verify_stage0_grammar.ps1` validates stage0 `u8` arithmetic (`+`, `-`, `*`, `/`), comparisons (`==`, `!=`, `<`, `<=`, `>`, `>=`), unary/binary logical operators (`!`, `&&`, `||`), parenthesized grouping, and `if(cond, then, else)` with deterministic diagnostics for non-`u8` operands, overflow/underflow, division-by-zero, missing binary-operator operands, missing unary-`!` operands, empty parenthesized expressions, invalid/missing `if` arguments, non-`u8` conditions, branch type mismatches, and selected-operand ownership misuse in logical expressions.
+2. `tests/conformance/verify_stage0_grammar.ps1` validates stage0 `u8` arithmetic (`+`, `-`, `*`, `/`), comparisons (`==`, `!=`, `<`, `<=`, `>`, `>=`), unary/binary logical operators (`!`, `&&`, `||`), boolean literals (`true`, `false`), parenthesized grouping, and `if(cond, then, else)` with deterministic diagnostics for non-`u8` operands, overflow/underflow, division-by-zero, missing binary-operator operands, missing unary-`!` operands, empty parenthesized expressions, invalid/missing `if` arguments, non-`u8` conditions, reserved-keyword identifier misuse (`true`/`false`), branch type mismatches, and selected-operand ownership misuse in logical expressions.
 3. Parser rejects non-`main` entrypoint patterns for stage0 subset.
 4. Parser rejects undefined identifiers and assignment to immutable `let` bindings.

@@ -36,6 +36,10 @@ Stage0 conformance checks:
 - `fixtures/main_exit_logic_not_eq.fn`: valid source proving unary `!` composition with comparison expressions.
 - `fixtures/main_exit_logic_not_or_chain.fn`: valid source proving unary `!` composition with logical `||` chain expressions.
 - `fixtures/main_exit_logic_not_add_precedence.fn`: valid source proving unary `!` binds tighter than additive expressions (`!x + y` parses as `(!x) + y`).
+- `fixtures/main_exit_bool_true_literal.fn`: valid source proving `true` literal maps to stage0 `u8` value `1`.
+- `fixtures/main_exit_bool_false_literal.fn`: valid source proving `false` literal maps to stage0 `u8` value `0`.
+- `fixtures/main_exit_bool_if_condition.fn`: valid source using `true` literal in stage0 `if(cond, then, else)` condition position.
+- `fixtures/main_exit_bool_logic_mix.fn`: valid source composing boolean literals with unary/binary logical operators.
 - `fixtures/main_exit_result_typed_binding.fn`: valid source with explicit `Result<u8,u8>` binding annotation and `try` unwrap.
 - `fixtures/main_exit_try_literal.fn`: valid source with stage0 bootstrap `try(ok(<expr>))` on literal expression.
 - `fixtures/main_exit_try_identifier.fn`: valid source with stage0 bootstrap `try(<expr>)` on identifier `Result<u8,u8>` binding.
@@ -91,6 +95,8 @@ Stage0 conformance checks:
 - `fixtures/invalid_logic_not_non_u8_operand.fn`: invalid source, parser must reject unary `!` operands that are not `u8`.
 - `fixtures/invalid_logic_not_missing_operand.fn`: invalid source, parser must reject unary `!` expressions with missing operands.
 - `fixtures/invalid_logic_not_use_after_move.fn`: invalid source, parser must reject use-after-move after unary `!move(...)` consumes a binding.
+- `fixtures/invalid_bool_keyword_binding_true.fn`: invalid source, parser must reject `true` keyword usage as an identifier binding name.
+- `fixtures/invalid_bool_keyword_assignment_true.fn`: invalid source, parser must reject `true` keyword usage as an assignment target identifier.
 - Core grammar invalid fixtures above are also assertion-checked for deterministic diagnostic message text in `verify_stage0_grammar.ps1`.
 - `fixtures/invalid_unsupported_type_annotation.fn`: invalid source, parser must reject unsupported type annotations.
 - `fixtures/invalid_unsupported_return_annotation.fn`: invalid source, parser must reject unsupported entrypoint return annotations.
