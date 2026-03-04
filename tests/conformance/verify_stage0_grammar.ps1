@@ -135,6 +135,8 @@ Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_err_t
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_non_result_literal.fn" -ExpectedMessagePart "try(...) expects Result<u8,u8> in stage0 bootstrap, found u8"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_non_result_identifier.fn" -ExpectedMessagePart "try(...) expects Result<u8,u8> in stage0 bootstrap, found u8"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_move_non_result_identifier.fn" -ExpectedMessagePart "try(...) expects Result<u8,u8> in stage0 bootstrap, found u8"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_ok_try_move_non_result_identifier.fn" -ExpectedMessagePart "try(...) expects Result<u8,u8> in stage0 bootstrap, found u8"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_err_try_move_non_result_identifier.fn" -ExpectedMessagePart "try(...) expects Result<u8,u8> in stage0 bootstrap, found u8"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_move_result_use_after_move.fn" -ExpectedMessagePart "use after move for identifier 'wrapped'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_move_result_assign_after_move_immutable.fn" -ExpectedMessagePart "cannot reinitialize moved immutable binding 'wrapped'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_move_result_drop_after_move.fn" -ExpectedMessagePart "drop after move for identifier 'wrapped'"
