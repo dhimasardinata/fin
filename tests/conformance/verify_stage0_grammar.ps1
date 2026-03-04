@@ -124,6 +124,8 @@ Assert-ParseFail -RelativePath "tests/conformance/fixtures/invalid_try_non_resul
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_err_result.fn" -ExpectedMessagePart "try(err(...)) is not supported in stage0 bootstrap (would require hidden control flow)"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_err_identifier.fn" -ExpectedMessagePart "try(err(...)) is not supported in stage0 bootstrap (would require hidden control flow)"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_try_move_err_identifier.fn" -ExpectedMessagePart "try(err(...)) is not supported in stage0 bootstrap (would require hidden control flow)"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_ok_try_err_identifier.fn" -ExpectedMessagePart "try(err(...)) is not supported in stage0 bootstrap (would require hidden control flow)"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_err_try_err_identifier.fn" -ExpectedMessagePart "try(err(...)) is not supported in stage0 bootstrap (would require hidden control flow)"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_ok_try_move_err_identifier.fn" -ExpectedMessagePart "try(err(...)) is not supported in stage0 bootstrap (would require hidden control flow)"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_err_try_move_err_identifier.fn" -ExpectedMessagePart "try(err(...)) is not supported in stage0 bootstrap (would require hidden control flow)"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_err_try_move_use_after_move_source.fn" -ExpectedMessagePart "use after move for identifier 'source'"
