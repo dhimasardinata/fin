@@ -1,0 +1,6 @@
+fn main() {
+    var value = 100
+    var sink = 0
+    sink = 0 && move(value)
+    exit(value)
+}

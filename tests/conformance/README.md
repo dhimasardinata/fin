@@ -26,6 +26,11 @@ Stage0 conformance checks:
 - `fixtures/main_exit_if_move_then_selected.fn`: valid source confirming selected `if` branch can perform `move(...)` semantics.
 - `fixtures/main_exit_if_move_else_selected.fn`: valid source confirming selected false branch can perform `move(...)` semantics.
 - `fixtures/main_exit_if_result_branches_try.fn`: valid source with `if` branches producing `Result<u8,u8>` and later `try` unwrap.
+- `fixtures/main_exit_logic_and_true.fn`: valid source with stage0 logical-and `&&` returning normalized `u8` predicate (`0`/`1`).
+- `fixtures/main_exit_logic_or_true.fn`: valid source with stage0 logical-or `||` returning normalized `u8` predicate (`0`/`1`).
+- `fixtures/main_exit_logic_precedence.fn`: valid source proving stage0 precedence order across logical-or, logical-and, and comparison forms (`||` lower than `&&`, both below comparison/arithmetic tiers).
+- `fixtures/main_exit_logic_and_short_circuit_move_rhs.fn`: valid source proving `&&` short-circuit skips RHS move side effects when left operand is `0`.
+- `fixtures/main_exit_logic_or_short_circuit_move_rhs.fn`: valid source proving `||` short-circuit skips RHS move side effects when left operand is non-zero.
 - `fixtures/main_exit_result_typed_binding.fn`: valid source with explicit `Result<u8,u8>` binding annotation and `try` unwrap.
 - `fixtures/main_exit_try_literal.fn`: valid source with stage0 bootstrap `try(ok(<expr>))` on literal expression.
 - `fixtures/main_exit_try_identifier.fn`: valid source with stage0 bootstrap `try(<expr>)` on identifier `Result<u8,u8>` binding.
@@ -73,6 +78,11 @@ Stage0 conformance checks:
 - `fixtures/invalid_if_empty_argument.fn`: invalid source, parser must reject `if(...)` calls with empty arguments.
 - `fixtures/invalid_if_non_u8_condition.fn`: invalid source, parser must reject non-`u8` `if(...)` condition expressions.
 - `fixtures/invalid_if_branch_type_mismatch.fn`: invalid source, parser must reject `if(...)` branches with mismatched result types.
+- `fixtures/invalid_logic_non_u8_operand_and.fn`: invalid source, parser must reject logical-and operands that are not `u8`.
+- `fixtures/invalid_logic_non_u8_operand_or_short_circuit.fn`: invalid source, parser must still reject logical-or RHS type mismatch even when left operand short-circuits.
+- `fixtures/invalid_logic_missing_rhs.fn`: invalid source, parser must reject logical operators missing right-hand operands.
+- `fixtures/invalid_logic_and_use_after_move_rhs_selected.fn`: invalid source, parser must reject use-after-move when `&&` evaluates selected RHS `move(...)`.
+- `fixtures/invalid_logic_or_use_after_move_rhs_selected.fn`: invalid source, parser must reject use-after-move when `||` evaluates selected RHS `move(...)`.
 - Core grammar invalid fixtures above are also assertion-checked for deterministic diagnostic message text in `verify_stage0_grammar.ps1`.
 - `fixtures/invalid_unsupported_type_annotation.fn`: invalid source, parser must reject unsupported type annotations.
 - `fixtures/invalid_unsupported_return_annotation.fn`: invalid source, parser must reject unsupported entrypoint return annotations.
