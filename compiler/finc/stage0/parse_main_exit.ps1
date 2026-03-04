@@ -23,6 +23,26 @@ function Parse-U8Literal {
     param([string]$Text)
 
     $trimmed = $Text.Trim()
+    if ($trimmed -match '^0[bB][01]+$') {
+        $binDigits = $trimmed.Substring(2)
+        $value = 0
+        try {
+            $value = [Convert]::ToInt32($binDigits, 2)
+        }
+        catch {
+            Fail-Parse ("invalid binary literal '{0}'" -f $trimmed)
+        }
+
+        if ($value -lt 0 -or $value -gt 255) {
+            Fail-Parse "exit/value literal must be in range 0..255"
+        }
+        return $value
+    }
+
+    if ($trimmed -match '^0[bB]') {
+        Fail-Parse ("invalid binary literal '{0}'" -f $trimmed)
+    }
+
     if ($trimmed -match '^0[xX][0-9A-Fa-f]+$') {
         $hexDigits = $trimmed.Substring(2)
         $value = 0

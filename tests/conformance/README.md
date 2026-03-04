@@ -32,6 +32,9 @@ Stage0 conformance checks:
 - `fixtures/main_exit_hex_literal.fn`: valid source with stage0 hexadecimal `u8` literal parsing (`0x..`).
 - `fixtures/main_exit_hex_arithmetic.fn`: valid source proving hexadecimal literals compose with arithmetic expressions.
 - `fixtures/main_exit_hex_bitwise_mix.fn`: valid source proving hexadecimal literals compose with bitwise expressions.
+- `fixtures/main_exit_binary_literal.fn`: valid source with stage0 binary `u8` literal parsing (`0b..`).
+- `fixtures/main_exit_binary_arithmetic.fn`: valid source proving binary literals compose with arithmetic expressions.
+- `fixtures/main_exit_binary_bitwise_mix.fn`: valid source proving binary literals compose with bitwise expressions.
 - `fixtures/main_exit_mul_precedence.fn`: valid source proving stage0 arithmetic precedence (`*` before `+`).
 - `fixtures/main_exit_mul_grouped.fn`: valid source proving stage0 parenthesized grouping overrides arithmetic precedence.
 - `fixtures/main_exit_cmp_eq_true.fn`: valid source with stage0 equality operator `==` yielding `u8` predicate values.
@@ -113,6 +116,9 @@ Stage0 conformance checks:
 - `fixtures/invalid_hex_literal_non_hex_digit.fn`: invalid source, parser must reject hexadecimal literals containing non-hex digits.
 - `fixtures/invalid_hex_literal_prefix_only.fn`: invalid source, parser must reject hexadecimal prefix-only literals (`0x`/`0X`).
 - `fixtures/invalid_hex_literal_out_of_range.fn`: invalid source, parser must reject hexadecimal literals outside `u8` range (`0..255`).
+- `fixtures/invalid_binary_literal_non_binary_digit.fn`: invalid source, parser must reject binary literals containing non-binary digits.
+- `fixtures/invalid_binary_literal_prefix_only.fn`: invalid source, parser must reject binary prefix-only literals (`0b`/`0B`).
+- `fixtures/invalid_binary_literal_out_of_range.fn`: invalid source, parser must reject binary literals outside `u8` range (`0..255`).
 - `fixtures/invalid_empty_parenthesized_expr.fn`: invalid source, parser must reject empty parenthesized expressions.
 - `fixtures/invalid_cmp_non_u8_operand.fn`: invalid source, parser must reject comparison operands that are not `u8`.
 - `fixtures/invalid_cmp_missing_rhs.fn`: invalid source, parser must reject comparison operators missing right-hand operands.
