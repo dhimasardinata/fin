@@ -76,6 +76,10 @@ if (-not $SkipDoctor) {
 & $fin build --src tests/conformance/fixtures/main_exit_div_literals.fn --out artifacts/test-exit66
 & $fin build --src tests/conformance/fixtures/main_exit_mul_precedence.fn --out artifacts/test-exit65
 & $fin build --src tests/conformance/fixtures/main_exit_mul_grouped.fn --out artifacts/test-exit80
+& $fin build --src tests/conformance/fixtures/main_exit_cmp_eq_true.fn --out artifacts/test-exit82
+& $fin build --src tests/conformance/fixtures/main_exit_cmp_lt_true.fn --out artifacts/test-exit83
+& $fin build --src tests/conformance/fixtures/main_exit_cmp_precedence.fn --out artifacts/test-exit86
+& $fin build --src tests/conformance/fixtures/main_exit_cmp_ge_false_bias.fn --out artifacts/test-exit90
 & $fin build --src tests/conformance/fixtures/main_exit_try_literal.fn --out artifacts/test-exit11
 & $fin build --src tests/conformance/fixtures/main_exit_try_identifier.fn --out artifacts/test-exit12
 & $fin build --src tests/conformance/fixtures/main_exit_try_ok_result.fn --out artifacts/test-exit13
@@ -122,6 +126,10 @@ if (-not $SkipRun) {
         & $fin run --no-build --out artifacts/test-exit66 --expect-exit 66
         & $fin run --no-build --out artifacts/test-exit65 --expect-exit 65
         & $fin run --no-build --out artifacts/test-exit80 --expect-exit 80
+        & $fin run --no-build --out artifacts/test-exit82 --expect-exit 82
+        & $fin run --no-build --out artifacts/test-exit83 --expect-exit 83
+        & $fin run --no-build --out artifacts/test-exit86 --expect-exit 86
+        & $fin run --no-build --out artifacts/test-exit90 --expect-exit 90
         & $fin run --no-build --out artifacts/test-exit11 --expect-exit 11
         & $fin run --no-build --out artifacts/test-exit12 --expect-exit 12
         & $fin run --no-build --out artifacts/test-exit13 --expect-exit 13
