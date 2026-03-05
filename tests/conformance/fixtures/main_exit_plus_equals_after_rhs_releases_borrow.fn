@@ -1,0 +1,6 @@
+fn main() {
+  var value = 53
+  var ref_value = &value
+  value += *(move(ref_value)) + 53
+  exit(value)
+}

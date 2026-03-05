@@ -168,6 +168,8 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_borrow_drop
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_borrow_drop_ref_then_assign.fn" -ExpectedExit 155
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_assign_after_rhs_releases_borrow.fn" -ExpectedExit 156
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_unwrap_assignment_after_rhs_releases_borrow.fn" -ExpectedExit 157
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_plus_equals_literal.fn" -ExpectedExit 158
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_plus_equals_after_rhs_releases_borrow.fn" -ExpectedExit 159
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_drop_unused.fn" -ExpectedExit 15
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_move_binding.fn" -ExpectedExit 16
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_move_reinit_var.fn" -ExpectedExit 17
@@ -285,6 +287,11 @@ Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_unwra
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_unwrap_assignment_err_identifier.fn" -ExpectedMessagePart "try keyword on err(...) is not supported in stage0 bootstrap (would require hidden control flow)"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_unwrap_assignment_immutable_target.fn" -ExpectedMessagePart "cannot assign to immutable binding 'code'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_unwrap_assignment_move_use_after_move_source.fn" -ExpectedMessagePart "use after move for identifier 'source'"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_plus_equals_missing_expression.fn" -ExpectedMessagePart "compound assignment '+=' requires expression"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_plus_equals_immutable_target.fn" -ExpectedMessagePart "cannot assign to immutable binding 'value'"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_plus_equals_non_u8_target.fn" -ExpectedMessagePart "compound assignment '+=' expects u8 target in stage0, found Result<u8,u8>"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_plus_equals_non_u8_expression.fn" -ExpectedMessagePart "compound assignment '+=' expects u8 expression in stage0, found Result<u8,u8>"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_plus_equals_overflow.fn" -ExpectedMessagePart "u8 overflow in '+=' expression"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_var_unwrap_binding_missing_expression.fn" -ExpectedMessagePart "unwrap var binding requires expression"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_var_unwrap_binding_non_result_identifier.fn" -ExpectedMessagePart "try keyword expects Result<u8,u8> in stage0 bootstrap, found u8"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_var_unwrap_binding_err_identifier.fn" -ExpectedMessagePart "try keyword on err(...) is not supported in stage0 bootstrap (would require hidden control flow)"
@@ -300,6 +307,7 @@ Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_move_
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_assign_while_borrowed.fn" -ExpectedMessagePart "cannot assign identifier 'value' while borrowed by 'ref_value'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_assign_after_rhs_still_borrowed.fn" -ExpectedMessagePart "cannot assign identifier 'value' while borrowed by 'ref_b'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_unwrap_assignment_after_rhs_still_borrowed.fn" -ExpectedMessagePart "cannot assign identifier 'value' while borrowed by 'ref_b'"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_plus_equals_after_rhs_still_borrowed.fn" -ExpectedMessagePart "cannot assign identifier 'value' while borrowed by 'ref_b'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_dereference_missing_operand.fn" -ExpectedMessagePart "dereference '*' requires an operand"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_dereference_non_reference.fn" -ExpectedMessagePart "dereference expects reference operand in stage0, found u8"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_use_after_drop.fn" -ExpectedMessagePart "use after drop for identifier 'value'"
