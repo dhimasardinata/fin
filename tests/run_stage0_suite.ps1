@@ -166,6 +166,9 @@ if (-not $SkipDoctor) {
 & $fin build --src tests/conformance/fixtures/main_exit_unwrap_assignment_after_rhs_releases_borrow.fn --out artifacts/test-exit157
 & $fin build --src tests/conformance/fixtures/main_exit_plus_equals_literal.fn --out artifacts/test-exit158
 & $fin build --src tests/conformance/fixtures/main_exit_plus_equals_after_rhs_releases_borrow.fn --out artifacts/test-exit159
+& $fin build --src tests/conformance/fixtures/main_exit_helper_default_u8.fn --out artifacts/test-exit160
+& $fin build --src tests/conformance/fixtures/main_exit_helper_chain.fn --out artifacts/test-exit161
+& $fin build --src tests/conformance/fixtures/main_exit_helper_result_try.fn --out artifacts/test-exit162
 & $fin build --src tests/conformance/fixtures/main_drop_unused.fn --out artifacts/test-exit15
 & $fin build --src tests/conformance/fixtures/main_move_binding.fn --out artifacts/test-exit16
 & $fin build --src tests/conformance/fixtures/main_move_reinit_var.fn --out artifacts/test-exit17
@@ -285,6 +288,9 @@ if (-not $SkipRun) {
         & $fin run --no-build --out artifacts/test-exit157 --expect-exit 157
         & $fin run --no-build --out artifacts/test-exit158 --expect-exit 158
         & $fin run --no-build --out artifacts/test-exit159 --expect-exit 159
+        & $fin run --no-build --out artifacts/test-exit160 --expect-exit 160
+        & $fin run --no-build --out artifacts/test-exit161 --expect-exit 161
+        & $fin run --no-build --out artifacts/test-exit162 --expect-exit 162
         & $fin run --no-build --out artifacts/test-exit15 --expect-exit 15
         & $fin run --no-build --out artifacts/test-exit16 --expect-exit 16
         & $fin run --no-build --out artifacts/test-exit17 --expect-exit 17

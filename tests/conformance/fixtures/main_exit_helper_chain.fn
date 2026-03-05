@@ -1,0 +1,11 @@
+fn base() {
+  return 160;
+}
+
+fn bump() {
+  return base() + 1;
+}
+
+fn main() {
+  exit(bump());
+}
