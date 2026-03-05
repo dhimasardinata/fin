@@ -1,0 +1,11 @@
+fn left() {
+  return right();
+}
+
+fn right() {
+  return left();
+}
+
+fn main() {
+  exit(left());
+}

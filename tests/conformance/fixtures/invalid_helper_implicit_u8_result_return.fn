@@ -1,0 +1,7 @@
+fn helper() {
+  return ok(1);
+}
+
+fn main() {
+  exit(helper());
+}

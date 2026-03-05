@@ -1,0 +1,7 @@
+fn ready() -> Result<u8,u8> {
+  return ok(162);
+}
+
+fn main() {
+  exit(ready()?);
+}

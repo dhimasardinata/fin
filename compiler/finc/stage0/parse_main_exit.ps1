@@ -145,6 +145,115 @@ function Copy-Hashtable {
     return $copy
 }
 
+$script:FunctionDefinitions = @{}
+$script:FunctionCallStack = [System.Collections.Generic.List[string]]::new()
+
+function Strip-Stage0LineComments {
+    param([string]$Text)
+
+    $withoutSlashComments = [regex]::Replace($Text, '(?m)//.*$', '')
+    return [regex]::Replace($withoutSlashComments, '(?m)#.*$', '')
+}
+
+function Get-Stage0Statements {
+    param(
+        [string]$FunctionName,
+        [string]$BodyText
+    )
+
+    $normalized = $BodyText -replace ';', "`n"
+    $statements = [System.Collections.Generic.List[string]]::new()
+    foreach ($line in ([regex]::Split($normalized, "`r?`n"))) {
+        $stmt = $line.Trim()
+        if ([string]::IsNullOrWhiteSpace($stmt)) {
+            continue
+        }
+        $statements.Add($stmt)
+    }
+
+    if ($statements.Count -eq 0) {
+        Fail-Parse ("function '{0}' body is empty" -f $FunctionName)
+    }
+
+    return $statements
+}
+
+function Get-ExpectedFunctionReturnType {
+    param(
+        [string]$FunctionName,
+        [string]$DeclaredReturnType
+    )
+
+    if ($FunctionName -eq "main") {
+        if (-not [string]::IsNullOrWhiteSpace($DeclaredReturnType) -and ([string]$DeclaredReturnType -ne "u8")) {
+            Fail-Parse ("entrypoint return type must be u8 in stage0 bootstrap, found {0}" -f $DeclaredReturnType)
+        }
+        return "u8"
+    }
+
+    if ([string]::IsNullOrWhiteSpace($DeclaredReturnType)) {
+        return "u8"
+    }
+
+    if (($DeclaredReturnType -ne "u8") -and ($DeclaredReturnType -ne "Result<u8,u8>")) {
+        Fail-Parse ("function '{0}' return type must be u8 or Result<u8,u8> in stage0 bootstrap, found {1}" -f $FunctionName, $DeclaredReturnType)
+    }
+
+    return [string]$DeclaredReturnType
+}
+
+function Get-Stage0FunctionDefinitions {
+    param([string]$ProgramText)
+
+    $definitions = @{}
+    $sanitizedProgram = Strip-Stage0LineComments -Text $ProgramText
+    $pattern = [regex]::new('(?s)\G\s*fn\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(\s*\)\s*(?:->\s*([^\{]+?))?\s*\{\s*(.*?)\s*\}\s*')
+    $position = 0
+
+    while ($position -lt $sanitizedProgram.Length) {
+        if ([string]::IsNullOrWhiteSpace($sanitizedProgram.Substring($position))) {
+            break
+        }
+
+        $match = $pattern.Match($sanitizedProgram, $position)
+        if (-not $match.Success) {
+            Fail-Parse "expected top-level function declaration in stage0 source"
+        }
+
+        $functionName = $match.Groups[1].Value
+        Assert-NonKeywordIdentifier -Name $functionName
+        if ($definitions.ContainsKey($functionName)) {
+            Fail-Parse ("duplicate function '{0}'" -f $functionName)
+        }
+
+        $declaredReturnTypeRaw = $match.Groups[2].Value
+        $declaredReturnType = if ([string]::IsNullOrWhiteSpace($declaredReturnTypeRaw)) {
+            ""
+        }
+        else {
+            Parse-TypeAnnotation -TypeText $declaredReturnTypeRaw
+        }
+
+        $expectedReturnType = Get-ExpectedFunctionReturnType -FunctionName $functionName -DeclaredReturnType $declaredReturnType
+        [string[]]$statements = @(Get-Stage0Statements -FunctionName $functionName -BodyText $match.Groups[3].Value)
+
+        $definitions[$functionName] = [pscustomobject]@{
+            Name = $functionName
+            DeclaredReturnType = [string]$declaredReturnType
+            ExpectedReturnType = [string]$expectedReturnType
+            Statements = $statements
+        }
+
+        $position = $match.Index + $match.Length
+    }
+
+    if (($definitions.Count -eq 0) -or (-not $definitions.ContainsKey("main"))) {
+        Fail-Parse "expected entrypoint pattern fn main() [-> <type>] { ... }"
+    }
+
+    return $definitions
+}
+
 function Set-ReferenceMetadata {
     param(
         [string]$Name,
@@ -884,6 +993,28 @@ function Parse-Expr {
         Fail-Parse ("postfix '?' expects Result<u8,u8> in stage0 bootstrap, found {0}" -f $innerValue.Type)
     }
 
+    if ($trimmedExpr -match '^([A-Za-z_][A-Za-z0-9_]*)\s*\((.*)\)$') {
+        $functionName = $Matches[1]
+        $argText = $Matches[2].Trim()
+        if (-not [string]::IsNullOrWhiteSpace($argText)) {
+            Fail-Parse ("stage0 function call '{0}' does not support arguments" -f $functionName)
+        }
+        if ($functionName -eq "main") {
+            Fail-Parse "entrypoint function 'main' cannot be called as expression in stage0"
+        }
+        if (-not $script:FunctionDefinitions.ContainsKey($functionName)) {
+            Fail-Parse ("undefined function '{0}'" -f $functionName)
+        }
+
+        $callValue = Invoke-Stage0Function -FunctionName $functionName
+        return [pscustomobject]@{
+            Type = [string]$callValue.Type
+            Value = [int]$callValue.Value
+            ResultState = [string]$callValue.ResultState
+            ReferenceTarget = ""
+        }
+    }
+
     $literal = Parse-U8Literal -Text $Expr
     if ($null -ne $literal) {
         return [pscustomobject]@{
@@ -955,8 +1086,425 @@ function Parse-Expr {
     }
 }
 
+function Invoke-Stage0Function {
+    param([string]$FunctionName)
+
+    if (-not $script:FunctionDefinitions.ContainsKey($FunctionName)) {
+        Fail-Parse ("undefined function '{0}'" -f $FunctionName)
+    }
+
+    if ($script:FunctionCallStack.Contains($FunctionName)) {
+        $callChain = @($script:FunctionCallStack.ToArray()) + $FunctionName
+        Fail-Parse ("recursive function call is not supported in stage0: {0}" -f ([string]::Join(' -> ', $callChain)))
+    }
+
+    $definition = $script:FunctionDefinitions[$FunctionName]
+    $script:FunctionCallStack.Add($FunctionName) | Out-Null
+
+    try {
+        $values = @{}
+        $mutable = @{}
+        $types = @{}
+        $resultStates = @{}
+        $lifecycleStates = @{}
+        $referenceTargets = @{}
+        $haveTerminal = $false
+        $functionResult = $null
+
+        foreach ($stmt in $definition.Statements) {
+            if ($haveTerminal) {
+                Fail-Parse 'statements after terminal exit/return are not allowed in stage0'
+            }
+
+            if ($stmt -match '^let\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([^?=]+?))?\s*\?=\s*$') {
+                Fail-Parse 'unwrap binding requires expression'
+            }
+
+            if ($stmt -match '^let\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([^?=]+?))?\s*\?=\s*(.+)$') {
+                $name = $Matches[1]
+                Assert-NonKeywordIdentifier -Name $name
+                $declaredTypeRaw = $Matches[2]
+                $expr = $Matches[3]
+                if ($values.ContainsKey($name)) {
+                    Fail-Parse "duplicate binding '$name'"
+                }
+
+                $exprValue = Parse-Expr -Expr ('try ' + $expr) -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets
+                $declaredType = if ([string]::IsNullOrWhiteSpace($declaredTypeRaw)) {
+                    [string]$exprValue.Type
+                }
+                else {
+                    Parse-TypeAnnotation -TypeText $declaredTypeRaw
+                }
+                if ([string]$exprValue.Type -ne $declaredType) {
+                    Fail-Parse ("type mismatch for binding '{0}': expected {1}, found {2}" -f $name, $declaredType, $exprValue.Type)
+                }
+
+                $values[$name] = [int]$exprValue.Value
+                $mutable[$name] = $false
+                $types[$name] = $declaredType
+                $resultStates[$name] = [string]$exprValue.ResultState
+                $lifecycleStates[$name] = 'alive'
+                Set-ReferenceMetadata -Name $name -ExprValue $exprValue -ReferenceTargets $referenceTargets
+                continue
+            }
+
+            if ($stmt -match '^let\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([^=]+?))?\s*=\s*(.+)$') {
+                $name = $Matches[1]
+                Assert-NonKeywordIdentifier -Name $name
+                $declaredTypeRaw = $Matches[2]
+                $expr = $Matches[3]
+                if ($values.ContainsKey($name)) {
+                    Fail-Parse "duplicate binding '$name'"
+                }
+
+                $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets
+                $declaredType = if ([string]::IsNullOrWhiteSpace($declaredTypeRaw)) {
+                    [string]$exprValue.Type
+                }
+                else {
+                    Parse-TypeAnnotation -TypeText $declaredTypeRaw
+                }
+                if ([string]$exprValue.Type -ne $declaredType) {
+                    Fail-Parse ("type mismatch for binding '{0}': expected {1}, found {2}" -f $name, $declaredType, $exprValue.Type)
+                }
+
+                $values[$name] = [int]$exprValue.Value
+                $mutable[$name] = $false
+                $types[$name] = $declaredType
+                $resultStates[$name] = [string]$exprValue.ResultState
+                $lifecycleStates[$name] = 'alive'
+                Set-ReferenceMetadata -Name $name -ExprValue $exprValue -ReferenceTargets $referenceTargets
+                continue
+            }
+
+            if ($stmt -match '^var\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([^=]+?))?\s*=\s*(.+)$') {
+                $name = $Matches[1]
+                Assert-NonKeywordIdentifier -Name $name
+                $declaredTypeRaw = $Matches[2]
+                $expr = $Matches[3]
+                if ($values.ContainsKey($name)) {
+                    Fail-Parse "duplicate binding '$name'"
+                }
+
+                $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets
+                $declaredType = if ([string]::IsNullOrWhiteSpace($declaredTypeRaw)) {
+                    [string]$exprValue.Type
+                }
+                else {
+                    Parse-TypeAnnotation -TypeText $declaredTypeRaw
+                }
+                if ([string]$exprValue.Type -ne $declaredType) {
+                    Fail-Parse ("type mismatch for binding '{0}': expected {1}, found {2}" -f $name, $declaredType, $exprValue.Type)
+                }
+
+                $values[$name] = [int]$exprValue.Value
+                $mutable[$name] = $true
+                $types[$name] = $declaredType
+                $resultStates[$name] = [string]$exprValue.ResultState
+                $lifecycleStates[$name] = 'alive'
+                Set-ReferenceMetadata -Name $name -ExprValue $exprValue -ReferenceTargets $referenceTargets
+                continue
+            }
+
+            if ($stmt -match '^var\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([^?=]+?))?\s*\?=\s*$') {
+                Fail-Parse 'unwrap var binding requires expression'
+            }
+
+            if ($stmt -match '^var\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([^?=]+?))?\s*\?=\s*(.+)$') {
+                $name = $Matches[1]
+                Assert-NonKeywordIdentifier -Name $name
+                $declaredTypeRaw = $Matches[2]
+                $expr = $Matches[3]
+                if ($values.ContainsKey($name)) {
+                    Fail-Parse "duplicate binding '$name'"
+                }
+
+                $exprValue = Parse-Expr -Expr ('try ' + $expr) -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets
+                $declaredType = if ([string]::IsNullOrWhiteSpace($declaredTypeRaw)) {
+                    [string]$exprValue.Type
+                }
+                else {
+                    Parse-TypeAnnotation -TypeText $declaredTypeRaw
+                }
+                if ([string]$exprValue.Type -ne $declaredType) {
+                    Fail-Parse ("type mismatch for binding '{0}': expected {1}, found {2}" -f $name, $declaredType, $exprValue.Type)
+                }
+
+                $values[$name] = [int]$exprValue.Value
+                $mutable[$name] = $true
+                $types[$name] = $declaredType
+                $resultStates[$name] = [string]$exprValue.ResultState
+                $lifecycleStates[$name] = 'alive'
+                Set-ReferenceMetadata -Name $name -ExprValue $exprValue -ReferenceTargets $referenceTargets
+                continue
+            }
+
+            if ($stmt -match '^([A-Za-z_][A-Za-z0-9_]*)\s*\?=\s*$') {
+                Fail-Parse 'unwrap assignment requires expression'
+            }
+
+            if ($stmt -match '^([A-Za-z_][A-Za-z0-9_]*)\s*\+=\s*$') {
+                Fail-Parse "compound assignment '+=' requires expression"
+            }
+
+            if ($stmt -match '^([A-Za-z_][A-Za-z0-9_]*)\s*\+=\s*(.+)$') {
+                $name = $Matches[1]
+                Assert-NonKeywordIdentifier -Name $name
+                $expr = $Matches[2]
+                if (-not $values.ContainsKey($name)) {
+                    Fail-Parse "assignment to undefined identifier '$name'"
+                }
+
+                $targetState = [string]$lifecycleStates[$name]
+                if ($targetState -eq 'moved') {
+                    Fail-Parse ("compound assignment '+=' requires alive binding '{0}', found moved" -f $name)
+                }
+                if ($targetState -eq 'dropped') {
+                    Fail-Parse ("compound assignment '+=' requires alive binding '{0}', found dropped" -f $name)
+                }
+                if ($targetState -ne 'alive') {
+                    Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $targetState, $name)
+                }
+
+                if (-not [bool]$mutable[$name]) {
+                    Fail-Parse "cannot assign to immutable binding '$name'"
+                }
+
+                $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets
+                $postExprTargetState = [string]$lifecycleStates[$name]
+                if (($postExprTargetState -eq 'dropped') -or ($postExprTargetState -eq 'moved')) {
+                    Fail-Parse ("assignment target '{0}' moved or dropped during expression evaluation" -f $name)
+                }
+                if ($postExprTargetState -ne 'alive') {
+                    Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $postExprTargetState, $name)
+                }
+
+                $targetType = [string]$types[$name]
+                if ($targetType -ne 'u8') {
+                    Fail-Parse ("compound assignment '+=' expects u8 target in stage0, found {0}" -f $targetType)
+                }
+                if ([string]$exprValue.Type -ne 'u8') {
+                    Fail-Parse ("compound assignment '+=' expects u8 expression in stage0, found {0}" -f $exprValue.Type)
+                }
+
+                $activeBorrowers = @(Get-LiveReferenceAliasesForTarget -Target $name -Types $types -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets)
+                if ($activeBorrowers.Count -gt 0) {
+                    Fail-Parse ("cannot assign identifier '{0}' while borrowed by '{1}'" -f $name, [string]$activeBorrowers[0])
+                }
+
+                $result = [int]$values[$name] + [int]$exprValue.Value
+                if ($result -gt 255) {
+                    Fail-Parse "u8 overflow in '+=' expression"
+                }
+
+                $values[$name] = $result
+                $resultStates[$name] = 'none'
+                $lifecycleStates[$name] = 'alive'
+                continue
+            }
+
+            if ($stmt -match '^([A-Za-z_][A-Za-z0-9_]*)\s*\?=\s*(.+)$') {
+                $name = $Matches[1]
+                Assert-NonKeywordIdentifier -Name $name
+                $expr = $Matches[2]
+                if (-not $values.ContainsKey($name)) {
+                    Fail-Parse "assignment to undefined identifier '$name'"
+                }
+                $targetState = [string]$lifecycleStates[$name]
+                if (($targetState -ne 'alive') -and ($targetState -ne 'moved') -and ($targetState -ne 'dropped')) {
+                    Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $targetState, $name)
+                }
+                if (-not [bool]$mutable[$name]) {
+                    if ($targetState -eq 'moved') {
+                        Fail-Parse "cannot reinitialize moved immutable binding '$name'"
+                    }
+                    if ($targetState -eq 'dropped') {
+                        Fail-Parse "cannot reinitialize dropped immutable binding '$name'"
+                    }
+                    Fail-Parse "cannot assign to immutable binding '$name'"
+                }
+                $exprValue = Parse-Expr -Expr ('try ' + $expr) -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets
+                $postExprTargetState = [string]$lifecycleStates[$name]
+                if (($targetState -eq 'alive') -and (($postExprTargetState -eq 'dropped') -or ($postExprTargetState -eq 'moved'))) {
+                    Fail-Parse ("assignment target '{0}' moved or dropped during expression evaluation" -f $name)
+                }
+                if ($targetState -eq 'alive') {
+                    if ($postExprTargetState -ne 'alive') {
+                        Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $postExprTargetState, $name)
+                    }
+                }
+                elseif ($targetState -eq 'moved') {
+                    if (($postExprTargetState -ne 'moved') -and ($postExprTargetState -ne 'alive')) {
+                        Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $postExprTargetState, $name)
+                    }
+                }
+                else {
+                    if (($postExprTargetState -ne 'dropped') -and ($postExprTargetState -ne 'alive')) {
+                        Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $postExprTargetState, $name)
+                    }
+                }
+                $targetType = [string]$types[$name]
+                if (-not $targetType.StartsWith('&')) {
+                    $activeBorrowers = @(Get-LiveReferenceAliasesForTarget -Target $name -Types $types -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets)
+                    if ($activeBorrowers.Count -gt 0) {
+                        Fail-Parse ("cannot assign identifier '{0}' while borrowed by '{1}'" -f $name, [string]$activeBorrowers[0])
+                    }
+                }
+                if ([string]$exprValue.Type -ne $targetType) {
+                    Fail-Parse ("type mismatch for assignment '{0}': expected {1}, found {2}" -f $name, $targetType, $exprValue.Type)
+                }
+                $values[$name] = [int]$exprValue.Value
+                $resultStates[$name] = [string]$exprValue.ResultState
+                $lifecycleStates[$name] = 'alive'
+                Set-ReferenceMetadata -Name $name -ExprValue $exprValue -ReferenceTargets $referenceTargets
+                continue
+            }
+
+            if ($stmt -match '^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$') {
+                $name = $Matches[1]
+                Assert-NonKeywordIdentifier -Name $name
+                $expr = $Matches[2]
+                if (-not $values.ContainsKey($name)) {
+                    Fail-Parse "assignment to undefined identifier '$name'"
+                }
+                $targetState = [string]$lifecycleStates[$name]
+                if (($targetState -ne 'alive') -and ($targetState -ne 'moved') -and ($targetState -ne 'dropped')) {
+                    Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $targetState, $name)
+                }
+                if (-not [bool]$mutable[$name]) {
+                    if ($targetState -eq 'moved') {
+                        Fail-Parse "cannot reinitialize moved immutable binding '$name'"
+                    }
+                    if ($targetState -eq 'dropped') {
+                        Fail-Parse "cannot reinitialize dropped immutable binding '$name'"
+                    }
+                    Fail-Parse "cannot assign to immutable binding '$name'"
+                }
+                $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets
+                $postExprTargetState = [string]$lifecycleStates[$name]
+                if (($targetState -eq 'alive') -and (($postExprTargetState -eq 'dropped') -or ($postExprTargetState -eq 'moved'))) {
+                    Fail-Parse ("assignment target '{0}' moved or dropped during expression evaluation" -f $name)
+                }
+                if ($targetState -eq 'alive') {
+                    if ($postExprTargetState -ne 'alive') {
+                        Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $postExprTargetState, $name)
+                    }
+                }
+                elseif ($targetState -eq 'moved') {
+                    if (($postExprTargetState -ne 'moved') -and ($postExprTargetState -ne 'alive')) {
+                        Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $postExprTargetState, $name)
+                    }
+                }
+                else {
+                    if (($postExprTargetState -ne 'dropped') -and ($postExprTargetState -ne 'alive')) {
+                        Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $postExprTargetState, $name)
+                    }
+                }
+                $targetType = [string]$types[$name]
+                if (-not $targetType.StartsWith('&')) {
+                    $activeBorrowers = @(Get-LiveReferenceAliasesForTarget -Target $name -Types $types -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets)
+                    if ($activeBorrowers.Count -gt 0) {
+                        Fail-Parse ("cannot assign identifier '{0}' while borrowed by '{1}'" -f $name, [string]$activeBorrowers[0])
+                    }
+                }
+                if ([string]$exprValue.Type -ne $targetType) {
+                    Fail-Parse ("type mismatch for assignment '{0}': expected {1}, found {2}" -f $name, $targetType, $exprValue.Type)
+                }
+                $values[$name] = [int]$exprValue.Value
+                $resultStates[$name] = [string]$exprValue.ResultState
+                $lifecycleStates[$name] = 'alive'
+                Set-ReferenceMetadata -Name $name -ExprValue $exprValue -ReferenceTargets $referenceTargets
+                continue
+            }
+
+            if ($stmt -match '^drop\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)$') {
+                $name = $Matches[1]
+                if (-not $values.ContainsKey($name)) {
+                    Fail-Parse "drop for undefined identifier '$name'"
+                }
+                $state = [string]$lifecycleStates[$name]
+                if ($state -eq 'dropped') {
+                    Fail-Parse "double drop for identifier '$name'"
+                }
+                if ($state -eq 'moved') {
+                    Fail-Parse "drop after move for identifier '$name'"
+                }
+                if ($state -ne 'alive') {
+                    Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $state, $name)
+                }
+
+                $dropType = [string]$types[$name]
+                if (-not $dropType.StartsWith('&')) {
+                    $activeBorrowers = @(Get-LiveReferenceAliasesForTarget -Target $name -Types $types -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets)
+                    if ($activeBorrowers.Count -gt 0) {
+                        Fail-Parse ("cannot drop identifier '{0}' while borrowed by '{1}'" -f $name, [string]$activeBorrowers[0])
+                    }
+                }
+
+                $lifecycleStates[$name] = 'dropped'
+                continue
+            }
+
+            if ($stmt -match '^exit\s*\(\s*(.+)\s*\)$') {
+                if ($FunctionName -ne 'main') {
+                    Fail-Parse ("exit(...) is only allowed in entrypoint function 'main', found in function '{0}'" -f $FunctionName)
+                }
+
+                $exprValue = Parse-Expr -Expr $Matches[1] -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets
+                if ([string]$exprValue.Type -ne [string]$definition.ExpectedReturnType) {
+                    Fail-Parse ("exit expression type must be {0}, found {1}" -f $definition.ExpectedReturnType, $exprValue.Type)
+                }
+
+                $functionResult = [pscustomobject]@{
+                    Type = [string]$definition.ExpectedReturnType
+                    Value = [int]$exprValue.Value
+                    ResultState = [string]$exprValue.ResultState
+                }
+                $haveTerminal = $true
+                continue
+            }
+
+            if (($stmt -match '^return\s*$') -or ($stmt -match '^return\s*\(\s*\)\s*$')) {
+                Fail-Parse 'return statement requires expression'
+            }
+
+            if (($stmt -match '^return\s+(.+)$') -or ($stmt -match '^return\s*\(\s*(.+)\s*\)$')) {
+                $exprValue = Parse-Expr -Expr $Matches[1] -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets
+                if ([string]$exprValue.Type -ne [string]$definition.ExpectedReturnType) {
+                    Fail-Parse ("return expression type must be {0}, found {1}" -f $definition.ExpectedReturnType, $exprValue.Type)
+                }
+
+                $functionResult = [pscustomobject]@{
+                    Type = [string]$definition.ExpectedReturnType
+                    Value = [int]$exprValue.Value
+                    ResultState = [string]$exprValue.ResultState
+                }
+                $haveTerminal = $true
+                continue
+            }
+
+            Fail-Parse "unsupported statement '$stmt'"
+        }
+
+        if (-not $haveTerminal) {
+            if ($FunctionName -eq 'main') {
+                Fail-Parse 'missing terminal statement (exit(<expr>) or return <expr>)'
+            }
+            Fail-Parse ("function '{0}' is missing terminal return" -f $FunctionName)
+        }
+
+        return $functionResult
+    }
+    finally {
+        if ($script:FunctionCallStack.Count -gt 0) {
+            $script:FunctionCallStack.RemoveAt($script:FunctionCallStack.Count - 1)
+        }
+    }
+}
+
 # Stage0 grammar subset:
-#   fn main() [-> <type>] {
+#   fn <name>() [-> <type>] {
 #     (let|var) <ident> [: <type>] = <expr>;
 #     let <ident> [: <type>] ?= <expr>;
 #     var <ident> [: <type>] ?= <expr>;
@@ -967,430 +1515,9 @@ function Parse-Expr {
 #     exit(<expr>);
 #     return <expr>;
 #   }
-# <expr> := <u8-literal> | true | false | <ident> | &<ident> | *<expr> | move(<ident>) | ok(<expr>) | err(<expr>) | try(<expr>) | try <expr> | <expr>? | if(<expr>, <expr>, <expr>) | !<expr> | (<expr>) | <expr> + <expr> | <expr> - <expr> | <expr> * <expr> | <expr> / <expr> | <expr> % <expr> | <expr> == <expr> | <expr> != <expr> | <expr> < <expr> | <expr> <= <expr> | <expr> > <expr> | <expr> >= <expr> | <expr> && <expr> | <expr> || <expr>
+# <expr> := <u8-literal> | true | false | <ident> | <name>() | &<ident> | *<expr> | move(<ident>) | ok(<expr>) | err(<expr>) | try(<expr>) | try <expr> | <expr>? | if(<expr>, <expr>, <expr>) | !<expr> | (<expr>) | <expr> + <expr> | <expr> - <expr> | <expr> * <expr> | <expr> / <expr> | <expr> % <expr> | <expr> == <expr> | <expr> != <expr> | <expr> < <expr> | <expr> <= <expr> | <expr> > <expr> | <expr> >= <expr> | <expr> && <expr> | <expr> || <expr>
 # <type> := u8 | Result<u8,u8> | &u8 | &Result<u8,u8>
 # with optional semicolons and line comments (# or //).
-$programPattern = '(?s)^\s*fn\s+main\s*\(\s*\)\s*(?:->\s*([^\{]+?))?\s*\{\s*(.*?)\s*\}\s*$'
-$programMatch = [regex]::Match($raw, $programPattern)
-if (-not $programMatch.Success) {
-    Fail-Parse "expected entrypoint pattern fn main() [-> <type>] { ... }"
-}
-
-$declaredMainReturnTypeRaw = $programMatch.Groups[1].Value
-$declaredMainReturnType = if ([string]::IsNullOrWhiteSpace($declaredMainReturnTypeRaw)) {
-    ""
-}
-else {
-    Parse-TypeAnnotation -TypeText $declaredMainReturnTypeRaw
-}
-if (-not [string]::IsNullOrWhiteSpace($declaredMainReturnType) -and [string]$declaredMainReturnType -ne "u8") {
-    Fail-Parse ("entrypoint return type must be u8 in stage0 bootstrap, found {0}" -f $declaredMainReturnType)
-}
-
-$body = $programMatch.Groups[2].Value
-$withoutSlashComments = [regex]::Replace($body, '(?m)//.*$', '')
-$withoutComments = [regex]::Replace($withoutSlashComments, '(?m)#.*$', '')
-$normalized = $withoutComments -replace ';', "`n"
-
-$statements = [System.Collections.Generic.List[string]]::new()
-foreach ($line in ([regex]::Split($normalized, "`r?`n"))) {
-    $stmt = $line.Trim()
-    if ([string]::IsNullOrWhiteSpace($stmt)) { continue }
-    $statements.Add($stmt)
-}
-
-if ($statements.Count -eq 0) {
-    Fail-Parse "function body is empty"
-}
-
-$values = @{}
-$mutable = @{}
-$types = @{}
-$resultStates = @{}
-$lifecycleStates = @{}
-$referenceTargets = @{}
-$haveExit = $false
-[int]$exitCode = -1
-
-foreach ($stmt in $statements) {
-    if ($haveExit) {
-        Fail-Parse "statements after terminal exit/return are not allowed in stage0"
-    }
-
-    if ($stmt -match '^let\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([^?=]+?))?\s*\?=\s*$') {
-        Fail-Parse "unwrap binding requires expression"
-    }
-
-    if ($stmt -match '^let\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([^?=]+?))?\s*\?=\s*(.+)$') {
-        $name = $Matches[1]
-        Assert-NonKeywordIdentifier -Name $name
-        $declaredTypeRaw = $Matches[2]
-        $expr = $Matches[3]
-        if ($values.ContainsKey($name)) {
-            Fail-Parse "duplicate binding '$name'"
-        }
-
-        # Sugar: let x ?= rhs  => let x = try rhs
-        $exprValue = Parse-Expr -Expr ("try " + $expr) -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets
-        $declaredType = if ([string]::IsNullOrWhiteSpace($declaredTypeRaw)) {
-            [string]$exprValue.Type
-        }
-        else {
-            Parse-TypeAnnotation -TypeText $declaredTypeRaw
-        }
-        if ([string]$exprValue.Type -ne $declaredType) {
-            Fail-Parse ("type mismatch for binding '{0}': expected {1}, found {2}" -f $name, $declaredType, $exprValue.Type)
-        }
-
-        $values[$name] = [int]$exprValue.Value
-        $mutable[$name] = $false
-        $types[$name] = $declaredType
-        $resultStates[$name] = [string]$exprValue.ResultState
-        $lifecycleStates[$name] = "alive"
-        Set-ReferenceMetadata -Name $name -ExprValue $exprValue -ReferenceTargets $referenceTargets
-        continue
-    }
-
-    if ($stmt -match '^let\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([^=]+?))?\s*=\s*(.+)$') {
-        $name = $Matches[1]
-        Assert-NonKeywordIdentifier -Name $name
-        $declaredTypeRaw = $Matches[2]
-        $expr = $Matches[3]
-        if ($values.ContainsKey($name)) {
-            Fail-Parse "duplicate binding '$name'"
-        }
-
-        $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets
-        $declaredType = if ([string]::IsNullOrWhiteSpace($declaredTypeRaw)) {
-            [string]$exprValue.Type
-        }
-        else {
-            Parse-TypeAnnotation -TypeText $declaredTypeRaw
-        }
-        if ([string]$exprValue.Type -ne $declaredType) {
-            Fail-Parse ("type mismatch for binding '{0}': expected {1}, found {2}" -f $name, $declaredType, $exprValue.Type)
-        }
-
-        $values[$name] = [int]$exprValue.Value
-        $mutable[$name] = $false
-        $types[$name] = $declaredType
-        $resultStates[$name] = [string]$exprValue.ResultState
-        $lifecycleStates[$name] = "alive"
-        Set-ReferenceMetadata -Name $name -ExprValue $exprValue -ReferenceTargets $referenceTargets
-        continue
-    }
-
-    if ($stmt -match '^var\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([^=]+?))?\s*=\s*(.+)$') {
-        $name = $Matches[1]
-        Assert-NonKeywordIdentifier -Name $name
-        $declaredTypeRaw = $Matches[2]
-        $expr = $Matches[3]
-        if ($values.ContainsKey($name)) {
-            Fail-Parse "duplicate binding '$name'"
-        }
-
-        $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets
-        $declaredType = if ([string]::IsNullOrWhiteSpace($declaredTypeRaw)) {
-            [string]$exprValue.Type
-        }
-        else {
-            Parse-TypeAnnotation -TypeText $declaredTypeRaw
-        }
-        if ([string]$exprValue.Type -ne $declaredType) {
-            Fail-Parse ("type mismatch for binding '{0}': expected {1}, found {2}" -f $name, $declaredType, $exprValue.Type)
-        }
-
-        $values[$name] = [int]$exprValue.Value
-        $mutable[$name] = $true
-        $types[$name] = $declaredType
-        $resultStates[$name] = [string]$exprValue.ResultState
-        $lifecycleStates[$name] = "alive"
-        Set-ReferenceMetadata -Name $name -ExprValue $exprValue -ReferenceTargets $referenceTargets
-        continue
-    }
-
-    if ($stmt -match '^var\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([^?=]+?))?\s*\?=\s*$') {
-        Fail-Parse "unwrap var binding requires expression"
-    }
-
-    if ($stmt -match '^var\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([^?=]+?))?\s*\?=\s*(.+)$') {
-        $name = $Matches[1]
-        Assert-NonKeywordIdentifier -Name $name
-        $declaredTypeRaw = $Matches[2]
-        $expr = $Matches[3]
-        if ($values.ContainsKey($name)) {
-            Fail-Parse "duplicate binding '$name'"
-        }
-
-        # Sugar: var x ?= rhs  => var x = try rhs
-        $exprValue = Parse-Expr -Expr ("try " + $expr) -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets
-        $declaredType = if ([string]::IsNullOrWhiteSpace($declaredTypeRaw)) {
-            [string]$exprValue.Type
-        }
-        else {
-            Parse-TypeAnnotation -TypeText $declaredTypeRaw
-        }
-        if ([string]$exprValue.Type -ne $declaredType) {
-            Fail-Parse ("type mismatch for binding '{0}': expected {1}, found {2}" -f $name, $declaredType, $exprValue.Type)
-        }
-
-        $values[$name] = [int]$exprValue.Value
-        $mutable[$name] = $true
-        $types[$name] = $declaredType
-        $resultStates[$name] = [string]$exprValue.ResultState
-        $lifecycleStates[$name] = "alive"
-        Set-ReferenceMetadata -Name $name -ExprValue $exprValue -ReferenceTargets $referenceTargets
-        continue
-    }
-
-    if ($stmt -match '^([A-Za-z_][A-Za-z0-9_]*)\s*\?=\s*$') {
-        Fail-Parse "unwrap assignment requires expression"
-    }
-
-    if ($stmt -match '^([A-Za-z_][A-Za-z0-9_]*)\s*\+=\s*$') {
-        Fail-Parse "compound assignment '+=' requires expression"
-    }
-
-    if ($stmt -match '^([A-Za-z_][A-Za-z0-9_]*)\s*\+=\s*(.+)$') {
-        $name = $Matches[1]
-        Assert-NonKeywordIdentifier -Name $name
-        $expr = $Matches[2]
-        if (-not $values.ContainsKey($name)) {
-            Fail-Parse "assignment to undefined identifier '$name'"
-        }
-
-        $targetState = [string]$lifecycleStates[$name]
-        if ($targetState -eq "moved") {
-            Fail-Parse ("compound assignment '+=' requires alive binding '{0}', found moved" -f $name)
-        }
-        if ($targetState -eq "dropped") {
-            Fail-Parse ("compound assignment '+=' requires alive binding '{0}', found dropped" -f $name)
-        }
-        if ($targetState -ne "alive") {
-            Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $targetState, $name)
-        }
-
-        if (-not [bool]$mutable[$name]) {
-            Fail-Parse "cannot assign to immutable binding '$name'"
-        }
-
-        $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets
-        $postExprTargetState = [string]$lifecycleStates[$name]
-        if (($postExprTargetState -eq "dropped") -or ($postExprTargetState -eq "moved")) {
-            Fail-Parse ("assignment target '{0}' moved or dropped during expression evaluation" -f $name)
-        }
-        if ($postExprTargetState -ne "alive") {
-            Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $postExprTargetState, $name)
-        }
-
-        $targetType = [string]$types[$name]
-        if ($targetType -ne "u8") {
-            Fail-Parse ("compound assignment '+=' expects u8 target in stage0, found {0}" -f $targetType)
-        }
-        if ([string]$exprValue.Type -ne "u8") {
-            Fail-Parse ("compound assignment '+=' expects u8 expression in stage0, found {0}" -f $exprValue.Type)
-        }
-
-        $activeBorrowers = @(Get-LiveReferenceAliasesForTarget -Target $name -Types $types -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets)
-        if ($activeBorrowers.Count -gt 0) {
-            Fail-Parse ("cannot assign identifier '{0}' while borrowed by '{1}'" -f $name, [string]$activeBorrowers[0])
-        }
-
-        $result = [int]$values[$name] + [int]$exprValue.Value
-        if ($result -gt 255) {
-            Fail-Parse "u8 overflow in '+=' expression"
-        }
-
-        $values[$name] = $result
-        $resultStates[$name] = "none"
-        $lifecycleStates[$name] = "alive"
-        continue
-    }
-
-    if ($stmt -match '^([A-Za-z_][A-Za-z0-9_]*)\s*\?=\s*(.+)$') {
-        $name = $Matches[1]
-        Assert-NonKeywordIdentifier -Name $name
-        $expr = $Matches[2]
-        if (-not $values.ContainsKey($name)) {
-            Fail-Parse "assignment to undefined identifier '$name'"
-        }
-        $targetState = [string]$lifecycleStates[$name]
-        if (($targetState -ne "alive") -and ($targetState -ne "moved") -and ($targetState -ne "dropped")) {
-            Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $targetState, $name)
-        }
-        if (-not [bool]$mutable[$name]) {
-            if ($targetState -eq "moved") {
-                Fail-Parse "cannot reinitialize moved immutable binding '$name'"
-            }
-            if ($targetState -eq "dropped") {
-                Fail-Parse "cannot reinitialize dropped immutable binding '$name'"
-            }
-            Fail-Parse "cannot assign to immutable binding '$name'"
-        }
-        # Sugar: x ?= rhs  => x = try rhs
-        $exprValue = Parse-Expr -Expr ("try " + $expr) -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets
-        $postExprTargetState = [string]$lifecycleStates[$name]
-        if (($targetState -eq "alive") -and (($postExprTargetState -eq "dropped") -or ($postExprTargetState -eq "moved"))) {
-            Fail-Parse ("assignment target '{0}' moved or dropped during expression evaluation" -f $name)
-        }
-        if ($targetState -eq "alive") {
-            if ($postExprTargetState -ne "alive") {
-                Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $postExprTargetState, $name)
-            }
-        }
-        elseif ($targetState -eq "moved") {
-            if (($postExprTargetState -ne "moved") -and ($postExprTargetState -ne "alive")) {
-                Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $postExprTargetState, $name)
-            }
-        }
-        else {
-            if (($postExprTargetState -ne "dropped") -and ($postExprTargetState -ne "alive")) {
-                Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $postExprTargetState, $name)
-            }
-        }
-        $targetType = [string]$types[$name]
-        if (-not $targetType.StartsWith("&")) {
-            $activeBorrowers = @(Get-LiveReferenceAliasesForTarget -Target $name -Types $types -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets)
-            if ($activeBorrowers.Count -gt 0) {
-                Fail-Parse ("cannot assign identifier '{0}' while borrowed by '{1}'" -f $name, [string]$activeBorrowers[0])
-            }
-        }
-        if ([string]$exprValue.Type -ne $targetType) {
-            Fail-Parse ("type mismatch for assignment '{0}': expected {1}, found {2}" -f $name, $targetType, $exprValue.Type)
-        }
-        $values[$name] = [int]$exprValue.Value
-        $resultStates[$name] = [string]$exprValue.ResultState
-        $lifecycleStates[$name] = "alive"
-        Set-ReferenceMetadata -Name $name -ExprValue $exprValue -ReferenceTargets $referenceTargets
-        continue
-    }
-
-    if ($stmt -match '^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$') {
-        $name = $Matches[1]
-        Assert-NonKeywordIdentifier -Name $name
-        $expr = $Matches[2]
-        if (-not $values.ContainsKey($name)) {
-            Fail-Parse "assignment to undefined identifier '$name'"
-        }
-        $targetState = [string]$lifecycleStates[$name]
-        if (($targetState -ne "alive") -and ($targetState -ne "moved") -and ($targetState -ne "dropped")) {
-            Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $targetState, $name)
-        }
-        if (-not [bool]$mutable[$name]) {
-            if ($targetState -eq "moved") {
-                Fail-Parse "cannot reinitialize moved immutable binding '$name'"
-            }
-            if ($targetState -eq "dropped") {
-                Fail-Parse "cannot reinitialize dropped immutable binding '$name'"
-            }
-            Fail-Parse "cannot assign to immutable binding '$name'"
-        }
-        $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets
-        $postExprTargetState = [string]$lifecycleStates[$name]
-        if (($targetState -eq "alive") -and (($postExprTargetState -eq "dropped") -or ($postExprTargetState -eq "moved"))) {
-            Fail-Parse ("assignment target '{0}' moved or dropped during expression evaluation" -f $name)
-        }
-        if ($targetState -eq "alive") {
-            if ($postExprTargetState -ne "alive") {
-                Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $postExprTargetState, $name)
-            }
-        }
-        elseif ($targetState -eq "moved") {
-            if (($postExprTargetState -ne "moved") -and ($postExprTargetState -ne "alive")) {
-                Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $postExprTargetState, $name)
-            }
-        }
-        else {
-            if (($postExprTargetState -ne "dropped") -and ($postExprTargetState -ne "alive")) {
-                Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $postExprTargetState, $name)
-            }
-        }
-        $targetType = [string]$types[$name]
-        if (-not $targetType.StartsWith("&")) {
-            $activeBorrowers = @(Get-LiveReferenceAliasesForTarget -Target $name -Types $types -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets)
-            if ($activeBorrowers.Count -gt 0) {
-                Fail-Parse ("cannot assign identifier '{0}' while borrowed by '{1}'" -f $name, [string]$activeBorrowers[0])
-            }
-        }
-        if ([string]$exprValue.Type -ne $targetType) {
-            Fail-Parse ("type mismatch for assignment '{0}': expected {1}, found {2}" -f $name, $targetType, $exprValue.Type)
-        }
-        $values[$name] = [int]$exprValue.Value
-        $resultStates[$name] = [string]$exprValue.ResultState
-        $lifecycleStates[$name] = "alive"
-        Set-ReferenceMetadata -Name $name -ExprValue $exprValue -ReferenceTargets $referenceTargets
-        continue
-    }
-
-    if ($stmt -match '^drop\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)$') {
-        $name = $Matches[1]
-        if (-not $values.ContainsKey($name)) {
-            Fail-Parse "drop for undefined identifier '$name'"
-        }
-        $state = [string]$lifecycleStates[$name]
-        if ($state -eq "dropped") {
-            Fail-Parse "double drop for identifier '$name'"
-        }
-        if ($state -eq "moved") {
-            Fail-Parse "drop after move for identifier '$name'"
-        }
-        if ($state -ne "alive") {
-            Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $state, $name)
-        }
-
-        $dropType = [string]$types[$name]
-        if (-not $dropType.StartsWith("&")) {
-            $activeBorrowers = @(Get-LiveReferenceAliasesForTarget -Target $name -Types $types -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets)
-            if ($activeBorrowers.Count -gt 0) {
-                Fail-Parse ("cannot drop identifier '{0}' while borrowed by '{1}'" -f $name, [string]$activeBorrowers[0])
-            }
-        }
-
-        $lifecycleStates[$name] = "dropped"
-        continue
-    }
-
-    if ($stmt -match '^exit\s*\(\s*(.+)\s*\)$') {
-        $exprValue = Parse-Expr -Expr $Matches[1] -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets
-        $expectedExitType = if ([string]::IsNullOrWhiteSpace($declaredMainReturnType)) {
-            "u8"
-        }
-        else {
-            [string]$declaredMainReturnType
-        }
-        if ([string]$exprValue.Type -ne $expectedExitType) {
-            Fail-Parse ("exit expression type must be {0}, found {1}" -f $expectedExitType, $exprValue.Type)
-        }
-        $exitCode = [int]$exprValue.Value
-        $haveExit = $true
-        continue
-    }
-
-    if (($stmt -match '^return\s*$') -or ($stmt -match '^return\s*\(\s*\)\s*$')) {
-        Fail-Parse "return statement requires expression"
-    }
-
-    if (($stmt -match '^return\s+(.+)$') -or ($stmt -match '^return\s*\(\s*(.+)\s*\)$')) {
-        $exprValue = Parse-Expr -Expr $Matches[1] -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets
-        $expectedReturnType = if ([string]::IsNullOrWhiteSpace($declaredMainReturnType)) {
-            "u8"
-        }
-        else {
-            [string]$declaredMainReturnType
-        }
-        if ([string]$exprValue.Type -ne $expectedReturnType) {
-            Fail-Parse ("return expression type must be {0}, found {1}" -f $expectedReturnType, $exprValue.Type)
-        }
-        $exitCode = [int]$exprValue.Value
-        $haveExit = $true
-        continue
-    }
-
-    Fail-Parse "unsupported statement '$stmt'"
-}
-
-if (-not $haveExit) {
-    Fail-Parse "missing terminal statement (exit(<expr>) or return <expr>)"
-}
-
-Write-Output $exitCode
+$script:FunctionDefinitions = Get-Stage0FunctionDefinitions -ProgramText $raw
+$mainResult = Invoke-Stage0Function -FunctionName 'main'
+Write-Output ([int]$mainResult.Value)
