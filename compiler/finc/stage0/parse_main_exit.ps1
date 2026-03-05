@@ -202,12 +202,108 @@ function Get-ExpectedFunctionReturnType {
     return [string]$DeclaredReturnType
 }
 
+function Split-TopLevelTypeList {
+    param([string]$Text)
+
+    $parts = [System.Collections.Generic.List[string]]::new()
+    $parenDepth = 0
+    $angleDepth = 0
+    $start = 0
+    for ($i = 0; $i -lt $Text.Length; $i++) {
+        $ch = $Text[$i]
+        if ($ch -eq '(') {
+            $parenDepth += 1
+            continue
+        }
+        if ($ch -eq ')') {
+            $parenDepth -= 1
+            if ($parenDepth -lt 0) {
+                Fail-Parse ("unbalanced parameter list '{0}'" -f $Text)
+            }
+            continue
+        }
+        if ($ch -eq '<') {
+            $angleDepth += 1
+            continue
+        }
+        if ($ch -eq '>') {
+            $angleDepth -= 1
+            if ($angleDepth -lt 0) {
+                Fail-Parse ("unbalanced parameter list '{0}'" -f $Text)
+            }
+            continue
+        }
+        if (($ch -eq ',') -and ($parenDepth -eq 0) -and ($angleDepth -eq 0)) {
+            $parts.Add($Text.Substring($start, $i - $start).Trim())
+            $start = $i + 1
+        }
+    }
+
+    if (($parenDepth -ne 0) -or ($angleDepth -ne 0)) {
+        Fail-Parse ("unbalanced parameter list '{0}'" -f $Text)
+    }
+
+    $parts.Add($Text.Substring($start).Trim())
+    return [string[]]$parts.ToArray()
+}
+
+function Parse-Stage0FunctionParameters {
+    param(
+        [string]$FunctionName,
+        [string]$ParameterText
+    )
+
+    if ([string]::IsNullOrWhiteSpace($ParameterText)) {
+        return @()
+    }
+
+    if ($FunctionName -eq "main") {
+        Fail-Parse "entrypoint function 'main' does not support parameters in stage0"
+    }
+
+    $parameters = [System.Collections.Generic.List[object]]::new()
+    $seenNames = @{}
+    foreach ($part in @(Split-TopLevelTypeList -Text $ParameterText)) {
+        $parameterDecl = [string]$part
+        if ([string]::IsNullOrWhiteSpace($parameterDecl)) {
+            Fail-Parse ("function '{0}' parameters must not contain empty entries" -f $FunctionName)
+        }
+
+        if ($parameterDecl -notmatch '^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(.+)$') {
+            if ($parameterDecl -match '^[A-Za-z_][A-Za-z0-9_]*$') {
+                Fail-Parse ("function parameter '{0}' requires explicit type annotation in stage0" -f $parameterDecl)
+            }
+            Fail-Parse ("invalid parameter declaration '{0}' in function '{1}'" -f $parameterDecl, $FunctionName)
+        }
+
+        $parameterName = $Matches[1]
+        $parameterTypeText = $Matches[2]
+        Assert-NonKeywordIdentifier -Name $parameterName
+        if ($seenNames.ContainsKey($parameterName)) {
+            Fail-Parse ("duplicate parameter '{0}' in function '{1}'" -f $parameterName, $FunctionName)
+        }
+
+        $parameterType = Parse-TypeAnnotation -TypeText $parameterTypeText
+        if (($parameterType -ne "u8") -and ($parameterType -ne "Result<u8,u8>")) {
+            Fail-Parse ("function parameter '{0}' type must be u8 or Result<u8,u8> in stage0 bootstrap, found {1}" -f $parameterName, $parameterType)
+        }
+
+        $parameters.Add([pscustomobject]@{
+            Name = [string]$parameterName
+            Type = [string]$parameterType
+        })
+        $seenNames[$parameterName] = $true
+    }
+
+    return @($parameters.ToArray())
+}
+
 function Get-Stage0FunctionDefinitions {
     param([string]$ProgramText)
 
     $definitions = @{}
     $sanitizedProgram = Strip-Stage0LineComments -Text $ProgramText
-    $pattern = [regex]::new('(?s)\G\s*fn\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(\s*\)\s*(?:->\s*([^\{]+?))?\s*\{\s*(.*?)\s*\}\s*')
+    $pattern = [regex]::new('(?s)\G\s*fn\s+([A-Za-z_][A-Za-z0-9_]*)\s*\((.*?)\)\s*(?:->\s*([^\{]+?))?\s*\{\s*(.*?)\s*\}\s*')
     $position = 0
 
     while ($position -lt $sanitizedProgram.Length) {
@@ -226,7 +322,9 @@ function Get-Stage0FunctionDefinitions {
             Fail-Parse ("duplicate function '{0}'" -f $functionName)
         }
 
-        $declaredReturnTypeRaw = $match.Groups[2].Value
+        $parameters = @(Parse-Stage0FunctionParameters -FunctionName $functionName -ParameterText $match.Groups[2].Value)
+
+        $declaredReturnTypeRaw = $match.Groups[3].Value
         $declaredReturnType = if ([string]::IsNullOrWhiteSpace($declaredReturnTypeRaw)) {
             ""
         }
@@ -235,10 +333,11 @@ function Get-Stage0FunctionDefinitions {
         }
 
         $expectedReturnType = Get-ExpectedFunctionReturnType -FunctionName $functionName -DeclaredReturnType $declaredReturnType
-        [string[]]$statements = @(Get-Stage0Statements -FunctionName $functionName -BodyText $match.Groups[3].Value)
+        [string[]]$statements = @(Get-Stage0Statements -FunctionName $functionName -BodyText $match.Groups[4].Value)
 
         $definitions[$functionName] = [pscustomobject]@{
             Name = $functionName
+            Parameters = @($parameters)
             DeclaredReturnType = [string]$declaredReturnType
             ExpectedReturnType = [string]$expectedReturnType
             Statements = $statements
@@ -996,9 +1095,6 @@ function Parse-Expr {
     if ($trimmedExpr -match '^([A-Za-z_][A-Za-z0-9_]*)\s*\((.*)\)$') {
         $functionName = $Matches[1]
         $argText = $Matches[2].Trim()
-        if (-not [string]::IsNullOrWhiteSpace($argText)) {
-            Fail-Parse ("stage0 function call '{0}' does not support arguments" -f $functionName)
-        }
         if ($functionName -eq "main") {
             Fail-Parse "entrypoint function 'main' cannot be called as expression in stage0"
         }
@@ -1006,7 +1102,27 @@ function Parse-Expr {
             Fail-Parse ("undefined function '{0}'" -f $functionName)
         }
 
-        $callValue = Invoke-Stage0Function -FunctionName $functionName
+        $definition = $script:FunctionDefinitions[$functionName]
+        $argumentExprs = @()
+        if (-not [string]::IsNullOrWhiteSpace($argText)) {
+            $argumentExprs = @(Split-TopLevelArguments -Expr $argText)
+            foreach ($argumentExpr in $argumentExprs) {
+                if ([string]::IsNullOrWhiteSpace([string]$argumentExpr)) {
+                    Fail-Parse ("function call '{0}' arguments must not be empty" -f $functionName)
+                }
+            }
+        }
+
+        if ($argumentExprs.Count -ne $definition.Parameters.Count) {
+            Fail-Parse ("function call '{0}' expects {1} arguments, found {2}" -f $functionName, $definition.Parameters.Count, $argumentExprs.Count)
+        }
+
+        $argumentValues = [System.Collections.Generic.List[object]]::new()
+        foreach ($argumentExpr in $argumentExprs) {
+            $argumentValues.Add((Parse-Expr -Expr ([string]$argumentExpr) -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates -ReferenceTargets $ReferenceTargets))
+        }
+
+        $callValue = Invoke-Stage0Function -FunctionName $functionName -ArgumentValues @($argumentValues.ToArray())
         return [pscustomobject]@{
             Type = [string]$callValue.Type
             Value = [int]$callValue.Value
@@ -1087,7 +1203,10 @@ function Parse-Expr {
 }
 
 function Invoke-Stage0Function {
-    param([string]$FunctionName)
+    param(
+        [string]$FunctionName,
+        [object[]]$ArgumentValues = @()
+    )
 
     if (-not $script:FunctionDefinitions.ContainsKey($FunctionName)) {
         Fail-Parse ("undefined function '{0}'" -f $FunctionName)
@@ -1099,6 +1218,10 @@ function Invoke-Stage0Function {
     }
 
     $definition = $script:FunctionDefinitions[$FunctionName]
+    if ($ArgumentValues.Count -ne $definition.Parameters.Count) {
+        Fail-Parse ("function call '{0}' expects {1} arguments, found {2}" -f $FunctionName, $definition.Parameters.Count, $ArgumentValues.Count)
+    }
+
     $script:FunctionCallStack.Add($FunctionName) | Out-Null
 
     try {
@@ -1110,6 +1233,20 @@ function Invoke-Stage0Function {
         $referenceTargets = @{}
         $haveTerminal = $false
         $functionResult = $null
+
+        for ($i = 0; $i -lt $definition.Parameters.Count; $i++) {
+            $parameter = $definition.Parameters[$i]
+            $argumentValue = $ArgumentValues[$i]
+            if ([string]$argumentValue.Type -ne [string]$parameter.Type) {
+                Fail-Parse ("type mismatch for parameter '{0}' in function '{1}': expected {2}, found {3}" -f $parameter.Name, $FunctionName, $parameter.Type, $argumentValue.Type)
+            }
+
+            $values[$parameter.Name] = [int]$argumentValue.Value
+            $mutable[$parameter.Name] = $false
+            $types[$parameter.Name] = [string]$parameter.Type
+            $resultStates[$parameter.Name] = [string]$argumentValue.ResultState
+            $lifecycleStates[$parameter.Name] = 'alive'
+        }
 
         foreach ($stmt in $definition.Statements) {
             if ($haveTerminal) {
@@ -1504,7 +1641,7 @@ function Invoke-Stage0Function {
 }
 
 # Stage0 grammar subset:
-#   fn <name>() [-> <type>] {
+#   fn <name>([<param> [, <param>]*]) [-> <type>] {
 #     (let|var) <ident> [: <type>] = <expr>;
 #     let <ident> [: <type>] ?= <expr>;
 #     var <ident> [: <type>] ?= <expr>;
@@ -1515,7 +1652,8 @@ function Invoke-Stage0Function {
 #     exit(<expr>);
 #     return <expr>;
 #   }
-# <expr> := <u8-literal> | true | false | <ident> | <name>() | &<ident> | *<expr> | move(<ident>) | ok(<expr>) | err(<expr>) | try(<expr>) | try <expr> | <expr>? | if(<expr>, <expr>, <expr>) | !<expr> | (<expr>) | <expr> + <expr> | <expr> - <expr> | <expr> * <expr> | <expr> / <expr> | <expr> % <expr> | <expr> == <expr> | <expr> != <expr> | <expr> < <expr> | <expr> <= <expr> | <expr> > <expr> | <expr> >= <expr> | <expr> && <expr> | <expr> || <expr>
+# <param> := <ident> : (u8 | Result<u8,u8>)
+# <expr> := <u8-literal> | true | false | <ident> | <name>([<expr> [, <expr>]*]) | &<ident> | *<expr> | move(<ident>) | ok(<expr>) | err(<expr>) | try(<expr>) | try <expr> | <expr>? | if(<expr>, <expr>, <expr>) | !<expr> | (<expr>) | <expr> + <expr> | <expr> - <expr> | <expr> * <expr> | <expr> / <expr> | <expr> % <expr> | <expr> == <expr> | <expr> != <expr> | <expr> < <expr> | <expr> <= <expr> | <expr> > <expr> | <expr> >= <expr> | <expr> && <expr> | <expr> || <expr>
 # <type> := u8 | Result<u8,u8> | &u8 | &Result<u8,u8>
 # with optional semicolons and line comments (# or //).
 $script:FunctionDefinitions = Get-Stage0FunctionDefinitions -ProgramText $raw

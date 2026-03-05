@@ -241,20 +241,13 @@ function Get-ClosureWorkspaceOwnerMetadataStatus {
     $raw = Get-Content -Path $MetadataPath -Raw -ErrorAction Stop
     $pidRaw = ""
     $startRaw = ""
-    $doc = $null
     try {
-        $doc = [System.Text.Json.JsonDocument]::Parse($raw)
-        $root = $doc.RootElement
-        $pidRaw = $root.GetProperty("pid").ToString()
-        $startRaw = $root.GetProperty("start_utc").GetString()
+        $parsed = $raw | ConvertFrom-Json -ErrorAction Stop
+        $pidRaw = [string]$parsed.pid
+        $startRaw = [string]$parsed.start_utc
     }
     catch {
         return $status
-    }
-    finally {
-        if ($null -ne $doc) {
-            $doc.Dispose()
-        }
     }
 
     [int]$metadataPid = 0

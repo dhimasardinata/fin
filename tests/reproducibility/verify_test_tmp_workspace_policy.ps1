@@ -59,6 +59,45 @@ function Assert-Throws {
     }
 }
 
+function Set-StaleLastWriteTimeUtc {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path,
+        [int]$Hours = 3
+    )
+
+    (Get-Item $Path).LastWriteTimeUtc = (Get-Date).ToUniversalTime().AddHours(-1 * $Hours)
+}
+
+function Get-RelativePathCompat {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$BasePath,
+        [Parameter(Mandatory = $true)]
+        [string]$FullPath
+    )
+
+    $baseDir = [System.IO.Path]::GetFullPath($BasePath)
+    $full = [System.IO.Path]::GetFullPath($FullPath)
+
+    Push-Location -Path $baseDir
+    try {
+        $relative = Resolve-Path -LiteralPath $full -Relative
+    }
+    finally {
+        Pop-Location
+    }
+
+    if ($relative.StartsWith(".\")) {
+        $relative = $relative.Substring(2)
+    }
+    elseif ($relative.StartsWith("./")) {
+        $relative = $relative.Substring(2)
+    }
+
+    return $relative.Replace("\", "/")
+}
+
 try {
     if (-not (Test-Path $tmpRoot)) {
         New-Item -ItemType Directory -Path $tmpRoot -Force | Out-Null
@@ -98,9 +137,10 @@ try {
     }
     $activeStartUtc = Get-TestTmpWorkspaceProcessStartUtc -OwnerPid $activeProc.Id
     Set-TestTmpWorkspaceOwnerMetadata -TmpDir $activePidDir -OwnerPid $activeProc.Id -OwnerStartUtc $activeStartUtc
-    (Get-Item $staleDir).LastWriteTimeUtc = (Get-Date).ToUniversalTime().AddHours(-3)
+    Set-StaleLastWriteTimeUtc -Path (Join-Path $activePidDir ".fin-tmp-owner.json")
+    Set-StaleLastWriteTimeUtc -Path $staleDir
     (Get-Item $recentDir).LastWriteTimeUtc = (Get-Date).ToUniversalTime()
-    (Get-Item $activePidDir).LastWriteTimeUtc = (Get-Date).ToUniversalTime().AddHours(-3)
+    Set-StaleLastWriteTimeUtc -Path $activePidDir
 
     $statePrune = Initialize-TestTmpWorkspace -RepoRoot $repoRoot -Prefix $prefix
     Assert-False -Condition (Test-Path $staleDir) -Message "Expected stale temp dir to be pruned."
@@ -113,7 +153,8 @@ try {
     # Case 4: Active PID dir with mismatched owner metadata is treated as stale and pruned.
     $env:FIN_TEST_TMP_STALE_HOURS = "1"
     Set-TestTmpWorkspaceOwnerMetadata -TmpDir $activePidDir -OwnerPid $activeProc.Id -OwnerStartUtc $activeStartUtc.AddMinutes(-5)
-    (Get-Item $activePidDir).LastWriteTimeUtc = (Get-Date).ToUniversalTime().AddHours(-3)
+    Set-StaleLastWriteTimeUtc -Path (Join-Path $activePidDir ".fin-tmp-owner.json")
+    Set-StaleLastWriteTimeUtc -Path $activePidDir
     $stateMismatch = Initialize-TestTmpWorkspace -RepoRoot $repoRoot -Prefix $prefix
     Assert-False -Condition (Test-Path $activePidDir) -Message "Expected mismatched owner metadata dir to be pruned."
     Finalize-TestTmpWorkspace -State $stateMismatch
@@ -186,7 +227,7 @@ try {
         }
     $forbiddenMatches = @(
         foreach ($scriptFile in $scriptFiles) {
-            $relativePath = [System.IO.Path]::GetRelativePath($repoRoot, $scriptFile.FullName)
+            $relativePath = Get-RelativePathCompat -BasePath $repoRoot -FullPath $scriptFile.FullName
             Select-String -Path $scriptFile.FullName -Pattern $forbiddenPattern |
                 ForEach-Object {
                     "{0}:{1}: {2}" -f $relativePath, $_.LineNumber, $_.Line.Trim()
@@ -204,7 +245,7 @@ try {
                 continue
             }
 
-            $relativePath = [System.IO.Path]::GetRelativePath($repoRoot, $scriptFile.FullName)
+            $relativePath = Get-RelativePathCompat -BasePath $repoRoot -FullPath $scriptFile.FullName
             Select-String -Path $scriptFile.FullName -Pattern $finobjHelperPattern |
                 ForEach-Object {
                     "{0}:{1}: {2}" -f $relativePath, $_.LineNumber, $_.Line.Trim()
@@ -222,7 +263,7 @@ try {
                 continue
             }
 
-            $relativePath = [System.IO.Path]::GetRelativePath($repoRoot, $scriptFile.FullName)
+            $relativePath = Get-RelativePathCompat -BasePath $repoRoot -FullPath $scriptFile.FullName
 
             Select-String -Path $scriptFile.FullName -Pattern $forbiddenFinobjParserCallPattern |
                 ForEach-Object {
@@ -250,7 +291,7 @@ try {
                 continue
             }
 
-            $relativePath = [System.IO.Path]::GetRelativePath($repoRoot, $scriptFile.FullName)
+            $relativePath = Get-RelativePathCompat -BasePath $repoRoot -FullPath $scriptFile.FullName
             Select-String -Path $scriptFile.FullName -Pattern $manualFinobjHashPattern |
                 ForEach-Object {
                     "{0}:{1}: {2}" -f $relativePath, $_.LineNumber, $_.Line.Trim()

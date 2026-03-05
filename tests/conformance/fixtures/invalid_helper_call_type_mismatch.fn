@@ -1,0 +1,7 @@
+fn unwrap(value: Result<u8,u8>) -> u8 {
+  return value?;
+}
+
+fn main() {
+  exit(unwrap(1));
+}
