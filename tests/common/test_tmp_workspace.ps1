@@ -1,6 +1,15 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+function Test-TestTmpWorkspaceHostIsWindows {
+    $isWindowsVar = Get-Variable -Name IsWindows -ErrorAction SilentlyContinue
+    if ($null -ne $isWindowsVar) {
+        return [bool]$isWindowsVar.Value
+    }
+
+    return ($env:OS -eq "Windows_NT")
+}
+
 function Get-TestTmpWorkspaceProcessStartUtc {
     param(
         [Parameter(Mandatory = $true)]
@@ -59,20 +68,13 @@ function Get-TestTmpWorkspaceOwnerMetadataStatus {
     $raw = Get-Content -Path $MetadataPath -Raw -ErrorAction Stop
     $pidRaw = ""
     $startRaw = ""
-    $doc = $null
     try {
-        $doc = [System.Text.Json.JsonDocument]::Parse($raw)
-        $root = $doc.RootElement
-        $pidRaw = $root.GetProperty("pid").ToString()
-        $startRaw = $root.GetProperty("start_utc").GetString()
+        $parsed = $raw | ConvertFrom-Json -ErrorAction Stop
+        $pidRaw = [string]$parsed.pid
+        $startRaw = [string]$parsed.start_utc
     }
     catch {
         return $status
-    }
-    finally {
-        if ($null -ne $doc) {
-            $doc.Dispose()
-        }
     }
 
     [int]$metadataPid = 0
@@ -202,6 +204,17 @@ function Remove-TestTmpWorkspaceDirectory {
     }
 
     if ($IgnoreFailure) {
+        if (Test-Path $TmpDir -and (Test-TestTmpWorkspaceHostIsWindows)) {
+            try {
+                & cmd.exe /d /c "rmdir /s /q `"$TmpDir`"" | Out-Null
+                if (-not (Test-Path $TmpDir)) {
+                    return
+                }
+            }
+            catch {
+                $lastError = $_
+            }
+        }
         Write-Warning ("Failed to remove test tmp dir after {0} attempts: {1}" -f $MaxAttempts, $TmpDir)
         return
     }

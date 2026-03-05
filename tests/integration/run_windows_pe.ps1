@@ -7,12 +7,21 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+function Test-HostIsWindows {
+    $isWindowsVar = Get-Variable -Name IsWindows -ErrorAction SilentlyContinue
+    if ($null -ne $isWindowsVar) {
+        return [bool]$isWindowsVar.Value
+    }
+
+    return ($env:OS -eq "Windows_NT")
+}
+
 if (-not (Test-Path $Path)) {
     Write-Error "PE binary not found: $Path"
     exit 1
 }
 
-if (-not $IsWindows) {
+if (-not (Test-HostIsWindows)) {
     Write-Host "Windows PE runtime check skipped on non-Windows host."
     $global:LASTEXITCODE = 0
     return

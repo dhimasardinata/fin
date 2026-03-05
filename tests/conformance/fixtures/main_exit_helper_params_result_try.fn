@@ -1,0 +1,8 @@
+fn unwrap(value: Result<u8,u8>) -> u8 {
+  return value?;
+}
+
+fn main() {
+  let ready = ok(164);
+  exit(unwrap(ready));
+}

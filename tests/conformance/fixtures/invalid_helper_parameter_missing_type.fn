@@ -1,0 +1,7 @@
+fn add(lhs, rhs: u8) -> u8 {
+  return rhs;
+}
+
+fn main() {
+  exit(add(1, 2));
+}

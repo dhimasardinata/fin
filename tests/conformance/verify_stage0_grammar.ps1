@@ -173,6 +173,8 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_plus_equals
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_helper_default_u8.fn" -ExpectedExit 160
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_helper_chain.fn" -ExpectedExit 161
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_helper_result_try.fn" -ExpectedExit 162
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_helper_params_add.fn" -ExpectedExit 163
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_helper_params_result_try.fn" -ExpectedExit 164
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_drop_unused.fn" -ExpectedExit 15
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_move_binding.fn" -ExpectedExit 16
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_move_reinit_var.fn" -ExpectedExit 17
@@ -190,11 +192,16 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_err_binding
 
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_missing_main.fn" -ExpectedMessagePart "expected entrypoint pattern fn main()"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_undefined_function_call.fn" -ExpectedMessagePart "undefined function 'helper'"
-Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_function_call_with_args.fn" -ExpectedMessagePart "stage0 function call 'helper' does not support arguments"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_function_call_with_args.fn" -ExpectedMessagePart "function call 'helper' expects 0 arguments, found 1"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_duplicate_function.fn" -ExpectedMessagePart "duplicate function 'helper'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_recursive_function_call.fn" -ExpectedMessagePart "recursive function call is not supported in stage0"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_helper_exit_statement.fn" -ExpectedMessagePart "exit(...) is only allowed in entrypoint function 'main'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_helper_implicit_u8_result_return.fn" -ExpectedMessagePart "return expression type must be u8, found Result<u8,u8>"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_helper_call_wrong_arg_count.fn" -ExpectedMessagePart "function call 'add' expects 2 arguments, found 1"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_helper_parameter_missing_type.fn" -ExpectedMessagePart "function parameter 'lhs' requires explicit type annotation in stage0"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_helper_parameter_reference_type.fn" -ExpectedMessagePart "function parameter 'value' type must be u8 or Result<u8,u8> in stage0 bootstrap, found &u8"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_main_parameters.fn" -ExpectedMessagePart "entrypoint function 'main' does not support parameters in stage0"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_helper_call_type_mismatch.fn" -ExpectedMessagePart "type mismatch for parameter 'value' in function 'unwrap': expected Result<u8,u8>, found u8"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_undefined_identifier.fn" -ExpectedMessagePart "undefined identifier 'code'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_assign_immutable.fn" -ExpectedMessagePart "cannot assign to immutable binding 'code'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_add_non_u8_operand.fn" -ExpectedMessagePart "operator '+' expects u8 operands in stage0, found Result<u8,u8> and u8"

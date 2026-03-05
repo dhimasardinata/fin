@@ -1,0 +1,8 @@
+fn project(value: &u8) -> u8 {
+  return *value;
+}
+
+fn main() {
+  let value = 1;
+  exit(project(&value));
+}

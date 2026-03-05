@@ -8,6 +8,33 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+function Test-HostIsWindows {
+    $isWindowsVar = Get-Variable -Name IsWindows -ErrorAction SilentlyContinue
+    if ($null -ne $isWindowsVar) {
+        return [bool]$isWindowsVar.Value
+    }
+
+    return ($env:OS -eq "Windows_NT")
+}
+
+function Test-HostIsLinux {
+    $isLinuxVar = Get-Variable -Name IsLinux -ErrorAction SilentlyContinue
+    if ($null -ne $isLinuxVar) {
+        return [bool]$isLinuxVar.Value
+    }
+
+    try {
+        $uname = & uname -s 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            return ([string]$uname -eq "Linux")
+        }
+    }
+    catch {
+    }
+
+    return $false
+}
+
 if (-not (Test-Path $Path)) {
     Write-Error "ELF binary not found: $Path"
     exit 1
@@ -59,10 +86,10 @@ function Normalize-Output {
 }
 
 $result = $null
-if ($IsLinux) {
+if (Test-HostIsLinux) {
     $result = Invoke-LinuxBinary -LinuxPath $resolvedPath
 }
-elseif ($IsWindows) {
+elseif (Test-HostIsWindows) {
     $result = Invoke-WslBinary -WindowsPath $resolvedPath
 }
 else {
