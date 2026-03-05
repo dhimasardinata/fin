@@ -137,7 +137,6 @@ try {
     }
     $activeStartUtc = Get-TestTmpWorkspaceProcessStartUtc -OwnerPid $activeProc.Id
     Set-TestTmpWorkspaceOwnerMetadata -TmpDir $activePidDir -OwnerPid $activeProc.Id -OwnerStartUtc $activeStartUtc
-    Set-StaleLastWriteTimeUtc -Path (Join-Path $activePidDir ".fin-tmp-owner.json")
     Set-StaleLastWriteTimeUtc -Path $staleDir
     (Get-Item $recentDir).LastWriteTimeUtc = (Get-Date).ToUniversalTime()
     Set-StaleLastWriteTimeUtc -Path $activePidDir
@@ -153,7 +152,6 @@ try {
     # Case 4: Active PID dir with mismatched owner metadata is treated as stale and pruned.
     $env:FIN_TEST_TMP_STALE_HOURS = "1"
     Set-TestTmpWorkspaceOwnerMetadata -TmpDir $activePidDir -OwnerPid $activeProc.Id -OwnerStartUtc $activeStartUtc.AddMinutes(-5)
-    Set-StaleLastWriteTimeUtc -Path (Join-Path $activePidDir ".fin-tmp-owner.json")
     Set-StaleLastWriteTimeUtc -Path $activePidDir
     $stateMismatch = Initialize-TestTmpWorkspace -RepoRoot $repoRoot -Prefix $prefix
     Assert-False -Condition (Test-Path $activePidDir) -Message "Expected mismatched owner metadata dir to be pruned."
