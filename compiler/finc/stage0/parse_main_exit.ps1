@@ -961,6 +961,7 @@ function Parse-Expr {
 #     let <ident> [: <type>] ?= <expr>;
 #     var <ident> [: <type>] ?= <expr>;
 #     <ident> ?= <expr>;
+#     <ident> += <expr>;
 #     <ident> = <expr>;
 #     drop(<ident>);
 #     exit(<expr>);
@@ -1144,6 +1145,66 @@ foreach ($stmt in $statements) {
 
     if ($stmt -match '^([A-Za-z_][A-Za-z0-9_]*)\s*\?=\s*$') {
         Fail-Parse "unwrap assignment requires expression"
+    }
+
+    if ($stmt -match '^([A-Za-z_][A-Za-z0-9_]*)\s*\+=\s*$') {
+        Fail-Parse "compound assignment '+=' requires expression"
+    }
+
+    if ($stmt -match '^([A-Za-z_][A-Za-z0-9_]*)\s*\+=\s*(.+)$') {
+        $name = $Matches[1]
+        Assert-NonKeywordIdentifier -Name $name
+        $expr = $Matches[2]
+        if (-not $values.ContainsKey($name)) {
+            Fail-Parse "assignment to undefined identifier '$name'"
+        }
+
+        $targetState = [string]$lifecycleStates[$name]
+        if ($targetState -eq "moved") {
+            Fail-Parse ("compound assignment '+=' requires alive binding '{0}', found moved" -f $name)
+        }
+        if ($targetState -eq "dropped") {
+            Fail-Parse ("compound assignment '+=' requires alive binding '{0}', found dropped" -f $name)
+        }
+        if ($targetState -ne "alive") {
+            Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $targetState, $name)
+        }
+
+        if (-not [bool]$mutable[$name]) {
+            Fail-Parse "cannot assign to immutable binding '$name'"
+        }
+
+        $exprValue = Parse-Expr -Expr $expr -Values $values -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets
+        $postExprTargetState = [string]$lifecycleStates[$name]
+        if (($postExprTargetState -eq "dropped") -or ($postExprTargetState -eq "moved")) {
+            Fail-Parse ("assignment target '{0}' moved or dropped during expression evaluation" -f $name)
+        }
+        if ($postExprTargetState -ne "alive") {
+            Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $postExprTargetState, $name)
+        }
+
+        $targetType = [string]$types[$name]
+        if ($targetType -ne "u8") {
+            Fail-Parse ("compound assignment '+=' expects u8 target in stage0, found {0}" -f $targetType)
+        }
+        if ([string]$exprValue.Type -ne "u8") {
+            Fail-Parse ("compound assignment '+=' expects u8 expression in stage0, found {0}" -f $exprValue.Type)
+        }
+
+        $activeBorrowers = @(Get-LiveReferenceAliasesForTarget -Target $name -Types $types -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets)
+        if ($activeBorrowers.Count -gt 0) {
+            Fail-Parse ("cannot assign identifier '{0}' while borrowed by '{1}'" -f $name, [string]$activeBorrowers[0])
+        }
+
+        $result = [int]$values[$name] + [int]$exprValue.Value
+        if ($result -gt 255) {
+            Fail-Parse "u8 overflow in '+=' expression"
+        }
+
+        $values[$name] = $result
+        $resultStates[$name] = "none"
+        $lifecycleStates[$name] = "alive"
+        continue
     }
 
     if ($stmt -match '^([A-Za-z_][A-Za-z0-9_]*)\s*\?=\s*(.+)$') {
