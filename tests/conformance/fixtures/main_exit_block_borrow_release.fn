@@ -1,0 +1,9 @@
+fn main() {
+  var value = 160
+  {
+    let ref_v = &value
+    let snapshot = *ref_v
+  }
+  value += 6
+  exit(value)
+}

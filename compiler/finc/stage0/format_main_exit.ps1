@@ -25,8 +25,10 @@ $exitCode = [int](& $parser -SourcePath $SourcePath)
 $withoutSlashComments = [regex]::Replace($sourceText, '(?m)//.*$', '')
 $withoutComments = [regex]::Replace($withoutSlashComments, '(?m)#.*$', '')
 $topLevelFunctionCount = ([regex]::Matches($withoutComments, '(?m)^\s*fn\s+[A-Za-z_][A-Za-z0-9_]*\s*\(')).Count
+$openBraceCount = ([regex]::Matches($withoutComments, '\{')).Count
+$preserveStructuredSource = ($topLevelFunctionCount -gt 1) -or ($openBraceCount -gt $topLevelFunctionCount)
 
-$formatted = if ($topLevelFunctionCount -gt 1) {
+$formatted = if ($preserveStructuredSource) {
     $preserved = Normalize-Text $sourceText
     if (-not $preserved.EndsWith("`n")) {
         $preserved += "`n"
