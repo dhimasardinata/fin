@@ -1,0 +1,9 @@
+fn main() {
+  var value = 160
+  {
+    var value = 20
+    value += 5
+  }
+  value += 8
+  exit(value)
+}

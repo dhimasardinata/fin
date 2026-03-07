@@ -102,6 +102,7 @@ Stage0 conformance checks:
 - `fixtures/main_exit_block_local.fn`: valid source proving nested block statements can declare block-local bindings while mutating outer locals.
 - `fixtures/main_exit_block_borrow_release.fn`: valid source proving block exit releases block-local borrows so later outer mutation is allowed.
 - `fixtures/main_exit_helper_block_return.fn`: valid source proving terminal `return` inside a nested helper block terminates the helper function.
+- `fixtures/main_exit_block_shadow_local.fn`: valid source proving nested blocks may shadow an outer visible binding name without mutating or retargeting the outer binding.
 - `fixtures/main_exit_borrow_deref.fn`: valid source with stage0 borrow expression `&<ident>` and dereference expression `*<expr>` returning the borrowed `u8` value.
 - `fixtures/main_exit_borrow_typed_u8.fn`: valid source with explicit reference annotation `&u8` on a borrowed local binding.
 - `fixtures/main_exit_borrow_result_try.fn`: valid source with explicit reference annotation `&Result<u8,u8>` and unwrap via `try(*<ref-ident>)`.
@@ -155,8 +156,8 @@ Stage0 conformance checks:
 - `fixtures/invalid_return_non_u8_expression.fn`: invalid source, parser must reject non-`u8` return expressions in stage0 entrypoint.
 - `fixtures/invalid_statement_after_return.fn`: invalid source, parser must reject statements that appear after terminal `return`.
 - `fixtures/invalid_statement_after_block_return.fn`: invalid source, parser must reject statements that appear after a nested block terminalizes the enclosing function.
-- `fixtures/invalid_block_duplicate_visible_name.fn`: invalid source, parser must reject block-local bindings that duplicate a currently visible binding name.
 - `fixtures/invalid_block_reference_escape.fn`: invalid source, parser must reject references that would escape a block while still borrowing block-local storage.
+- `fixtures/invalid_block_shadow_reference_escape.fn`: invalid source, parser must reject re-targeting an outer reference to shadowed block-local storage that would then escape the block.
 - `fixtures/invalid_empty_parenthesized_expr.fn`: invalid source, parser must reject empty parenthesized expressions.
 - `fixtures/invalid_cmp_non_u8_operand.fn`: invalid source, parser must reject comparison operands that are not `u8`.
 - `fixtures/invalid_cmp_missing_rhs.fn`: invalid source, parser must reject comparison operators missing right-hand operands.

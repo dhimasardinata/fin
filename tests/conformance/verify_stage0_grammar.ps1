@@ -178,6 +178,7 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_helper_para
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_block_local.fn" -ExpectedExit 165
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_block_borrow_release.fn" -ExpectedExit 166
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_helper_block_return.fn" -ExpectedExit 167
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_block_shadow_local.fn" -ExpectedExit 168
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_drop_unused.fn" -ExpectedExit 15
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_move_binding.fn" -ExpectedExit 16
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_move_reinit_var.fn" -ExpectedExit 17
@@ -206,7 +207,7 @@ Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_helpe
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_main_parameters.fn" -ExpectedMessagePart "entrypoint function 'main' does not support parameters in stage0"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_helper_call_type_mismatch.fn" -ExpectedMessagePart "type mismatch for parameter 'value' in function 'unwrap': expected Result<u8,u8>, found u8"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_block_reference_escape.fn" -ExpectedMessagePart "cannot leave block while identifier 'inner' is borrowed by 'leak'"
-Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_block_duplicate_visible_name.fn" -ExpectedMessagePart "duplicate binding 'value'"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_block_shadow_reference_escape.fn" -ExpectedMessagePart "cannot leave block while identifier 'value' is borrowed by 'leak'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_undefined_identifier.fn" -ExpectedMessagePart "undefined identifier 'code'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_assign_immutable.fn" -ExpectedMessagePart "cannot assign to immutable binding 'code'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_add_non_u8_operand.fn" -ExpectedMessagePart "operator '+' expects u8 operands in stage0, found Result<u8,u8> and u8"
