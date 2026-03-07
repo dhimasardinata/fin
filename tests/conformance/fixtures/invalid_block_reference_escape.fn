@@ -1,0 +1,9 @@
+fn main() {
+  let outer = 1
+  var leak: &u8 = &outer
+  {
+    let inner = 2
+    leak = &inner
+  }
+  exit(*leak)
+}

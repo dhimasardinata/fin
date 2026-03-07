@@ -1,0 +1,8 @@
+fn main() {
+  var value = 160
+  {
+    let add = 5
+    value += add
+  }
+  exit(value)
+}

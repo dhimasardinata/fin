@@ -1,0 +1,10 @@
+fn helper(base: u8) -> u8 {
+  {
+    let bump = 7
+    return base + bump
+  }
+}
+
+fn main() {
+  exit(helper(160))
+}

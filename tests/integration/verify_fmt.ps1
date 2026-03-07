@@ -59,6 +59,18 @@ if ((Normalize-Text $multiFormatted) -ne (Normalize-Text $multiSource)) {
     exit 1
 }
 
+$blockTarget = Join-Path $tmpDir "block.fn"
+$blockSource = "fn main() {`n  var value = 160`n  {`n    let add = 7`n    value += add`n  }`n  exit(value)`n}`n"
+Set-Content -Path $blockTarget -Value $blockSource -NoNewline
+
+& $fin fmt --src $blockTarget
+
+$blockFormatted = Get-Content -Path $blockTarget -Raw
+if ((Normalize-Text $blockFormatted) -ne (Normalize-Text $blockSource)) {
+    Write-Error "Formatter must preserve structured single-function block sources until block formatting lands."
+    exit 1
+}
+
 Finalize-TestTmpWorkspace -State $tmpState
 
 Write-Host "fmt integration check passed."
