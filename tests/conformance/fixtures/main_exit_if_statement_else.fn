@@ -1,0 +1,9 @@
+fn main() {
+  var value = 160
+  if (0) {
+    value += 1
+  } else {
+    value += 10
+  }
+  exit(value)
+}

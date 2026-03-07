@@ -145,6 +145,21 @@ function Copy-Hashtable {
     return $copy
 }
 
+function Copy-Stage0ScopeFrames {
+    param([System.Collections.Generic.List[hashtable]]$ScopeFrames)
+
+    $copy = [System.Collections.Generic.List[hashtable]]::new()
+    if ($null -eq $ScopeFrames) {
+        return (, $copy)
+    }
+
+    foreach ($frame in $ScopeFrames) {
+        $copy.Add((Copy-Hashtable -Table $frame)) | Out-Null
+    }
+
+    return (, $copy)
+}
+
 $script:FunctionDefinitions = @{}
 $script:FunctionCallStack = [System.Collections.Generic.List[string]]::new()
 $script:Stage0BindingCounter = 0
@@ -379,6 +394,12 @@ function Get-Stage0Statements {
         $isStatementBreak = (($ch -eq ';') -or ($ch -eq "`n") -or ($ch -eq "`r"))
         if ($isStatementBreak -and ($parenDepth -eq 0) -and ($braceDepth -eq 0)) {
             $stmt = $BodyText.Substring($start, $i - $start).Trim()
+            if ((-not [string]::IsNullOrWhiteSpace($stmt)) -and ($stmt -match '^if(?:\s|\()') -and (Has-Stage0PendingElse -Text $BodyText -StartIndex ($i + 1))) {
+                if (($ch -eq "`r") -and (($i + 1) -lt $BodyText.Length) -and ($BodyText[$i + 1] -eq "`n")) {
+                    $i += 1
+                }
+                continue
+            }
             if (-not [string]::IsNullOrWhiteSpace($stmt)) {
                 $statements.Add($stmt)
             }
@@ -406,6 +427,93 @@ function Get-Stage0Statements {
     }
 
     return $statements
+}
+
+function Has-Stage0PendingElse {
+    param(
+        [string]$Text,
+        [int]$StartIndex
+    )
+
+    $position = Skip-Stage0Whitespace -Text $Text -StartIndex $StartIndex
+    if (($position + 4) -gt $Text.Length) {
+        return $false
+    }
+
+    if ($Text.Substring($position, 4) -ne "else") {
+        return $false
+    }
+
+    $nextIndex = $position + 4
+    if ($nextIndex -ge $Text.Length) {
+        return $true
+    }
+
+    $nextChar = $Text[$nextIndex]
+    return (-not [char]::IsLetterOrDigit($nextChar)) -and ($nextChar -ne '_')
+}
+
+function Try-ParseStage0IfStatement {
+    param(
+        [string]$FunctionName,
+        [string]$Statement
+    )
+
+    $trimmed = $Statement.Trim()
+    if ($trimmed -notmatch '^if(?:\s|\()') {
+        return $null
+    }
+
+    $position = Skip-Stage0Whitespace -Text $trimmed -StartIndex 2
+    if (($position -ge $trimmed.Length) -or ($trimmed[$position] -ne '(')) {
+        Fail-Parse "if statement requires parenthesized condition"
+    }
+
+    $conditionClose = Get-MatchingDelimiterIndex -Text $trimmed -StartIndex $position -OpenChar '(' -CloseChar ')' -ContextDescription ("if statement condition in function '{0}'" -f $FunctionName)
+    $conditionExpr = $trimmed.Substring($position + 1, $conditionClose - $position - 1).Trim()
+    if ([string]::IsNullOrWhiteSpace($conditionExpr)) {
+        Fail-Parse "if statement requires condition expression"
+    }
+
+    $position = Skip-Stage0Whitespace -Text $trimmed -StartIndex ($conditionClose + 1)
+    if (($position -ge $trimmed.Length) -or ($trimmed[$position] -ne '{')) {
+        Fail-Parse "if statement requires then-block"
+    }
+
+    $thenClose = Get-MatchingDelimiterIndex -Text $trimmed -StartIndex $position -OpenChar '{' -CloseChar '}' -ContextDescription ("if statement then-block in function '{0}'" -f $FunctionName)
+    $thenBody = $trimmed.Substring($position + 1, $thenClose - $position - 1)
+    [string[]]$thenStatements = @(Get-Stage0Statements -FunctionName $FunctionName -BodyText $thenBody -AllowEmpty)
+
+    $position = Skip-Stage0Whitespace -Text $trimmed -StartIndex ($thenClose + 1)
+    $hasElse = $false
+    [string[]]$elseStatements = @()
+    if ($position -lt $trimmed.Length) {
+        if (-not (Has-Stage0PendingElse -Text $trimmed -StartIndex $position)) {
+            Fail-Parse ("unsupported trailing tokens after if statement '{0}'" -f $trimmed.Substring($position).Trim())
+        }
+
+        $position = Skip-Stage0Whitespace -Text $trimmed -StartIndex ($position + 4)
+        if (($position -ge $trimmed.Length) -or ($trimmed[$position] -ne '{')) {
+            Fail-Parse "if statement else branch must be block"
+        }
+
+        $elseClose = Get-MatchingDelimiterIndex -Text $trimmed -StartIndex $position -OpenChar '{' -CloseChar '}' -ContextDescription ("if statement else-block in function '{0}'" -f $FunctionName)
+        $elseBody = $trimmed.Substring($position + 1, $elseClose - $position - 1)
+        $elseStatements = @(Get-Stage0Statements -FunctionName $FunctionName -BodyText $elseBody -AllowEmpty)
+        $position = Skip-Stage0Whitespace -Text $trimmed -StartIndex ($elseClose + 1)
+        $hasElse = $true
+    }
+
+    if ($position -lt $trimmed.Length) {
+        Fail-Parse ("unsupported trailing tokens after if statement '{0}'" -f $trimmed.Substring($position).Trim())
+    }
+
+    return [pscustomobject]@{
+        ConditionExpr = $conditionExpr
+        ThenStatements = $thenStatements
+        HasElse = $hasElse
+        ElseStatements = $elseStatements
+    }
 }
 
 function Get-ExpectedFunctionReturnType {
@@ -1497,6 +1605,32 @@ function Parse-Expr {
     }
 }
 
+function Invoke-Stage0StatementProbe {
+    param(
+        [string]$FunctionName,
+        [string]$ExpectedReturnType,
+        [string[]]$Statements,
+        [hashtable]$Values,
+        [hashtable]$Mutable,
+        [hashtable]$Types,
+        [hashtable]$ResultStates,
+        [hashtable]$LifecycleStates,
+        [hashtable]$ReferenceTargets
+    )
+
+    $savedScopeFrames = $script:Stage0ScopeFrames
+    $savedDisplayNames = $script:Stage0BindingDisplayNames
+    try {
+        $script:Stage0ScopeFrames = Copy-Stage0ScopeFrames -ScopeFrames $savedScopeFrames
+        $script:Stage0BindingDisplayNames = Copy-Hashtable -Table $savedDisplayNames
+        return Invoke-Stage0Statements -FunctionName $FunctionName -ExpectedReturnType $ExpectedReturnType -Statements $Statements -Values (Copy-Hashtable -Table $Values) -Mutable (Copy-Hashtable -Table $Mutable) -Types (Copy-Hashtable -Table $Types) -ResultStates (Copy-Hashtable -Table $ResultStates) -LifecycleStates (Copy-Hashtable -Table $LifecycleStates) -ReferenceTargets (Copy-Hashtable -Table $ReferenceTargets) -IsBlockScope
+    }
+    finally {
+        $script:Stage0ScopeFrames = $savedScopeFrames
+        $script:Stage0BindingDisplayNames = $savedDisplayNames
+    }
+}
+
 function Invoke-Stage0Statements {
     param(
         [string]$FunctionName,
@@ -1536,6 +1670,36 @@ function Invoke-Stage0Statements {
                 if ($blockResult.HaveTerminal) {
                     $functionResult = $blockResult.Result
                     $haveTerminal = $true
+                }
+                continue
+            }
+
+            $ifStatement = Try-ParseStage0IfStatement -FunctionName $FunctionName -Statement $stmt
+            if ($null -ne $ifStatement) {
+                $conditionValue = Parse-Expr -Expr $ifStatement.ConditionExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates -ReferenceTargets $ReferenceTargets
+                if ([string]$conditionValue.Type -ne 'u8') {
+                    Fail-Parse ("if statement condition expects u8 in stage0, found {0}" -f $conditionValue.Type)
+                }
+
+                Invoke-Stage0StatementProbe -FunctionName $FunctionName -ExpectedReturnType $ExpectedReturnType -Statements $ifStatement.ThenStatements -Values $Values -Mutable $Mutable -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates -ReferenceTargets $ReferenceTargets | Out-Null
+                if ($ifStatement.HasElse) {
+                    Invoke-Stage0StatementProbe -FunctionName $FunctionName -ExpectedReturnType $ExpectedReturnType -Statements $ifStatement.ElseStatements -Values $Values -Mutable $Mutable -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates -ReferenceTargets $ReferenceTargets | Out-Null
+                }
+
+                [string[]]$selectedStatements = @()
+                if ([int]$conditionValue.Value -ne 0) {
+                    $selectedStatements = @($ifStatement.ThenStatements)
+                }
+                elseif ($ifStatement.HasElse) {
+                    $selectedStatements = @($ifStatement.ElseStatements)
+                }
+
+                if ($selectedStatements.Count -gt 0) {
+                    $branchResult = Invoke-Stage0Statements -FunctionName $FunctionName -ExpectedReturnType $ExpectedReturnType -Statements $selectedStatements -Values $Values -Mutable $Mutable -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates -ReferenceTargets $ReferenceTargets -IsBlockScope
+                    if ($branchResult.HaveTerminal) {
+                        $functionResult = $branchResult.Result
+                        $haveTerminal = $true
+                    }
                 }
                 continue
             }
@@ -1985,6 +2149,7 @@ function Invoke-Stage0Function {
 #     <ident> += <expr>;
 #     <ident> = <expr>;
 #     { <stmt>* };
+#     if (<expr>) { <stmt>* } [else { <stmt>* }];
 #     drop(<ident>);
 #     exit(<expr>);
 #     return <expr>;

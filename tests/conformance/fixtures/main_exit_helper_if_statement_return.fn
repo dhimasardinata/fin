@@ -1,0 +1,11 @@
+fn choose(flag: u8) -> u8 {
+  if (flag) {
+    return 171
+  } else {
+    return 172
+  }
+}
+
+fn main() {
+  exit(choose(1))
+}
