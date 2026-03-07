@@ -174,6 +174,7 @@ if (-not $SkipDoctor) {
 & $fin build --src tests/conformance/fixtures/main_exit_block_local.fn --out artifacts/test-exit165
 & $fin build --src tests/conformance/fixtures/main_exit_block_borrow_release.fn --out artifacts/test-exit166
 & $fin build --src tests/conformance/fixtures/main_exit_helper_block_return.fn --out artifacts/test-exit167
+& $fin build --src tests/conformance/fixtures/main_exit_block_shadow_local.fn --out artifacts/test-exit168
 & $fin build --src tests/conformance/fixtures/main_drop_unused.fn --out artifacts/test-exit15
 & $fin build --src tests/conformance/fixtures/main_move_binding.fn --out artifacts/test-exit16
 & $fin build --src tests/conformance/fixtures/main_move_reinit_var.fn --out artifacts/test-exit17

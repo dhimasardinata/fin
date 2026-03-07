@@ -1,0 +1,9 @@
+fn main() {
+  let value = 1
+  var leak: &u8 = &value
+  {
+    let value = 2
+    leak = &value
+  }
+  exit(*leak)
+}
