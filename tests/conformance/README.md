@@ -103,6 +103,9 @@ Stage0 conformance checks:
 - `fixtures/main_exit_block_borrow_release.fn`: valid source proving block exit releases block-local borrows so later outer mutation is allowed.
 - `fixtures/main_exit_helper_block_return.fn`: valid source proving terminal `return` inside a nested helper block terminates the helper function.
 - `fixtures/main_exit_block_shadow_local.fn`: valid source proving nested blocks may shadow an outer visible binding name without mutating or retargeting the outer binding.
+- `fixtures/main_exit_if_statement_then.fn`: valid source proving statement-form `if (<expr>) { ... }` can mutate outer state on the selected true branch.
+- `fixtures/main_exit_if_statement_else.fn`: valid source proving statement-form `if (<expr>) { ... } else { ... }` can select and apply the else branch.
+- `fixtures/main_exit_helper_if_statement_return.fn`: valid source proving terminal `return` inside a statement-form helper `if` branch terminates the helper function.
 - `fixtures/main_exit_borrow_deref.fn`: valid source with stage0 borrow expression `&<ident>` and dereference expression `*<expr>` returning the borrowed `u8` value.
 - `fixtures/main_exit_borrow_typed_u8.fn`: valid source with explicit reference annotation `&u8` on a borrowed local binding.
 - `fixtures/main_exit_borrow_result_try.fn`: valid source with explicit reference annotation `&Result<u8,u8>` and unwrap via `try(*<ref-ident>)`.
@@ -165,6 +168,9 @@ Stage0 conformance checks:
 - `fixtures/invalid_if_empty_argument.fn`: invalid source, parser must reject `if(...)` calls with empty arguments.
 - `fixtures/invalid_if_non_u8_condition.fn`: invalid source, parser must reject non-`u8` `if(...)` condition expressions.
 - `fixtures/invalid_if_branch_type_mismatch.fn`: invalid source, parser must reject `if(...)` branches with mismatched result types.
+- `fixtures/invalid_if_statement_missing_then_block.fn`: invalid source, parser must reject statement-form `if` without a `{ ... }` then-block.
+- `fixtures/invalid_if_statement_else_without_block.fn`: invalid source, parser must reject statement-form `else` branches that are not blocks.
+- `fixtures/invalid_if_statement_non_u8_condition.fn`: invalid source, parser must reject non-`u8` statement-form `if` condition expressions.
 - `fixtures/invalid_logic_non_u8_operand_and.fn`: invalid source, parser must reject logical-and operands that are not `u8`.
 - `fixtures/invalid_logic_non_u8_operand_or_short_circuit.fn`: invalid source, parser must still reject logical-or RHS type mismatch even when left operand short-circuits.
 - `fixtures/invalid_logic_missing_rhs.fn`: invalid source, parser must reject logical operators missing right-hand operands.

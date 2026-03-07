@@ -179,6 +179,9 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_block_local
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_block_borrow_release.fn" -ExpectedExit 166
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_helper_block_return.fn" -ExpectedExit 167
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_block_shadow_local.fn" -ExpectedExit 168
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_if_statement_then.fn" -ExpectedExit 169
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_if_statement_else.fn" -ExpectedExit 170
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_helper_if_statement_return.fn" -ExpectedExit 171
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_drop_unused.fn" -ExpectedExit 15
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_move_binding.fn" -ExpectedExit 16
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_move_reinit_var.fn" -ExpectedExit 17
@@ -246,6 +249,9 @@ Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_if_mi
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_if_empty_argument.fn" -ExpectedMessagePart "if(...) arguments must not be empty"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_if_non_u8_condition.fn" -ExpectedMessagePart "if(...) condition expects u8 in stage0, found Result<u8,u8>"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_if_branch_type_mismatch.fn" -ExpectedMessagePart "if(...) branch type mismatch: then is u8, else is Result<u8,u8>"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_if_statement_missing_then_block.fn" -ExpectedMessagePart "if statement requires then-block"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_if_statement_else_without_block.fn" -ExpectedMessagePart "if statement else branch must be block"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_if_statement_non_u8_condition.fn" -ExpectedMessagePart "if statement condition expects u8 in stage0, found Result<u8,u8>"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_logic_non_u8_operand_and.fn" -ExpectedMessagePart "operator '&&' expects u8 operands in stage0, found u8 and Result<u8,u8>"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_logic_non_u8_operand_or_short_circuit.fn" -ExpectedMessagePart "operator '||' expects u8 operands in stage0, found u8 and Result<u8,u8>"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_logic_missing_rhs.fn" -ExpectedMessagePart "binary operator '&&' requires both operands"
