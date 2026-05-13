@@ -1,0 +1,4 @@
+fn main() {
+  LET code = 7
+  exit(code)
+}
