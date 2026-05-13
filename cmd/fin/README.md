@@ -15,7 +15,7 @@ Current bootstrap shim:
 - `./fin.ps1 pkg publish [--manifest <path>] [--src <dir>] [--out-dir <path>] [--dry-run]`
 - `./fin.ps1 test [--quick] [--no-doctor] [--no-run]`
 
-Planned unified commands:
+Unified commands tracked in `FIP-0015`:
 
 - `fin init`
 - `fin build`

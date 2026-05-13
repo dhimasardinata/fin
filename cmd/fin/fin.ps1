@@ -571,7 +571,7 @@ Usage:
   ./cmd/fin/fin.ps1 pkg publish [--manifest <path>] [--src <dir>] [--out-dir <path>] [--dry-run]
   ./cmd/fin/fin.ps1 test [--quick] [--no-doctor] [--no-run]
 
-Planned unified commands (tracked in FIP-0015):
+Unified commands (tracked in FIP-0015):
   fin init | build | run | test | fmt | doc | pkg add | pkg publish | doctor
 "@ | Write-Host
 }
