@@ -1,0 +1,7 @@
+fn main() {
+  exit(later());
+}
+
+fn later() -> u8 {
+  return 173;
+}

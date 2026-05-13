@@ -171,6 +171,7 @@ if (-not $SkipDoctor) {
 & $fin build --src tests/conformance/fixtures/main_exit_helper_result_try.fn --out artifacts/test-exit162
 & $fin build --src tests/conformance/fixtures/main_exit_helper_params_add.fn --out artifacts/test-exit163
 & $fin build --src tests/conformance/fixtures/main_exit_helper_params_result_try.fn --out artifacts/test-exit164
+& $fin build --src tests/conformance/fixtures/main_exit_helper_after_main.fn --out artifacts/test-exit173
 & $fin build --src tests/conformance/fixtures/main_exit_block_local.fn --out artifacts/test-exit165
 & $fin build --src tests/conformance/fixtures/main_exit_block_borrow_release.fn --out artifacts/test-exit166
 & $fin build --src tests/conformance/fixtures/main_exit_helper_block_return.fn --out artifacts/test-exit167
@@ -302,6 +303,7 @@ if (-not $SkipRun) {
         & $fin run --no-build --out artifacts/test-exit162 --expect-exit 162
         & $fin run --no-build --out artifacts/test-exit163 --expect-exit 163
         & $fin run --no-build --out artifacts/test-exit164 --expect-exit 164
+        & $fin run --no-build --out artifacts/test-exit173 --expect-exit 173
         & $fin run --no-build --out artifacts/test-exit165 --expect-exit 165
         & $fin run --no-build --out artifacts/test-exit166 --expect-exit 166
         & $fin run --no-build --out artifacts/test-exit167 --expect-exit 167

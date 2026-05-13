@@ -175,6 +175,7 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_helper_chai
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_helper_result_try.fn" -ExpectedExit 162
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_helper_params_add.fn" -ExpectedExit 163
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_helper_params_result_try.fn" -ExpectedExit 164
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_helper_after_main.fn" -ExpectedExit 173
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_block_local.fn" -ExpectedExit 165
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_block_borrow_release.fn" -ExpectedExit 166
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_helper_block_return.fn" -ExpectedExit 167
