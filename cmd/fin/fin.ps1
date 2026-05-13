@@ -558,8 +558,8 @@ Unified commands (tracked in FIP-0015):
 
 Test options:
   --quick      keep shared gates and use the smoke fixture matrix
-  --no-doctor  skip doctor policy preflight
-  --no-run     skip runtime executions
+  --no-doctor  skip the suite's standalone doctor preflight
+  --no-run     skip the final fixture runtime phase
 "@ | Write-Host
 }
 

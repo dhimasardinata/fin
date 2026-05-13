@@ -54,7 +54,9 @@ Current commands:
 9. `pkg publish`: emits deterministic stage0 package artifact (`.fnpkg`).
 10. `test`: executes aggregated stage0 test suite. `--quick` preserves shared
     gates but uses a smoke fixture matrix instead of the exhaustive fixture
-    build/run matrix.
+    build/run matrix. `--no-doctor` skips the suite's standalone doctor
+    preflight. `--no-run` skips the final fixture runtime phase after fixture
+    builds.
 
 This preserves forward compatibility with the planned unified CLI contract while enabling immediate policy enforcement.
 
@@ -89,4 +91,5 @@ Current checks:
 13. `./fin.ps1 pkg publish --manifest fin.toml --src src --out-dir artifacts/publish` emits deterministic stage0 package artifact.
 14. `./fin.ps1 test` executes stage0 suite end-to-end.
 15. `./fin.ps1 test --quick --no-run` executes shared gates and the smoke
-    fixture build matrix without the exhaustive fixture matrix.
+    fixture build matrix without the final fixture runtime phase or exhaustive
+    fixture matrix.

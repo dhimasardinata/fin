@@ -25,6 +25,8 @@ Until native `fin` is available, a compatibility shim is provided:
 - `fin test`: run package tests. `--quick` keeps shared bootstrap,
   conformance, integration, reproducibility, and policy gates, but uses a
   small fixture smoke matrix instead of the exhaustive fixture build/run matrix.
+  `--no-doctor` skips the suite's standalone doctor preflight. `--no-run`
+  skips the final fixture runtime phase after fixture builds.
 - `fin fmt`: format `.fn` files.
 - `fin doc`: generate API and language docs.
 - `fin pkg add <name>`: add dependency and update `fin.lock`.

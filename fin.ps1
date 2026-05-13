@@ -2,7 +2,7 @@ param(
     [Parameter(Position = 0)]
     [string]$Command = "",
 
-    [Parameter(ValueFromRemainingArguments = $true)]
+    [Parameter(Position = 1, ValueFromRemainingArguments = $true)]
     [string[]]$CommandArgs
 )
 
