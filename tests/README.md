@@ -9,7 +9,9 @@ Test families:
 
 Entry points:
 
-- `tests/run_stage0_suite.ps1`: aggregated stage0 `fin test` suite.
+- `tests/run_stage0_suite.ps1`: aggregated stage0 `fin test` suite. `-Quick`
+  keeps shared gates and uses a smoke fixture matrix instead of the exhaustive
+  fixture build/run matrix.
 - `ci/verify_fip_metadata.ps1`: FIP lifecycle metadata and index consistency gate, also checking status labels plus CI/doctor wiring.
 - `tests/reproducibility/verify_stage0_reproducibility.ps1`: stage0 reproducibility hash gate (emit/build/publish/finobj/finld), including `finld` object-set, symbol-resolution, relocation-resolution witness-hash determinism, applied-relocation count stability checks, and verify-diagnostics mode checks (`LinkedVerifyEnabled`/`LinkedVerifyMode`).
 - `tests/reproducibility/verify_closure_baseline_contract.ps1`: committed closure baseline contract gate covering key order, hash formats, parity booleans, source existence, and derived closure hash consistency.

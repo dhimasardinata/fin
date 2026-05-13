@@ -75,6 +75,13 @@ if (-not $SkipDoctor) {
 & $verifyPolicyGate
 
 & $fin build --src tests/conformance/fixtures/main_exit0.fn --out artifacts/test-exit0
+
+if ($Quick) {
+    & $fin build --src tests/conformance/fixtures/main_exit7.fn --out artifacts/test-exit7
+    & $fin build --src tests/conformance/fixtures/main_exit_var_assign.fn --out artifacts/test-exit8
+    & $fin build --src tests/conformance/fixtures/main_exit_helper_params_add.fn --out artifacts/test-exit163
+}
+else {
 & $fin build --src tests/conformance/fixtures/main_exit7.fn --out artifacts/test-exit7
 & $fin build --src tests/conformance/fixtures/main_exit_var_assign.fn --out artifacts/test-exit8
 & $fin build --src tests/conformance/fixtures/main_exit_typed_u8.fn --out artifacts/test-exit9
@@ -202,10 +209,16 @@ if (-not $SkipDoctor) {
 & $fin build --src tests/conformance/fixtures/main_result_drop_reinit_drop_reinit.fn --out artifacts/test-exit27
 & $fin build --src tests/conformance/fixtures/main_exit_err_unused.fn --out artifacts/test-exit28
 & $fin build --src tests/conformance/fixtures/main_exit_err_binding_ok_path.fn --out artifacts/test-exit29
+}
 
 if (-not $SkipRun) {
     & $fin run --no-build --out artifacts/test-exit0 --expect-exit 0
-    if (-not $Quick) {
+    if ($Quick) {
+        & $fin run --no-build --out artifacts/test-exit7 --expect-exit 7
+        & $fin run --no-build --out artifacts/test-exit8 --expect-exit 8
+        & $fin run --no-build --out artifacts/test-exit163 --expect-exit 163
+    }
+    else {
         & $fin run --no-build --out artifacts/test-exit7 --expect-exit 7
         & $fin run --no-build --out artifacts/test-exit8 --expect-exit 8
         & $fin run --no-build --out artifacts/test-exit9 --expect-exit 9

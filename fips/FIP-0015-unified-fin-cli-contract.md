@@ -52,7 +52,9 @@ Current commands:
 7. `doc`: generates stage0 documentation from `.fn` subset.
 8. `pkg add`: inserts/updates dependency entries in `fin.toml` and rewrites `fin.lock`.
 9. `pkg publish`: emits deterministic stage0 package artifact (`.fnpkg`).
-10. `test`: executes aggregated stage0 test suite.
+10. `test`: executes aggregated stage0 test suite. `--quick` preserves shared
+    gates but uses a smoke fixture matrix instead of the exhaustive fixture
+    build/run matrix.
 
 This preserves forward compatibility with the planned unified CLI contract while enabling immediate policy enforcement.
 
@@ -86,3 +88,5 @@ Current checks:
 12. `./fin.ps1 pkg add <name[@version]>` updates manifest dependencies and rewrites `fin.lock` deterministically.
 13. `./fin.ps1 pkg publish --manifest fin.toml --src src --out-dir artifacts/publish` emits deterministic stage0 package artifact.
 14. `./fin.ps1 test` executes stage0 suite end-to-end.
+15. `./fin.ps1 test --quick --no-run` executes shared gates and the smoke
+    fixture build matrix without the exhaustive fixture matrix.
