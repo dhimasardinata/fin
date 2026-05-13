@@ -2,7 +2,7 @@
 
 - id: FIP-0007
 - address: fin://fip/FIP-0007
-- status: InProgress
+- status: Implemented
 - authors: @fin-maintainers
 - created: 2026-02-27
 - requires: ["FIP-0006"]
@@ -50,6 +50,7 @@
   - tests/conformance/fixtures/main_exit_unwrap_assignment_after_rhs_releases_borrow.fn
   - tests/conformance/fixtures/main_exit_plus_equals_after_rhs_releases_borrow.fn
   - tests/conformance/fixtures/main_exit_block_borrow_release.fn
+  - tests/conformance/fixtures/main_exit_block_shadow_local.fn
   - tests/conformance/fixtures/invalid_result_use_after_drop.fn
   - tests/conformance/fixtures/invalid_result_use_after_move.fn
   - tests/conformance/fixtures/invalid_result_assign_after_drop_immutable.fn
@@ -90,6 +91,7 @@
   - tests/conformance/fixtures/invalid_unwrap_assignment_after_rhs_still_borrowed.fn
   - tests/conformance/fixtures/invalid_plus_equals_after_rhs_still_borrowed.fn
   - tests/conformance/fixtures/invalid_block_reference_escape.fn
+  - tests/conformance/fixtures/invalid_block_shadow_reference_escape.fn
   - tests/conformance/fixtures/invalid_dereference_missing_operand.fn
   - tests/conformance/fixtures/invalid_dereference_non_reference.fn
   - tests/conformance/fixtures/invalid_use_after_drop.fn
@@ -109,6 +111,7 @@
   - tests/conformance/fixtures/invalid_drop_after_move.fn
   - tests/conformance/fixtures/invalid_move_after_drop.fn
   - tests/conformance/fixtures/invalid_self_move_assignment.fn
+  - tests/reproducibility/verify_ownership_borrow_contract.ps1
 - acceptance:
   - Safety suite catches use-after-free and double-free classes.
 
@@ -154,7 +157,7 @@ Current stage0 implementation delta:
 28. Transition guards remain enforced for nested source-binding paths; for example `drop(<ident>)` after nested `ok(try(move(<ident>)))` or `err(try(move(<ident>)))` consumption is rejected as drop-after-move until mutable re-initialization restores `alive`.
 29. Immutable nested source-binding paths keep the same guard behavior; re-initialization assignments after nested `ok(try(move(<ident>)))`/`err(try(move(<ident>)))` consumption are rejected deterministically.
 30. Nested wrapper paths also preserve type guards for `try` inputs; non-result identifiers in `ok(try(<ident>))`/`err(try(<ident>))` and non-result moved identifiers in `ok(try(move(<ident>)))`/`err(try(move(<ident>)))` are rejected deterministically with the same `try(...) expects Result<u8,u8>` diagnostics.
-31. This slice creates explicit parser/test safety gates while ownership inference and borrow-check semantics are still evolving.
+31. This stage0 contract creates explicit parser/test safety gates for lifecycle and borrow safety; broader ownership inference beyond the bootstrap surface remains future work.
 32. Conditional expression selection through `if(cond, then, else)` applies lifecycle transitions from the selected branch while preserving deterministic ownership diagnostics and move semantics in selected branches.
 33. Statement-form conditionals `if (<expr>) { ... } [else { ... }]` validate both branches with copied ownership state, then apply lifecycle transitions only from the selected branch to live state; non-selected branches do not consume or release live bindings even though their diagnostics stay deterministic.
 34. Logical short-circuit selection through `&&` and `||` applies lifecycle transitions only for selected RHS evaluation paths; non-selected RHS paths do not consume moved bindings in live state but still run deterministic copied-state type checks.
@@ -172,7 +175,7 @@ Implementation complexity and schedule risk are tracked in milestone updates and
 
 ## Compatibility
 
-Compatibility impact must be documented before Implemented status.
+FIP-0007 establishes the checked stage0 lifecycle and borrowing contract. Future changes to move/drop behavior, borrow lifetime handling, dereference rules, active-borrow assignment guards, block escape checks, or lifecycle diagnostics must update this FIP and the ownership/borrow contract verifier in the same change.
 
 ## Test Plan
 
@@ -180,6 +183,6 @@ Current checks:
 
 1. `tests/conformance/verify_stage0_grammar.ps1` validates `main_drop_unused.fn`, `main_move_binding.fn`, `main_move_reinit_var.fn`, `main_drop_reinit_var.fn`, `main_move_reinit_move_again.fn`, `main_drop_reinit_move.fn`, `main_drop_reinit_drop_reinit.fn`, `main_result_move_reinit_var.fn`, `main_result_drop_reinit_var.fn`, `main_result_drop_reinit_move.fn`, `main_result_move_reinit_move_again.fn`, `main_result_drop_reinit_drop_reinit.fn`, borrow/dereference fixtures (`main_exit_borrow_deref.fn`, `main_exit_borrow_typed_u8.fn`, `main_exit_borrow_result_try.fn`, `main_exit_borrow_reflects_reassign.fn`, `main_exit_borrow_drop_ref_then_move.fn`, `main_exit_borrow_drop_ref_then_assign.fn`, `main_exit_assign_after_rhs_releases_borrow.fn`, `main_exit_unwrap_assignment_after_rhs_releases_borrow.fn`, `main_exit_plus_equals_after_rhs_releases_borrow.fn`, `main_exit_block_borrow_release.fn`, `main_exit_block_shadow_local.fn`, `main_exit_if_statement_then.fn`, `main_exit_if_statement_else.fn`, `main_exit_helper_if_statement_return.fn`), and nested-wrapper/unwrap move fixtures `main_exit_try_ok_move_u8.fn`, `main_exit_err_move_u8.fn`, `main_exit_try_move_ok_move_u8.fn`, `main_exit_try_move_result_reinit_move_again.fn`, `main_exit_try_move_result_reinit_drop_reinit.fn`, `main_exit_try_move_other_result_assign.fn`, `main_exit_try_move_ok_nested_wrapper.fn`, `main_exit_err_try_move_ok_identifier.fn`, `main_exit_err_try_move_ok_reinit_source.fn`, `main_exit_ok_try_move_ok_reinit_source.fn`, `main_exit_ok_try_move_ok_reinit_drop_reinit_source.fn`, `main_exit_err_try_move_ok_reinit_drop_reinit_source.fn`, `main_exit_if_move_then_selected.fn`, `main_exit_if_move_else_selected.fn`, `main_exit_logic_and_short_circuit_move_rhs.fn`, and `main_exit_logic_or_short_circuit_move_rhs.fn`; it asserts parse failures for use-after-drop/move/redrop, double-drop/move, drop-after-move, move-after-drop, assign-after-drop-immutable, assign-after-move-immutable, undefined-drop/move, self-move assignment, nested-wrapper use-after-move (`invalid_use_after_move_inside_ok.fn`, `invalid_use_after_move_inside_err.fn`), logical selected-RHS use-after-move (`invalid_logic_and_use_after_move_rhs_selected.fn`, `invalid_logic_or_use_after_move_rhs_selected.fn`), unary-not moved-operand use-after-move (`invalid_logic_not_use_after_move.fn`), post-`try(move(<result-ident>))` use-after-move (`invalid_try_move_result_use_after_move.fn`, `invalid_err_try_move_use_after_move_source.fn`, `invalid_ok_try_move_use_after_move_source.fn`), immutable re-init after moved `try` consumption (`invalid_try_move_result_assign_after_move_immutable.fn`, `invalid_ok_try_move_assign_after_move_immutable_source.fn`, `invalid_err_try_move_assign_after_move_immutable_source.fn`), drop-after-move after moved `try` consumption (`invalid_try_move_result_drop_after_move.fn`, `invalid_ok_try_move_drop_after_move_source.fn`, `invalid_err_try_move_drop_after_move_source.fn`), nested non-result type rejection in wrapper paths for non-move and moved forms (`invalid_ok_try_non_result_identifier.fn`, `invalid_err_try_non_result_identifier.fn`, `invalid_ok_try_move_non_result_identifier.fn`, `invalid_err_try_move_non_result_identifier.fn`), self-target assignment hazards through moved unwraps (`invalid_try_move_result_self_assignment.fn`), nested-wrapper err-state rejection in non-move and moved forms (`invalid_ok_try_err_identifier.fn`, `invalid_err_try_err_identifier.fn`, `invalid_ok_try_move_err_identifier.fn`, `invalid_err_try_move_err_identifier.fn`), block-local reference escape (`invalid_block_reference_escape.fn`, `invalid_block_shadow_reference_escape.fn`), invalid statement-form conditional blocks (`invalid_if_statement_missing_then_block.fn`, `invalid_if_statement_else_without_block.fn`, `invalid_if_statement_non_u8_condition.fn`), and borrow/dereference misuse fixtures (`invalid_borrow_reference_expr.fn`, `invalid_borrow_after_move.fn`, `invalid_move_while_borrowed.fn`, `invalid_assign_while_borrowed.fn`, `invalid_assign_after_rhs_still_borrowed.fn`, `invalid_unwrap_assignment_after_rhs_still_borrowed.fn`, `invalid_plus_equals_after_rhs_still_borrowed.fn`, `invalid_dereference_missing_operand.fn`, `invalid_dereference_non_reference.fn`, `invalid_dereference_expr.fn`, `invalid_borrow_type_annotation.fn`) with deterministic message-substring checks for ownership/lifecycle diagnostics.
 2. `tests/run_stage0_suite.ps1` invokes `tests/conformance/verify_stage0_grammar.ps1` in the stage0 aggregate suite.
+3. `tests/reproducibility/verify_ownership_borrow_contract.ps1` statically checks the FIP status/index, parser lifecycle and borrow hooks, conformance diagnostics, runtime fixture coverage, and implementation-list references for the FIP-0007 stage0 contract.
 
-Acceptance criteria listed above remain normative for Implemented status.
-
+Acceptance criteria listed above are now enforced by the implemented status gate.
