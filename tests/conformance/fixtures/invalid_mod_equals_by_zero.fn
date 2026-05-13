@@ -1,0 +1,5 @@
+fn main() {
+  var value = 10
+  value %= 0
+  exit(value)
+}

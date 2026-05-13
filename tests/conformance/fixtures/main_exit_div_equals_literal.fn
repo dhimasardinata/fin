@@ -1,0 +1,5 @@
+fn main() {
+  var value = 250
+  value /= 2
+  exit(value)
+}

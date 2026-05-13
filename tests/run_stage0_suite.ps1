@@ -166,6 +166,11 @@ if (-not $SkipDoctor) {
 & $fin build --src tests/conformance/fixtures/main_exit_unwrap_assignment_after_rhs_releases_borrow.fn --out artifacts/test-exit157
 & $fin build --src tests/conformance/fixtures/main_exit_plus_equals_literal.fn --out artifacts/test-exit158
 & $fin build --src tests/conformance/fixtures/main_exit_plus_equals_after_rhs_releases_borrow.fn --out artifacts/test-exit159
+& $fin build --src tests/conformance/fixtures/main_exit_minus_equals_literal.fn --out artifacts/test-exit172a
+& $fin build --src tests/conformance/fixtures/main_exit_times_equals_literal.fn --out artifacts/test-exit172b
+& $fin build --src tests/conformance/fixtures/main_exit_div_equals_literal.fn --out artifacts/test-exit125
+& $fin build --src tests/conformance/fixtures/main_exit_mod_equals_literal.fn --out artifacts/test-exit31b
+& $fin build --src tests/conformance/fixtures/main_exit_minus_equals_after_rhs_releases_borrow.fn --out artifacts/test-exit72
 & $fin build --src tests/conformance/fixtures/main_exit_helper_default_u8.fn --out artifacts/test-exit160
 & $fin build --src tests/conformance/fixtures/main_exit_helper_chain.fn --out artifacts/test-exit161
 & $fin build --src tests/conformance/fixtures/main_exit_helper_result_try.fn --out artifacts/test-exit162
@@ -297,6 +302,11 @@ if (-not $SkipRun) {
         & $fin run --no-build --out artifacts/test-exit157 --expect-exit 157
         & $fin run --no-build --out artifacts/test-exit158 --expect-exit 158
         & $fin run --no-build --out artifacts/test-exit159 --expect-exit 159
+        & $fin run --no-build --out artifacts/test-exit172a --expect-exit 172
+        & $fin run --no-build --out artifacts/test-exit172b --expect-exit 172
+        & $fin run --no-build --out artifacts/test-exit125 --expect-exit 125
+        & $fin run --no-build --out artifacts/test-exit31b --expect-exit 31
+        & $fin run --no-build --out artifacts/test-exit72 --expect-exit 72
         & $fin run --no-build --out artifacts/test-exit160 --expect-exit 160
         & $fin run --no-build --out artifacts/test-exit161 --expect-exit 161
         & $fin run --no-build --out artifacts/test-exit162 --expect-exit 162
