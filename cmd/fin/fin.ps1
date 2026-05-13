@@ -2,7 +2,7 @@ param(
     [Parameter(Position = 0)]
     [string]$Command = "",
 
-    [Parameter(ValueFromRemainingArguments = $true)]
+    [Parameter(Position = 1, ValueFromRemainingArguments = $true)]
     [string[]]$CommandArgs
 )
 
@@ -529,30 +529,12 @@ function Invoke-Test {
     }
 
     $suite = Join-Path $repoRoot "tests/run_stage0_suite.ps1"
-    if ($quick -and $skipDoctor -and $skipRun) {
-        & $suite -Quick -SkipDoctor -SkipRun
-    }
-    elseif ($quick -and $skipDoctor) {
-        & $suite -Quick -SkipDoctor
-    }
-    elseif ($quick -and $skipRun) {
-        & $suite -Quick -SkipRun
-    }
-    elseif ($skipDoctor -and $skipRun) {
-        & $suite -SkipDoctor -SkipRun
-    }
-    elseif ($quick) {
-        & $suite -Quick
-    }
-    elseif ($skipDoctor) {
-        & $suite -SkipDoctor
-    }
-    elseif ($skipRun) {
-        & $suite -SkipRun
-    }
-    else {
-        & $suite
-    }
+    $suiteArgs = @{}
+    if ($quick) { $suiteArgs["Quick"] = $true }
+    if ($skipDoctor) { $suiteArgs["SkipDoctor"] = $true }
+    if ($skipRun) { $suiteArgs["SkipRun"] = $true }
+
+    & $suite @suiteArgs
 }
 
 function Show-Usage {
@@ -573,6 +555,11 @@ Usage:
 
 Unified commands (tracked in FIP-0015):
   fin init | build | run | test | fmt | doc | pkg add | pkg publish | doctor
+
+Test options:
+  --quick      keep shared gates and use the smoke fixture matrix
+  --no-doctor  skip doctor policy preflight
+  --no-run     skip runtime executions
 "@ | Write-Host
 }
 
