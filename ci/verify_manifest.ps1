@@ -1,5 +1,6 @@
 param(
-    [string]$Manifest = "fin.toml"
+    [string]$Manifest = "fin.toml",
+    [switch]$Quiet
 )
 
 Set-StrictMode -Version Latest
@@ -153,4 +154,6 @@ catch {
     exit 1
 }
 
-Write-Host "Manifest policy check passed."
+if (-not $Quiet) {
+    Write-Host "Manifest policy check passed."
+}

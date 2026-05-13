@@ -34,7 +34,8 @@ function Assert-SupportedTarget {
 function Resolve-ManifestPrimaryTarget {
     param(
         [string]$ManifestPath = "fin.toml",
-        [switch]$RequireExists
+        [switch]$RequireExists,
+        [switch]$ValidatePolicy
     )
 
     $manifestFull = if ([System.IO.Path]::IsPathRooted($ManifestPath)) {
@@ -49,6 +50,10 @@ function Resolve-ManifestPrimaryTarget {
             throw "Manifest file not found: $manifestFull"
         }
         return ""
+    }
+
+    if ($ValidatePolicy) {
+        & (Join-Path $repoRoot "ci/verify_manifest.ps1") -Manifest $manifestFull -Quiet
     }
 
     $raw = Get-Content -Path $manifestFull -Raw
@@ -228,11 +233,9 @@ function Invoke-Build {
         }
     }
 
-    if ($manifestProvided) {
-        $null = Resolve-ManifestPrimaryTarget -ManifestPath $manifest -RequireExists
-    }
+    $manifestTarget = Resolve-ManifestPrimaryTarget -ManifestPath $manifest -RequireExists:$manifestProvided -ValidatePolicy
     if ([string]::IsNullOrWhiteSpace($target)) {
-        $target = Resolve-ManifestPrimaryTarget -ManifestPath $manifest
+        $target = $manifestTarget
     }
     if ([string]::IsNullOrWhiteSpace($target)) {
         $target = "x86_64-linux-elf"
@@ -313,11 +316,9 @@ function Invoke-Run {
         }
     }
 
-    if ($manifestProvided) {
-        $null = Resolve-ManifestPrimaryTarget -ManifestPath $manifest -RequireExists
-    }
+    $manifestTarget = Resolve-ManifestPrimaryTarget -ManifestPath $manifest -RequireExists:$manifestProvided -ValidatePolicy
     if ([string]::IsNullOrWhiteSpace($target)) {
-        $target = Resolve-ManifestPrimaryTarget -ManifestPath $manifest
+        $target = $manifestTarget
     }
     if ([string]::IsNullOrWhiteSpace($target)) {
         $target = "x86_64-linux-elf"

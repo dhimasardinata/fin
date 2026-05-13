@@ -31,3 +31,6 @@ Unified commands tracked in `FIP-0015`:
 - `fin pkg add`
 - `fin pkg publish`
 - `fin doctor`
+
+`fin build` and `fin run` validate the selected manifest when one is present
+before using it for target selection.

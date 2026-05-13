@@ -47,8 +47,8 @@ Current commands:
 1. `init`: scaffolds `fin.toml`, `fin.lock`, and `src/main.fn`.
 2. `doctor`: executes policy and seed checks.
 3. `emit-elf-exit0`: runs the FIP-0010 stage0 emitter and verifier.
-4. `build`: parses stage0 `.fn` subset and emits verified native artifact for selected target.
-5. `run`: builds (optional) and executes target-specific artifact with expected exit-code assertion.
+4. `build`: validates the selected manifest when present, parses stage0 `.fn` subset, and emits verified native artifact for selected target.
+5. `run`: validates the selected manifest when present, builds (optional), and executes target-specific artifact with expected exit-code assertion.
 6. `fmt`: formats stage0 `.fn` subset into canonical style.
 7. `doc`: generates stage0 documentation from `.fn` subset.
 8. `pkg add`: inserts/updates dependency entries in `fin.toml` and rewrites `fin.lock`.
@@ -85,7 +85,7 @@ Current checks:
 4. `./fin.ps1 build --src tests/conformance/fixtures/main_exit7.fn --out artifacts/fin-build-exit7` succeeds.
 5. `./fin.ps1 build --target x86_64-windows-pe --out artifacts/main.exe` succeeds.
 6. `./fin.ps1 run --no-build --out artifacts/fin-build-exit7 --expect-exit 7` executes fixture artifact.
-7. `./fin.ps1 build --manifest fin.toml` resolves target from `[targets].primary` when target is omitted.
+7. `./fin.ps1 build --manifest fin.toml` validates manifest policy and resolves target from `[targets].primary` when target is omitted.
 8. `./fin.ps1 fmt --src <file>` rewrites stage0 source to canonical form.
 9. `./fin.ps1 fmt --src <file> --check` fails on unformatted source and passes on formatted source.
 10. `./fin.ps1 doc --src <file> --out <file>` generates doc output with expected summary and exit code.

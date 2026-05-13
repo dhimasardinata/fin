@@ -20,8 +20,8 @@ Until native `fin` is available, a compatibility shim is provided:
 ## Commands
 
 - `fin init`: create a new package layout.
-- `fin build`: compile current package.
-- `fin run`: build and execute current package.
+- `fin build`: validate the selected manifest when present, then compile current package.
+- `fin run`: validate the selected manifest when present, then build and execute current package.
 - `fin test`: run package tests. `--quick` keeps shared bootstrap,
   conformance, integration, reproducibility, and policy gates, but uses a
   small fixture smoke matrix instead of the exhaustive fixture build/run matrix.
