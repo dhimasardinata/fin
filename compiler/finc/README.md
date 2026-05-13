@@ -2,7 +2,7 @@
 
 `finc` is the Fin compiler track.
 
-## Planned Pipeline
+## Compiler Pipeline Direction
 
 1. Lexer and parser.
 2. Type inference and checking.

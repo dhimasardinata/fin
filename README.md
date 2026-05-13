@@ -20,13 +20,13 @@ This repository implements the foundation phase:
 - CI policy gates for independent toolchain and FIP linkage are defined.
 - Reproducibility and toolchain-policy self-checks are integrated into stage0 test suite.
 - Stage0 direct ELF emitters are implemented (`emit_elf_exit0.ps1`, `emit_elf_write_exit.ps1`).
-- Stage0 direct PE emitter starter is implemented (`emit_pe_exit0.ps1`).
+- Stage0 direct PE emitter is implemented (`emit_pe_exit0.ps1`).
 - Stage0 minimal parser/build path is implemented for `.fn` subset.
 - Bootstrap CLI shim covers stage0 workflows (`init`, `doctor`, `build`, `run`, `fmt`, `doc`, `pkg add`, `pkg publish`, `test`).
 - Lean no-libc stdlib v0 has a Review-stage contract tied to runtime ABI witnesses (`docs/stdlib-v0.md`).
 - Manifest policy gate validates required policy lines and target schema in `fin.toml`.
 - Stage0 bootstrap closure proxy witness is implemented with baseline verification (`tests/bootstrap/verify_stage0_closure.ps1`, `seed/stage0-closure-baseline.txt`).
-- Stage0 finobj/finld starter flow is implemented for minimal multi-object object-to-native path (Linux ELF and Windows PE).
+- Stage0 finobj/finld flow is implemented for minimal multi-object object-to-native path (Linux ELF and Windows PE).
 - Stage0 build/run supports selectable pipeline (`direct` or `finobj`) for Linux ELF and Windows PE outputs.
 - Compiler/linker/object-format/assembler tracks are scaffolded.
 
