@@ -50,7 +50,9 @@ Implementation complexity and schedule risk are tracked in milestone updates and
 
 ## Compatibility
 
-Compatibility impact must be documented before Implemented status.
+This adds reproducibility gates without changing source-language semantics.
+Changes to witness hashes, deterministic output contracts, or reproducibility
+scope require an explicit FIP/test update.
 
 ## Test Plan
 

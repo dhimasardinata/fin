@@ -44,7 +44,9 @@ Implementation complexity and schedule risk are tracked in milestone updates and
 
 ## Compatibility
 
-Compatibility impact must be documented before Implemented status.
+This intentionally rejects normal-build paths that depend on external
+compiler, assembler, or linker tools. New bootstrap exceptions must be explicit
+and ratified by a FIP.
 
 ## Test Plan
 

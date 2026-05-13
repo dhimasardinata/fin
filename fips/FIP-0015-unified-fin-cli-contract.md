@@ -70,7 +70,9 @@ Implementation complexity and schedule risk are tracked in milestone updates and
 
 ## Compatibility
 
-Compatibility impact must be documented before Implemented status.
+This stabilizes the bootstrap `fin` command names and mandatory option
+semantics. Incompatible command or flag changes require an explicit FIP/test
+update.
 
 ## Test Plan
 

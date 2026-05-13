@@ -280,7 +280,9 @@ Implementation complexity and schedule risk are tracked in milestone updates and
 
 ## Compatibility
 
-Compatibility impact must be documented before Implemented status.
+This locks the stage0 grammar subset and its accepted bootstrap tolerances.
+Unsupported syntax remains rejected by the conformance suite until a later FIP
+extends the grammar.
 
 ## Test Plan
 

@@ -54,7 +54,9 @@ Implementation complexity and schedule risk are tracked in milestone updates and
 
 ## Compatibility
 
-Compatibility impact must be documented before Implemented status.
+This locks the stage0 `fin.toml` and `fin.lock` fields used by package,
+publish, and target-selection flows. Incompatible schema changes require an
+explicit FIP/test update or a documented migration path.
 
 ## Test Plan
 

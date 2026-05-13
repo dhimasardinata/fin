@@ -63,7 +63,9 @@ Implementation complexity and schedule risk are tracked in milestone updates and
 
 ## Compatibility
 
-Compatibility impact must be documented before Implemented status.
+This locks the minimal direct Windows PE emitter contract for the stage0
+bootstrap path. Changes to emitted layout, verification rules, or deterministic
+output hashes require an explicit FIP/test update.
 
 ## Test Plan
 

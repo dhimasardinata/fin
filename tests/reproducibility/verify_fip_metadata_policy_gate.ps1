@@ -52,6 +52,7 @@ function Write-MinimalFipRepo {
 - implementation:
   - README.md
 "@,
+        [string]$CompatibilityBody = "Minimal.",
         [switch]$CreateReadme
     )
 
@@ -127,7 +128,7 @@ Minimal.
 
 ## Compatibility
 
-Minimal.
+$CompatibilityBody
 
 ## Test Plan
 
@@ -169,6 +170,9 @@ try {
 
     Write-MinimalFipRepo -Status "Draft" -ImplementationBlock "- implementation: []"
     Assert-Passes -Label "draft FIP with empty implementation list" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -Status "Implemented" -CompatibilityBody "Compatibility impact must be documented before Implemented status." -CreateReadme
+    Assert-Fails -Label "implemented FIP with compatibility placeholder" -Action { & $policy -Root $tmpRoot }
 }
 finally {
     Finalize-TestTmpWorkspace -State $tmpState

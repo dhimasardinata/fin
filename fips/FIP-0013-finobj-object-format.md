@@ -70,7 +70,10 @@ Implementation complexity and schedule risk are tracked in milestone updates and
 
 ## Compatibility
 
-Compatibility impact must be documented before Implemented status.
+This locks the finobj v0 text schema, canonical ordering rules, symbol-value
+metadata, and relocation metadata used by stage0 finld. Incompatible object
+format changes require either a versioned format change or an explicit FIP/test
+update.
 
 ## Test Plan
 

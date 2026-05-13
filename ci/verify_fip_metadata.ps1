@@ -192,6 +192,11 @@ Get-ChildItem -LiteralPath $fipDir -File -Filter "FIP-*.md" |
             Assert-FipSection -Text $text -Section $section -Path $relativePath
         }
 
+        $compatibilityPlaceholder = "Compatibility impact must be documented before Implemented status."
+        if (($status -in @("Implemented", "Released")) -and ($text -match [regex]::Escape($compatibilityPlaceholder))) {
+            Fail-FipMetadata ("{0} status {1} must replace compatibility placeholder text" -f $relativePath, $status)
+        }
+
         if ($text -notmatch '(?m)^-\s+implementation:\s*(\[\])?\s*$') {
             Fail-FipMetadata ("{0} missing implementation metadata" -f $relativePath)
         }

@@ -67,7 +67,9 @@ Implementation complexity and schedule risk are tracked in milestone updates and
 
 ## Compatibility
 
-Compatibility impact must be documented before Implemented status.
+This locks the current Linux x86_64 raw syscall ABI witnesses used by stage0.
+Changing syscall numbers, calling convention assumptions, or witness semantics
+requires an explicit FIP/test update.
 
 ## Test Plan
 
