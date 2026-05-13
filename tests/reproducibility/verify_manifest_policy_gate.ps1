@@ -11,6 +11,9 @@ $manifest = Join-Path $tmpRoot "fin.toml"
 
 function Write-Manifest {
     param(
+        [string]$Name = "gate_smoke",
+        [string]$Version = "0.1.0-dev",
+        [string]$SeedHash = "UNSET",
         [string]$Primary = "x86_64-linux-elf",
         [string]$Secondary = "x86_64-windows-pe",
         [string]$Independent = "true",
@@ -20,10 +23,10 @@ function Write-Manifest {
 
     Set-Content -Path $manifest -Value @"
 [workspace]
-name = "gate_smoke"
-version = "0.1.0-dev"
+name = "$Name"
+version = "$Version"
 independent = $Independent
-seed_hash = "UNSET"
+seed_hash = "$SeedHash"
 
 [targets]
 primary = "$Primary"
@@ -58,6 +61,18 @@ function Assert-Fails {
 # Should pass: valid baseline.
 Write-Manifest
 & $policy -Manifest $manifest
+
+# Should fail: invalid workspace name.
+Write-Manifest -Name "9bad"
+Assert-Fails -Action { & $policy -Manifest $manifest | Out-Null } -Label "invalid workspace name"
+
+# Should fail: empty workspace version.
+Write-Manifest -Version ""
+Assert-Fails -Action { & $policy -Manifest $manifest | Out-Null } -Label "empty workspace version"
+
+# Should fail: invalid seed hash syntax.
+Write-Manifest -SeedHash "NOT-A-HASH"
+Assert-Fails -Action { & $policy -Manifest $manifest | Out-Null } -Label "invalid seed hash"
 
 # Should fail: invalid primary target.
 Write-Manifest -Primary "x86_64-linux-unknown"

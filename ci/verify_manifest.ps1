@@ -73,6 +73,21 @@ function Decode-StringValue {
     return ""
 }
 
+function Assert-RequiredCanonicalString {
+    param(
+        [hashtable]$Map,
+        [string]$Key
+    )
+
+    $raw = Get-RequiredValue -Map $Map -Key $Key
+    $decoded = Decode-StringValue -Value $raw
+    if ([string]::IsNullOrWhiteSpace($decoded)) {
+        throw ("{0} must be a non-empty quoted string" -f $Key)
+    }
+
+    return $decoded
+}
+
 try {
     $map = Parse-ManifestMap -Path $Manifest
 }
@@ -82,15 +97,24 @@ catch {
 }
 
 try {
+    $workspaceName = Assert-RequiredCanonicalString -Map $map -Key "workspace.name"
+    if ($workspaceName -notmatch '^[A-Za-z][A-Za-z0-9_-]*$') {
+        throw "workspace.name must match ^[A-Za-z][A-Za-z0-9_-]*$"
+    }
+
+    $workspaceVersion = Assert-RequiredCanonicalString -Map $map -Key "workspace.version"
+    if ($workspaceVersion -match '"') {
+        throw "workspace.version may not contain quote characters"
+    }
+
     $independent = (Get-RequiredValue -Map $map -Key "workspace.independent").ToLowerInvariant()
     if ($independent -ne "true") {
         throw "workspace.independent must be true"
     }
 
-    $seedHashRaw = Get-RequiredValue -Map $map -Key "workspace.seed_hash"
-    $seedHash = Decode-StringValue -Value $seedHashRaw
-    if ([string]::IsNullOrWhiteSpace($seedHash)) {
-        throw "workspace.seed_hash must be a quoted string"
+    $seedHash = Assert-RequiredCanonicalString -Map $map -Key "workspace.seed_hash"
+    if ($seedHash -ne "UNSET" -and $seedHash -notmatch '^[0-9a-f]{64}$') {
+        throw "workspace.seed_hash must be UNSET or a lowercase SHA-256 hex digest"
     }
 
     $extPolicy = (Get-RequiredValue -Map $map -Key "policy.external_toolchain_forbidden").ToLowerInvariant()
