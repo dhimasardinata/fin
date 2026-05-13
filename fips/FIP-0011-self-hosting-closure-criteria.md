@@ -32,7 +32,7 @@ This proposal is part of the Fin independent-toolchain baseline and is required 
 
 Current stage0 closure proxy:
 
-1. Build fixed source input twice for each stage0 matrix case:
+1. Build a fixed representative source input twice for each stage0 matrix case:
    - `x86_64-linux-elf` + `direct`
    - `x86_64-linux-elf` + `finobj`
    - `x86_64-windows-pe` + `direct`
@@ -48,6 +48,7 @@ Current stage0 closure proxy:
 8. Statically validate the committed baseline contract before the heavier closure run, including case-sensitive key order, duplicate/unexpected key rejection, hash formats, parity booleans, direct/finobj equality, source existence, and closure hash derivation from matrix hashes.
 9. Materialize closure build outputs in a uniquely tokenized run-scoped workspace under `artifacts/closure` using run-tokenized output basenames to avoid cross-run collisions in both final outputs and stage0 intermediate finobj temp paths.
 10. Prune stale run workspaces under `artifacts/closure` before each run with age-gated policy (default 24h; configurable via `FIN_CLOSURE_STALE_HOURS`; bypass only when `FIN_KEEP_CLOSURE_RUNS=1`; invalid keep values rejected; invalid stale-hours rejected even when keep mode is set), scoped to `run-*` directories only, using owner metadata (`pid` + `start_utc`) for active-owner protection with legacy PID fallback/backfill.
+11. The committed baseline source is a representative stage0 fixture that exercises helper calls, typed parameters, statement-form `while`, mutation, and terminal `return` before entrypoint `exit`.
 
 This proxy establishes deterministic closure evidence before native self-hosting exists.
 Full `fin-seed -> finc -> finc` closure remains the completion requirement for Implemented status.

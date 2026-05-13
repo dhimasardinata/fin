@@ -20,7 +20,7 @@ Until native self-hosting is available, stage0 closure evidence is produced by:
 
 Proxy rule:
 
-1. Build the same source twice for each stage0 matrix case:
+1. Build the same representative source twice for each stage0 matrix case:
    - Linux ELF `direct`
    - Linux ELF `finobj`
    - Windows PE `direct`
@@ -32,6 +32,7 @@ Proxy rule:
 6. Verify witness keys/values against committed baseline `seed/stage0-closure-baseline.txt` with strict keyset matching, duplicate-key rejection, and canonical key-order validation.
 7. Use a uniquely tokenized run-scoped closure workspace under `artifacts/closure` with run-tokenized output basenames so concurrent closure runs do not collide on output filenames or stage0 intermediate finobj temp names.
 8. Prune stale `run-*` closure workspaces with age gating (default 24h; override via `FIN_CLOSURE_STALE_HOURS`; disable only via `FIN_KEEP_CLOSURE_RUNS=1`; invalid keep values fail fast; invalid stale-hours values fail fast even when keep mode is set) while protecting active-owner directories via owner metadata (`pid` + `start_utc`) and legacy PID fallback/backfill; malformed run names and non-positive/non-parseable PID run names are treated as inactive and pruned when stale. Non-`run-*` directories are out of prune scope.
+9. Use a representative stage0 source that exercises helper calls, typed parameters, statement-form `while`, mutation, and terminal `return` before entrypoint `exit`.
 
 ## Constraints
 
