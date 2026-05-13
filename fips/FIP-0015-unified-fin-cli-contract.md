@@ -58,7 +58,7 @@ Current commands:
     preflight. `--no-run` skips the final fixture runtime phase after fixture
     builds.
 
-This preserves forward compatibility with the planned unified CLI contract while enabling immediate policy enforcement.
+This keeps the bootstrap shim aligned with the unified CLI contract while enabling immediate policy enforcement.
 
 ## Alternatives
 
