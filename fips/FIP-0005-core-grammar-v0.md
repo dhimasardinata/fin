@@ -7,7 +7,7 @@
 - created: 2026-02-27
 - requires: ["FIP-0004"]
 - target_release: M2
-- discussion: TBD
+- discussion: fin://fip/FIP-0005
 - implementation:
   - compiler/finc/stage0/parse_main_exit.ps1
   - tests/conformance/verify_stage0_grammar.ps1

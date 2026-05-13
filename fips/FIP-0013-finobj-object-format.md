@@ -7,7 +7,7 @@
 - created: 2026-02-27
 - requires: ["FIP-0010"]
 - target_release: M5
-- discussion: TBD
+- discussion: fin://fip/FIP-0013
 - implementation:
   - compiler/finobj/stage0/write_finobj_exit.ps1
   - compiler/finobj/stage0/read_finobj_exit.ps1

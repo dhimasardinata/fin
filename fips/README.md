@@ -19,6 +19,10 @@
 - `implementation`
 - `acceptance`
 
+Implemented and released FIPs must replace placeholder discussion metadata.
+Bootstrap records without an external thread use their canonical `fin://fip/...`
+address instead of `TBD`.
+
 ## Status Lifecycle
 
 `Draft -> Review -> Accepted -> Scheduled -> InProgress -> Implemented -> Released`

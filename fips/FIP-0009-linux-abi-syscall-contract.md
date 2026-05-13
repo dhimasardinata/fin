@@ -7,7 +7,7 @@
 - created: 2026-02-27
 - requires: ["FIP-0010"]
 - target_release: M1
-- discussion: TBD
+- discussion: fin://fip/FIP-0009
 - implementation:
   - compiler/finc/stage0/emit_elf_exit0.ps1
   - compiler/finc/stage0/emit_elf_write_exit.ps1

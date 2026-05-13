@@ -52,6 +52,7 @@ function Write-MinimalFipRepo {
 - implementation:
   - README.md
 "@,
+        [string]$Discussion = "TBD",
         [string]$CompatibilityBody = "Minimal.",
         [switch]$CreateReadme
     )
@@ -101,7 +102,7 @@ function Write-MinimalFipRepo {
 - created: 2026-02-27
 - requires: $Requires
 - target_release: M0
-- discussion: TBD
+- discussion: $Discussion
 $ImplementationBlock
 - acceptance:
   - Minimal policy passes.
@@ -171,7 +172,13 @@ try {
     Write-MinimalFipRepo -Status "Draft" -ImplementationBlock "- implementation: []"
     Assert-Passes -Label "draft FIP with empty implementation list" -Action { & $policy -Root $tmpRoot }
 
-    Write-MinimalFipRepo -Status "Implemented" -CompatibilityBody "Compatibility impact must be documented before Implemented status." -CreateReadme
+    Write-MinimalFipRepo -Status "Implemented" -Discussion "fin://fip/FIP-0001" -CreateReadme
+    Assert-Passes -Label "implemented FIP with completed discussion and compatibility" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -Status "Implemented" -CreateReadme
+    Assert-Fails -Label "implemented FIP with discussion placeholder" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -Status "Implemented" -Discussion "fin://fip/FIP-0001" -CompatibilityBody "Compatibility impact must be documented before Implemented status." -CreateReadme
     Assert-Fails -Label "implemented FIP with compatibility placeholder" -Action { & $policy -Root $tmpRoot }
 }
 finally {

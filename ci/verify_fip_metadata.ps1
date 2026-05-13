@@ -157,6 +157,7 @@ Get-ChildItem -LiteralPath $fipDir -File -Filter "FIP-*.md" |
         $address = Get-FipMetadataValue -Text $text -Key "address" -Path $relativePath
         $status = Get-FipMetadataValue -Text $text -Key "status" -Path $relativePath
         $targetRelease = Get-FipMetadataValue -Text $text -Key "target_release" -Path $relativePath
+        $discussion = Get-FipMetadataValue -Text $text -Key "discussion" -Path $relativePath
         $requires = @(Get-FipListMetadata -Text $text -Key "requires" -Path $relativePath)
         $implementationPaths = @(Get-FipListMetadata -Text $text -Key "implementation" -Path $relativePath)
 
@@ -195,6 +196,10 @@ Get-ChildItem -LiteralPath $fipDir -File -Filter "FIP-*.md" |
         $compatibilityPlaceholder = "Compatibility impact must be documented before Implemented status."
         if (($status -in @("Implemented", "Released")) -and ($text -match [regex]::Escape($compatibilityPlaceholder))) {
             Fail-FipMetadata ("{0} status {1} must replace compatibility placeholder text" -f $relativePath, $status)
+        }
+
+        if (($status -in @("Implemented", "Released")) -and ($discussion -eq "TBD")) {
+            Fail-FipMetadata ("{0} status {1} must replace discussion placeholder text" -f $relativePath, $status)
         }
 
         if ($text -notmatch '(?m)^-\s+implementation:\s*(\[\])?\s*$') {

@@ -7,7 +7,7 @@
 - created: 2026-02-27
 - requires: ["FIP-0002", "FIP-0018"]
 - target_release: M0
-- discussion: TBD
+- discussion: fin://fip/FIP-0020
 - implementation:
   - ci/forbid_external_toolchain.ps1
   - tests/reproducibility/verify_toolchain_policy_gate.ps1

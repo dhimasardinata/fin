@@ -7,7 +7,7 @@
 - created: 2026-02-27
 - requires: ["FIP-0015"]
 - target_release: M6
-- discussion: TBD
+- discussion: fin://fip/FIP-0016
 - implementation:
   - compiler/finc/stage0/pkg_add.ps1
   - compiler/finc/stage0/pkg_publish.ps1

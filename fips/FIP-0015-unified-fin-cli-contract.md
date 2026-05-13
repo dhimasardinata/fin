@@ -7,7 +7,7 @@
 - created: 2026-02-27
 - requires: ["FIP-0002"]
 - target_release: M3
-- discussion: TBD
+- discussion: fin://fip/FIP-0015
 - implementation:
   - cmd/fin/fin.ps1
   - fin.ps1
