@@ -114,6 +114,39 @@ function Get-FipListMetadata {
     Fail-FipMetadata ("{0} missing metadata key: {1}" -f $Path, $Key)
 }
 
+function Get-FipBlockListMetadata {
+    param(
+        [string]$Text,
+        [string]$Key,
+        [string]$Path
+    )
+
+    $lines = [regex]::Split($Text, "`r?`n")
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        if ($lines[$i] -notmatch ("^-\s+{0}:\s*$" -f [regex]::Escape($Key))) {
+            continue
+        }
+
+        $items = [System.Collections.Generic.List[string]]::new()
+        for ($j = $i + 1; $j -lt $lines.Count; $j++) {
+            if ([string]::IsNullOrWhiteSpace($lines[$j]) -or $lines[$j] -match '^#' -or $lines[$j] -match '^-\s+') {
+                break
+            }
+
+            $itemMatch = [regex]::Match($lines[$j], '^\s{2}-\s+(.+?)\s*$')
+            if (-not $itemMatch.Success) {
+                Fail-FipMetadata ("{0} invalid {1} metadata item: {2}" -f $Path, $Key, $lines[$j])
+            }
+
+            $items.Add($itemMatch.Groups[1].Value.Trim()) | Out-Null
+        }
+
+        return $items.ToArray()
+    }
+
+    Fail-FipMetadata ("{0} missing metadata key: {1}" -f $Path, $Key)
+}
+
 function Assert-RepoRelativePath {
     param(
         [string]$Value,
@@ -162,6 +195,7 @@ Get-ChildItem -LiteralPath $fipDir -File -Filter "FIP-*.md" |
         $discussion = Get-FipMetadataValue -Text $text -Key "discussion" -Path $relativePath
         $requires = @(Get-FipListMetadata -Text $text -Key "requires" -Path $relativePath)
         $implementationPaths = @(Get-FipListMetadata -Text $text -Key "implementation" -Path $relativePath)
+        $acceptanceCriteria = @(Get-FipBlockListMetadata -Text $text -Key "acceptance" -Path $relativePath)
 
         if ($id -ne $fileId -or $headerId -ne $fileId) {
             Fail-FipMetadata ("{0} id mismatch: filename={1} header={2} metadata={3}" -f $relativePath, $fileId, $headerId, $id)
@@ -223,8 +257,8 @@ Get-ChildItem -LiteralPath $fipDir -File -Filter "FIP-*.md" |
             Fail-FipMetadata ("{0} missing implementation metadata" -f $relativePath)
         }
 
-        if ($text -notmatch '(?m)^-\s+acceptance:\s*$') {
-            Fail-FipMetadata ("{0} missing acceptance metadata block" -f $relativePath)
+        if ($acceptanceCriteria.Count -eq 0) {
+            Fail-FipMetadata ("{0} acceptance metadata requires at least one item" -f $relativePath)
         }
 
         if (($status -in @("Accepted", "Scheduled", "InProgress", "Implemented", "Released")) -and $implementationPaths.Count -eq 0) {

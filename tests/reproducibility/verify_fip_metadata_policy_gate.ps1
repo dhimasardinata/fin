@@ -52,6 +52,10 @@ function Write-MinimalFipRepo {
 - implementation:
   - README.md
 "@,
+        [string]$AcceptanceBlock = @"
+- acceptance:
+  - Minimal policy passes.
+"@,
         [string]$AuthorsLine = "- authors: @fin-maintainers",
         [string]$CreatedLine = "- created: 2026-02-27",
         [string]$Discussion = "TBD",
@@ -106,8 +110,7 @@ $CreatedLine
 - target_release: M0
 - discussion: $Discussion
 $ImplementationBlock
-- acceptance:
-  - Minimal policy passes.
+$AcceptanceBlock
 
 ## Summary
 
@@ -151,6 +154,9 @@ try {
 
     Write-MinimalFipRepo -CreatedLine "- created: 2026-02-30" -CreateReadme
     Assert-Fails -Label "created metadata with invalid date" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -AcceptanceBlock "- acceptance:" -CreateReadme
+    Assert-Fails -Label "empty acceptance metadata block" -Action { & $policy -Root $tmpRoot }
 
     Write-MinimalFipRepo -ImplementationBlock @"
 - implementation:
