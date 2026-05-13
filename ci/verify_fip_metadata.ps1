@@ -156,6 +156,8 @@ Get-ChildItem -LiteralPath $fipDir -File -Filter "FIP-*.md" |
         $id = Get-FipMetadataValue -Text $text -Key "id" -Path $relativePath
         $address = Get-FipMetadataValue -Text $text -Key "address" -Path $relativePath
         $status = Get-FipMetadataValue -Text $text -Key "status" -Path $relativePath
+        $authors = Get-FipMetadataValue -Text $text -Key "authors" -Path $relativePath
+        $created = Get-FipMetadataValue -Text $text -Key "created" -Path $relativePath
         $targetRelease = Get-FipMetadataValue -Text $text -Key "target_release" -Path $relativePath
         $discussion = Get-FipMetadataValue -Text $text -Key "discussion" -Path $relativePath
         $requires = @(Get-FipListMetadata -Text $text -Key "requires" -Path $relativePath)
@@ -177,6 +179,21 @@ Get-ChildItem -LiteralPath $fipDir -File -Filter "FIP-*.md" |
 
         if ($allowedStatuses -notcontains $status) {
             Fail-FipMetadata ("{0} invalid status: {1}" -f $relativePath, $status)
+        }
+
+        if ([string]::IsNullOrWhiteSpace($authors)) {
+            Fail-FipMetadata ("{0} authors metadata must not be empty" -f $relativePath)
+        }
+
+        if ($created -notmatch '^[0-9]{4}-[0-9]{2}-[0-9]{2}$') {
+            Fail-FipMetadata ("{0} created metadata must be YYYY-MM-DD, found: {1}" -f $relativePath, $created)
+        }
+
+        try {
+            [datetime]::ParseExact($created, "yyyy-MM-dd", [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::None) | Out-Null
+        }
+        catch {
+            Fail-FipMetadata ("{0} created metadata is not a valid date: {1}" -f $relativePath, $created)
         }
 
         if ($targetRelease -notmatch '^M[0-9]+$') {

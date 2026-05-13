@@ -32,7 +32,7 @@ Entry points:
 - `tests/integration/verify_pkg_publish.ps1`: `fin pkg publish` integration gate with PID-scoped temp workspace hygiene.
 - `tests/integration/verify_examples.ps1`: runnable examples integration gate for checked `examples/` sources and both Stage0 pipelines.
 - `tests/reproducibility/verify_manifest_policy_gate.ps1`: manifest policy gate self-check coverage with PID-scoped temp workspace hygiene.
-- `tests/reproducibility/verify_fip_metadata_policy_gate.ps1`: FIP metadata policy self-check coverage for missing/unsafe implementation paths, invalid/unknown `requires` entries, status-sensitive empty implementation lists, and implemented/released FIPs that still carry discussion or compatibility placeholders.
+- `tests/reproducibility/verify_fip_metadata_policy_gate.ps1`: FIP metadata policy self-check coverage for missing author metadata, malformed/invalid `created` dates, missing/unsafe implementation paths, invalid/unknown `requires` entries, status-sensitive empty implementation lists, and implemented/released FIPs that still carry discussion or compatibility placeholders.
 - `tests/reproducibility/verify_fip_policy_gate.ps1`: FIP PR-link policy self-check coverage for missing, ineligible review, unknown, and eligible FIP statuses.
 - `tests/reproducibility/verify_stdlib_contract.ps1`: no-libc stdlib contract self-check coverage for `FIP-0017` API lanes, ABI witnesses, and runtime table links.
 - `tests/reproducibility/verify_toolchain_policy_gate.ps1`: toolchain policy gate self-check coverage with PID-scoped temp workspace hygiene.

@@ -52,6 +52,8 @@ function Write-MinimalFipRepo {
 - implementation:
   - README.md
 "@,
+        [string]$AuthorsLine = "- authors: @fin-maintainers",
+        [string]$CreatedLine = "- created: 2026-02-27",
         [string]$Discussion = "TBD",
         [string]$CompatibilityBody = "Minimal.",
         [switch]$CreateReadme
@@ -98,8 +100,8 @@ function Write-MinimalFipRepo {
 - id: FIP-0001
 - address: fin://fip/FIP-0001
 - status: $Status
-- authors: @fin-maintainers
-- created: 2026-02-27
+$AuthorsLine
+$CreatedLine
 - requires: $Requires
 - target_release: M0
 - discussion: $Discussion
@@ -140,6 +142,15 @@ Minimal.
 try {
     Write-MinimalFipRepo -CreateReadme
     Assert-Passes -Label "valid minimal FIP repo" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -AuthorsLine "" -CreateReadme
+    Assert-Fails -Label "missing authors metadata" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -CreatedLine "- created: 2026-2-27" -CreateReadme
+    Assert-Fails -Label "created metadata with non-canonical date format" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -CreatedLine "- created: 2026-02-30" -CreateReadme
+    Assert-Fails -Label "created metadata with invalid date" -Action { & $policy -Root $tmpRoot }
 
     Write-MinimalFipRepo -ImplementationBlock @"
 - implementation:

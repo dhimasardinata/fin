@@ -21,6 +21,9 @@
 The title is not separate metadata. It is the canonical header:
 `# FIP-####: <Title>`.
 
+`created` uses the canonical `YYYY-MM-DD` date format, and `authors` must not
+be empty.
+
 Implemented and released FIPs must replace placeholder discussion metadata.
 Bootstrap records without an external thread use their canonical `fin://fip/...`
 address instead of `TBD`.
