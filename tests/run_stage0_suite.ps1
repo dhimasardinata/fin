@@ -31,6 +31,7 @@ $verifyRepro = Join-Path $repoRoot "tests/reproducibility/verify_stage0_reproduc
 $verifyTmpWorkspacePolicy = Join-Path $repoRoot "tests/reproducibility/verify_test_tmp_workspace_policy.ps1"
 $verifyClosureWorkspacePolicy = Join-Path $repoRoot "tests/reproducibility/verify_closure_workspace_policy.ps1"
 $verifyManifestPolicyGate = Join-Path $repoRoot "tests/reproducibility/verify_manifest_policy_gate.ps1"
+$verifyCompatibilityPolicy = Join-Path $repoRoot "tests/reproducibility/verify_compatibility_policy.ps1"
 $verifyPolicyGate = Join-Path $repoRoot "tests/reproducibility/verify_toolchain_policy_gate.ps1"
 
 Write-Host "fin test: stage0 suite starting"
@@ -62,6 +63,7 @@ if (-not $SkipDoctor) {
 & $verifyTmpWorkspacePolicy
 & $verifyClosureWorkspacePolicy
 & $verifyManifestPolicyGate
+& $verifyCompatibilityPolicy
 & $verifyPolicyGate
 
 & $fin build --src tests/conformance/fixtures/main_exit0.fn --out artifacts/test-exit0

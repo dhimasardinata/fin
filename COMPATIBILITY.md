@@ -1,5 +1,8 @@
 # Compatibility Policy
 
+This policy is tracked by FIP-0019 and applies to language, toolchain, runtime,
+package, and release contracts.
+
 ## Versioning
 
 Fin uses semantic versioning for toolchain releases and language editions when introduced.
@@ -14,6 +17,7 @@ Fin uses semantic versioning for toolchain releases and language editions when i
 
 - Breaking syntax/semantic/ABI changes require an accepted FIP and migration notes.
 - Breaking changes must include compatibility tests and explicit release notes.
+- Pull requests that alter public behavior must document compatibility impact before merge.
 
 ## Edition Policy
 
