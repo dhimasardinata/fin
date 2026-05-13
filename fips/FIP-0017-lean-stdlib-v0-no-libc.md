@@ -22,6 +22,7 @@
   - tests/integration/verify_linux_write_exit.ps1
   - tests/integration/verify_windows_pe_exit.ps1
   - tests/reproducibility/verify_stdlib_contract.ps1
+  - tests/reproducibility/verify_stdlib_contract_policy_gate.ps1
   - tests/run_stage0_suite.ps1
 - acceptance:
   - Stdlib API conformance and runtime ABI tests pass.
@@ -62,8 +63,9 @@ Compatibility impact must be documented before Implemented status.
 
 Current checks:
 
-1. `tests/reproducibility/verify_stdlib_contract.ps1` validates the Review-stage no-libc stdlib contract references the required API lanes, ABI witnesses, runtime tables, and completion requirements.
-2. `tests/bootstrap/verify_elf_exit0.ps1`, `tests/bootstrap/verify_elf_write_exit.ps1`, and `tests/bootstrap/verify_pe_exit0.ps1` validate the current direct runtime ABI witnesses.
-3. `tests/integration/verify_linux_write_exit.ps1` validates Linux `sys_write + sys_exit` behavior without libc.
-4. `tests/integration/verify_windows_pe_exit.ps1` validates PE structure and runtime exit on Windows hosts.
-5. `tests/run_stage0_suite.ps1` includes the stdlib contract verifier.
+1. `tests/reproducibility/verify_stdlib_contract.ps1` validates the Review-stage no-libc stdlib contract references the required API lanes, case-sensitive ABI witnesses, runtime tables, and completion requirements.
+2. `tests/reproducibility/verify_stdlib_contract_policy_gate.ps1` validates wrong-case ABI witness paths, FIP implementation paths, runtime ABI witnesses, and suite wiring are rejected.
+3. `tests/bootstrap/verify_elf_exit0.ps1`, `tests/bootstrap/verify_elf_write_exit.ps1`, and `tests/bootstrap/verify_pe_exit0.ps1` validate the current direct runtime ABI witnesses.
+4. `tests/integration/verify_linux_write_exit.ps1` validates Linux `sys_write + sys_exit` behavior without libc.
+5. `tests/integration/verify_windows_pe_exit.ps1` validates PE structure and runtime exit on Windows hosts.
+6. `tests/run_stage0_suite.ps1` includes the stdlib contract verifier.
