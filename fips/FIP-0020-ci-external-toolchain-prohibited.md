@@ -28,9 +28,10 @@ This proposal is part of the Fin independent-toolchain baseline and is required 
 
 Current CI policy gate:
 
-1. Workflow files are scanned for disallowed external toolchain command patterns.
-2. Matches fail the check unless explicitly allow-tagged (`fin-ci-allow-external`).
-3. Gate runs in CI and in local `fin doctor`/policy scripts.
+1. The policy root must exist before scanning starts.
+2. Workflow files are scanned for disallowed external toolchain command patterns.
+3. Matches fail the check unless explicitly allow-tagged (`fin-ci-allow-external`).
+4. Gate runs in CI and in local `fin doctor`/policy scripts.
 
 Disallowed classes include compiler, linker, and assembler commands (`gcc/clang/ld/as/nasm/...`).
 
@@ -53,5 +54,5 @@ and ratified by a FIP.
 Current checks:
 
 1. CI step runs `./ci/forbid_external_toolchain.ps1`.
-2. `tests/reproducibility/verify_toolchain_policy_gate.ps1` validates fail/pass behavior on synthetic workflow content.
+2. `tests/reproducibility/verify_toolchain_policy_gate.ps1` validates root handling plus fail/pass behavior on synthetic workflow content.
 3. `tests/run_stage0_suite.ps1` includes gate self-check.

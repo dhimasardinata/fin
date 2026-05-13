@@ -8,4 +8,4 @@ Reproducibility checks:
 - `verify_fip_metadata_policy_gate.ps1`: validates FIP metadata gate behavior for implementation-path existence/safety, `requires` reference format/existence, and status-sensitive empty implementation lists.
 - `verify_fip_policy_gate.ps1`: validates FIP PR-link gate behavior for non-feature changes, missing links, unknown FIPs, ineligible review FIPs, and eligible accepted/in-progress/implemented FIPs.
 - `verify_stdlib_contract.ps1`: validates the no-libc stdlib v0 contract for required API lanes, ABI witnesses, runtime table dependencies, and suite wiring.
-- `verify_toolchain_policy_gate.ps1`: validates external-toolchain CI gate behavior against disallowed workflow content, with PID-scoped temp workspace hygiene.
+- `verify_toolchain_policy_gate.ps1`: validates external-toolchain CI gate behavior for root handling, disallowed workflow content, case-insensitive matching, and allow-tagged exceptions, with PID-scoped temp workspace hygiene.

@@ -2,6 +2,20 @@ param(
     [string]$Root = "."
 )
 
+Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
+
+$rootFull = if ([System.IO.Path]::IsPathRooted($Root)) {
+    [System.IO.Path]::GetFullPath($Root)
+}
+else {
+    [System.IO.Path]::GetFullPath((Join-Path (Get-Location).Path $Root))
+}
+
+if (-not (Test-Path -LiteralPath $rootFull -PathType Container)) {
+    throw "Policy root not found: $rootFull"
+}
+
 $disallowed = @(
     "clang\+\+",
     "clang",
@@ -20,20 +34,20 @@ $disallowed = @(
 )
 
 $regex = "(?i)\b(" + ($disallowed -join "|") + ")\b"
-$workflowPath = Join-Path $Root ".github/workflows"
+$workflowPath = Join-Path $rootFull ".github/workflows"
 
-if (-not (Test-Path $workflowPath)) {
+if (-not (Test-Path -LiteralPath $workflowPath)) {
     Write-Host "No workflow directory found; skipping check."
     exit 0
 }
 
 $violations = @()
-$files = @(Get-ChildItem -Path $workflowPath -Recurse -File | Where-Object {
+$files = @(Get-ChildItem -LiteralPath $workflowPath -Recurse -File | Where-Object {
     $_.Extension -eq ".yml" -or $_.Extension -eq ".yaml"
 })
 
 foreach ($file in $files) {
-    $lines = Get-Content $file.FullName
+    $lines = Get-Content -LiteralPath $file.FullName
     for ($i = 0; $i -lt $lines.Count; $i++) {
         $line = $lines[$i]
         if ($line -match "fin-ci-allow-external") {
