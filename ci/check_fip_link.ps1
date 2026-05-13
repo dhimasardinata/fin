@@ -5,6 +5,9 @@ param(
     [string]$FipDir = ""
 )
 
+Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
+
 $requirePattern = "(^|[^A-Z0-9])(FIP-[0-9]{4})([^0-9]|$)"
 $eligibleStatuses = @("Accepted", "Scheduled", "InProgress", "Implemented", "Released")
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
@@ -36,7 +39,7 @@ if ($ChangedFiles) {
 
 $featureTouched = $false
 foreach ($f in $files) {
-    if ($f -match "^(compiler/|runtime/|std/|cmd/|SPEC\.md|fin\.toml)") {
+    if ($f -match "^(compiler/|runtime/|std/|cmd/|ci/|\.github/workflows/|SPEC\.md|fin\.toml)") {
         $featureTouched = $true
         break
     }

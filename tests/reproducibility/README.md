@@ -6,6 +6,6 @@ Reproducibility checks:
 - `verify_manifest_policy_gate.ps1`: validates manifest policy gate behavior for workspace identity, version, seed-hash syntax, target schema, dependency entry syntax, canonical booleans, and policy switches, with PID-scoped temp workspace hygiene.
 - `verify_seed_hash_policy_gate.ps1`: validates seed hash gate behavior for manifest/SHA256SUMS consistency, `-RequireSet`, path safety, hash syntax, artifact format, real artifact hashing, and UNSET/artifact conflicts, with PID-scoped temp workspace hygiene.
 - `verify_fip_metadata_policy_gate.ps1`: validates FIP metadata gate behavior for implementation-path existence/safety, `requires` reference format/existence, `target_release` format, and status-sensitive empty implementation lists.
-- `verify_fip_policy_gate.ps1`: validates FIP PR-link gate behavior for non-feature changes, missing links, unknown FIPs, ineligible review FIPs, and eligible accepted/in-progress/implemented FIPs.
+- `verify_fip_policy_gate.ps1`: validates FIP PR-link gate behavior for non-feature changes, missing links, CI policy/workflow changes, unknown FIPs, ineligible review FIPs, and eligible accepted/in-progress/implemented FIPs.
 - `verify_stdlib_contract.ps1`: validates the no-libc stdlib v0 contract for required API lanes, ABI witnesses, runtime table dependencies, and suite wiring.
 - `verify_toolchain_policy_gate.ps1`: validates external-toolchain CI gate behavior for root handling, disallowed workflow content, case-insensitive matching, and allow-tagged exceptions, with PID-scoped temp workspace hygiene.

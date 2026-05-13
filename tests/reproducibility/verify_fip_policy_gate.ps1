@@ -47,6 +47,14 @@ Assert-Fails -Label "feature change without FIP" -Action {
     & $policy -Title "feat: change compiler" -Body "" -ChangedFiles "compiler/finc/stage0/parse_main_exit.ps1"
 }
 
+Assert-Fails -Label "CI policy change without FIP" -Action {
+    & $policy -Title "ci: change policy gate" -Body "" -ChangedFiles "ci/check_fip_link.ps1"
+}
+
+Assert-Fails -Label "workflow policy change without FIP" -Action {
+    & $policy -Title "ci: change workflow gate" -Body "" -ChangedFiles ".github/workflows/ci.yml"
+}
+
 Assert-Fails -Label "feature change with missing FIP" -Action {
     & $policy -Title "feat: change compiler FIP-9999" -Body "" -ChangedFiles "compiler/finc/stage0/parse_main_exit.ps1"
 }
@@ -57,6 +65,10 @@ Assert-Fails -Label "feature change with ineligible review FIP" -Action {
 
 Assert-Passes -Label "feature change with accepted FIP" -Action {
     & $policy -Title "feat: update charter" -Body "Refs FIP-0001" -ChangedFiles "SPEC.md"
+}
+
+Assert-Passes -Label "CI policy change with accepted FIP" -Action {
+    & $policy -Title "ci: update gate" -Body "Refs FIP-0002" -ChangedFiles "ci/check_fip_link.ps1"
 }
 
 Assert-Passes -Label "feature change with in-progress FIP" -Action {
