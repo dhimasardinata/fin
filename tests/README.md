@@ -26,6 +26,7 @@ Entry points:
 - `tests/integration/verify_pkg.ps1`: `fin pkg add` integration gate with PID-scoped temp workspace hygiene.
 - `tests/integration/verify_pkg_publish.ps1`: `fin pkg publish` integration gate with PID-scoped temp workspace hygiene.
 - `tests/reproducibility/verify_manifest_policy_gate.ps1`: manifest policy gate self-check coverage with PID-scoped temp workspace hygiene.
+- `tests/reproducibility/verify_compatibility_policy.ps1`: FIP-0019 policy publication gate for compatibility sections, governance/release references, PR checklist coverage, and FIP implementation linkage.
 - `tests/reproducibility/verify_toolchain_policy_gate.ps1`: toolchain policy gate self-check coverage with PID-scoped temp workspace hygiene.
 
 Temporary workspace policy:
