@@ -9,7 +9,6 @@
 ## Required Metadata
 
 - `id`
-- `title`
 - `status`
 - `authors`
 - `created`
@@ -18,6 +17,9 @@
 - `discussion`
 - `implementation`
 - `acceptance`
+
+The title is not separate metadata. It is the canonical header:
+`# FIP-####: <Title>`.
 
 Implemented and released FIPs must replace placeholder discussion metadata.
 Bootstrap records without an external thread use their canonical `fin://fip/...`
