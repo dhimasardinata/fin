@@ -148,7 +148,7 @@ if ($sumRows.Count -eq 0) {
     Fail-SeedHash "SHA256SUMS contains no hash rows"
 }
 
-$matchingRows = @($sumRows | Where-Object { $_.Path -eq $artifactPath })
+$matchingRows = @($sumRows | Where-Object { $_.Path -ceq $artifactPath })
 if ($matchingRows.Count -eq 0) {
     Fail-SeedHash ("SHA256SUMS missing manifest artifact path: {0}" -f $artifactPath)
 }
@@ -183,7 +183,7 @@ else {
     }
 
     $actualHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $artifactFull).Hash.ToLowerInvariant()
-    if ($actualHash -ne $manifestHash) {
+    if ($actualHash -cne $manifestHash) {
         Fail-SeedHash ("Seed artifact hash mismatch for {0}: expected={1} actual={2}" -f $artifactPath, $manifestHash, $actualHash)
     }
 }

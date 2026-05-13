@@ -58,14 +58,14 @@ function Write-SeedRepo {
         $artifactHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $artifactFull).Hash.ToLowerInvariant()
     }
 
-    if ($Hash -eq "__ARTIFACT__") {
+    if ($Hash -ceq "__ARTIFACT__") {
         $Hash = $artifactHash
     }
 
     if ([string]::IsNullOrWhiteSpace($SumsHash)) {
         $SumsHash = $Hash
     }
-    elseif ($SumsHash -eq "__ARTIFACT__") {
+    elseif ($SumsHash -ceq "__ARTIFACT__") {
         $SumsHash = $artifactHash
     }
 
@@ -120,6 +120,9 @@ try {
 
     Write-SeedRepo -SumsPath "seed/other.bin"
     Assert-Fails -Label "missing SHA256SUMS row for manifest path" -Action { & $policy -Manifest $manifest -Sums $sums }
+
+    Write-SeedRepo -SumsPath "Seed/fin-seed.bin"
+    Assert-Fails -Label "wrong-case SHA256SUMS row for manifest path" -Action { & $policy -Manifest $manifest -Sums $sums }
 
     Write-SeedRepo -Format "unknown-format"
     Assert-Fails -Label "unsupported artifact format" -Action { & $policy -Manifest $manifest -Sums $sums }
