@@ -32,6 +32,7 @@ $verifyFinobjLink = Join-Path $repoRoot "tests/integration/verify_finobj_link.ps
 $verifyBuildPipelineFinobj = Join-Path $repoRoot "tests/integration/verify_build_pipeline_finobj.ps1"
 $verifyRepro = Join-Path $repoRoot "tests/reproducibility/verify_stage0_reproducibility.ps1"
 $verifyTmpWorkspacePolicy = Join-Path $repoRoot "tests/reproducibility/verify_test_tmp_workspace_policy.ps1"
+$verifyClosureBaselineContractPolicyGate = Join-Path $repoRoot "tests/reproducibility/verify_closure_baseline_contract_policy_gate.ps1"
 $verifyClosureWorkspacePolicy = Join-Path $repoRoot "tests/reproducibility/verify_closure_workspace_policy.ps1"
 $verifyManifestPolicyGate = Join-Path $repoRoot "tests/reproducibility/verify_manifest_policy_gate.ps1"
 $verifySeedHashPolicyGate = Join-Path $repoRoot "tests/reproducibility/verify_seed_hash_policy_gate.ps1"
@@ -70,6 +71,7 @@ if (-not $SkipDoctor) {
 & $verifyBuildPipelineFinobj
 & $verifyRepro
 & $verifyTmpWorkspacePolicy
+& $verifyClosureBaselineContractPolicyGate
 & $verifyClosureWorkspacePolicy
 & $verifyManifestPolicyGate
 & $verifySeedHashPolicyGate

@@ -1,10 +1,34 @@
+param(
+    [string]$Baseline = "",
+    [string]$Fip = "",
+    [string]$Suite = ""
+)
+
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-$repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..")
-$baseline = Join-Path $repoRoot "seed/stage0-closure-baseline.txt"
-$fip = Join-Path $repoRoot "fips/FIP-0011-self-hosting-closure-criteria.md"
-$suite = Join-Path $repoRoot "tests/run_stage0_suite.ps1"
+$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
+
+if ([string]::IsNullOrWhiteSpace($Baseline)) {
+    $Baseline = Join-Path $repoRoot "seed/stage0-closure-baseline.txt"
+}
+elseif (-not [System.IO.Path]::IsPathRooted($Baseline)) {
+    $Baseline = Join-Path $repoRoot $Baseline
+}
+
+if ([string]::IsNullOrWhiteSpace($Fip)) {
+    $Fip = Join-Path $repoRoot "fips/FIP-0011-self-hosting-closure-criteria.md"
+}
+elseif (-not [System.IO.Path]::IsPathRooted($Fip)) {
+    $Fip = Join-Path $repoRoot $Fip
+}
+
+if ([string]::IsNullOrWhiteSpace($Suite)) {
+    $Suite = Join-Path $repoRoot "tests/run_stage0_suite.ps1"
+}
+elseif (-not [System.IO.Path]::IsPathRooted($Suite)) {
+    $Suite = Join-Path $repoRoot $Suite
+}
 
 function Fail-ClosureBaseline {
     param([string]$Message)
@@ -34,11 +58,11 @@ function Assert-Sha256OrUnset {
         [switch]$AllowUnset
     )
 
-    if ($AllowUnset -and $Value -eq "UNSET") {
+    if ($AllowUnset -and $Value -ceq "UNSET") {
         return
     }
 
-    if ($Value -notmatch "^[0-9a-f]{64}$") {
+    if ($Value -cnotmatch "^[0-9a-f]{64}$") {
         Fail-ClosureBaseline ("{0} must be a lowercase SHA256 hex value" -f $Label)
     }
 }
@@ -59,15 +83,15 @@ $requiredKeys = @(
     "closure_equal"
 )
 
-$map = @{}
+$map = [System.Collections.Generic.Dictionary[string, string]]::new([System.StringComparer]::Ordinal)
 $orderedKeys = [System.Collections.Generic.List[string]]::new()
-foreach ($line in Get-Content -LiteralPath $baseline) {
+foreach ($line in Get-Content -LiteralPath $Baseline) {
     $trimmed = $line.Trim()
     if ([string]::IsNullOrWhiteSpace($trimmed)) {
         continue
     }
 
-    if ($trimmed -notmatch "^([A-Za-z0-9_]+)=(.*)$") {
+    if ($trimmed -cnotmatch "^([A-Za-z0-9_]+)=(.*)$") {
         Fail-ClosureBaseline ("invalid baseline line: {0}" -f $trimmed)
     }
 
@@ -82,7 +106,7 @@ foreach ($line in Get-Content -LiteralPath $baseline) {
 
 $order = ($orderedKeys.ToArray() -join ",")
 $requiredOrder = ($requiredKeys -join ",")
-if ($order -ne $requiredOrder) {
+if ($order -cne $requiredOrder) {
     Fail-ClosureBaseline ("baseline key order mismatch: expected={0} actual={1}" -f $requiredOrder, $order)
 }
 
@@ -93,12 +117,12 @@ foreach ($key in $requiredKeys) {
 }
 
 foreach ($key in ($map.Keys | Sort-Object)) {
-    if ($requiredKeys -notcontains $key) {
+    if ($requiredKeys -cnotcontains $key) {
         Fail-ClosureBaseline ("baseline has unexpected key: {0}" -f $key)
     }
 }
 
-if ($map["closure_mode"] -ne "stage0-proxy") {
+if ($map["closure_mode"] -cne "stage0-proxy") {
     Fail-ClosureBaseline "closure_mode must be stage0-proxy"
 }
 
@@ -117,16 +141,16 @@ foreach ($key in @("seed_snapshot_sha256", "toolchain_snapshot_sha256", "closure
     Assert-Sha256OrUnset -Value $map[$key] -Label $key
 }
 
-if ($map["linux_direct_sha256"] -ne $map["linux_finobj_sha256"]) {
+if ($map["linux_direct_sha256"] -cne $map["linux_finobj_sha256"]) {
     Fail-ClosureBaseline "linux direct/finobj hashes must match"
 }
 
-if ($map["windows_direct_sha256"] -ne $map["windows_finobj_sha256"]) {
+if ($map["windows_direct_sha256"] -cne $map["windows_finobj_sha256"]) {
     Fail-ClosureBaseline "windows direct/finobj hashes must match"
 }
 
 foreach ($key in @("linux_pipeline_parity", "windows_pipeline_parity", "closure_equal")) {
-    if ($map[$key] -ne "true") {
+    if ($map[$key] -cne "true") {
         Fail-ClosureBaseline ("{0} must be true" -f $key)
     }
 }
@@ -138,22 +162,22 @@ $matrixText = @(
     ("windows_finobj={0}" -f $map["windows_finobj_sha256"])
 ) -join "`n"
 $derivedClosureHash = Get-TextHashHex -Text ($matrixText + "`n")
-if ($map["closure_hash"] -ne $derivedClosureHash) {
+if ($map["closure_hash"] -cne $derivedClosureHash) {
     Fail-ClosureBaseline ("closure_hash derivation mismatch: expected={0} actual={1}" -f $derivedClosureHash, $map["closure_hash"])
 }
 
-$fipText = Get-Content -LiteralPath $fip -Raw
+$fipText = Get-Content -LiteralPath $Fip -Raw
 $fipImplementationMatch = [regex]::Match($fipText, "(?ms)^- implementation:\s*(?<body>.*?)(?=^\- acceptance:)")
 if (-not $fipImplementationMatch.Success) {
     Fail-ClosureBaseline "FIP-0011 must have an implementation block"
 }
 
-if ($fipImplementationMatch.Groups["body"].Value -notmatch [regex]::Escape("tests/reproducibility/verify_closure_baseline_contract.ps1")) {
+if ($fipImplementationMatch.Groups["body"].Value -cnotmatch [regex]::Escape("tests/reproducibility/verify_closure_baseline_contract.ps1")) {
     Fail-ClosureBaseline "FIP-0011 implementation list must include closure baseline verifier"
 }
 
-$suiteText = Get-Content -LiteralPath $suite -Raw
-if ($suiteText -notmatch [regex]::Escape("tests/reproducibility/verify_closure_baseline_contract.ps1")) {
+$suiteText = Get-Content -LiteralPath $Suite -Raw
+if ($suiteText -cnotmatch [regex]::Escape("tests/reproducibility/verify_closure_baseline_contract.ps1")) {
     Fail-ClosureBaseline "stage0 suite must call the closure baseline verifier"
 }
 

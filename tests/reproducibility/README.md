@@ -1,7 +1,8 @@
 Reproducibility checks:
 
 - `verify_stage0_reproducibility.ps1`: validates deterministic hashes across repeated stage0 emit/build/publish operations.
-- `verify_closure_baseline_contract.ps1`: validates the committed stage0 closure baseline key order, hash formats, parity booleans, source path, and closure-hash derivation.
+- `verify_closure_baseline_contract.ps1`: validates the committed stage0 closure baseline case-sensitive key order, hash formats, parity booleans, source path, and closure-hash derivation.
+- `verify_closure_baseline_contract_policy_gate.ps1`: validates closure baseline contract negative cases for wrong-case keys/values, lowercase `UNSET`, uppercase hashes, and uppercase parity booleans.
 - `verify_closure_workspace_policy.ps1`: validates stage0 closure run-workspace stale-pruning policy with owner-metadata safety (`pid` + `start_utc`), including invalid keep/stale env fail-fast checks (stale-hours validation also enforced on keep-mode path), `FIN_KEEP_CLOSURE_RUNS=1` keep-mode bypass across consecutive runs, distinct repeated run workspaces, malformed run-name pruning, non-positive/overflow/non-parseable PID run-name pruning, non-run stale-dir retention, mismatched-metadata pruning, invalid-metadata fallback+repair, and legacy PID-only backfill.
 - `verify_manifest_policy_gate.ps1`: validates manifest policy gate behavior for workspace identity, version, canonical seed-hash syntax, case-sensitive target schema, dependency entry syntax, canonical booleans, and policy switches, with PID-scoped temp workspace hygiene.
 - `verify_seed_hash_policy_gate.ps1`: validates seed hash gate behavior for manifest/SHA256SUMS consistency, `-RequireSet`, path safety, lowercase hash syntax, artifact format, seed identity/version and policy booleans, real artifact hashing, and UNSET/artifact conflicts, with PID-scoped temp workspace hygiene.
