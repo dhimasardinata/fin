@@ -8,7 +8,7 @@
 
 ## Checklist
 
-- [ ] I linked an `Accepted` or `Scheduled` FIP when required.
+- [ ] I linked an eligible FIP (`Accepted`, `Scheduled`, `InProgress`, `Implemented`, or `Released`) when required.
 - [ ] I added or updated tests.
 - [ ] I documented compatibility impact.
 - [ ] I documented reproducibility impact.

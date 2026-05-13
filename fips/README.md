@@ -27,4 +27,4 @@ Side statuses: `Deferred`, `Rejected`.
 
 ## Merge Rule
 
-Feature pull requests must link an `Accepted` or `Scheduled` FIP.
+Feature pull requests must link a FIP in status `Accepted`, `Scheduled`, `InProgress`, `Implemented`, or `Released`.
