@@ -7,7 +7,7 @@
 - created: 2026-02-27
 - requires: ["FIP-0010"]
 - target_release: M4
-- discussion: TBD
+- discussion: fin://fip/FIP-0012
 - implementation:
   - compiler/finc/stage0/emit_pe_exit0.ps1
   - compiler/finc/stage0/build_stage0.ps1
@@ -63,7 +63,9 @@ Implementation complexity and schedule risk are tracked in milestone updates and
 
 ## Compatibility
 
-Compatibility impact must be documented before Implemented status.
+This locks the minimal direct Windows PE emitter contract for the stage0
+bootstrap path. Changes to emitted layout, verification rules, or deterministic
+output hashes require an explicit FIP/test update.
 
 ## Test Plan
 

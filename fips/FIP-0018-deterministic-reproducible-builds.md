@@ -7,8 +7,9 @@
 - created: 2026-02-27
 - requires: ["FIP-0003"]
 - target_release: M0
-- discussion: TBD
+- discussion: fin://fip/FIP-0018
 - implementation:
+  - docs/quality-gates.md
   - tests/reproducibility/verify_stage0_reproducibility.ps1
   - tests/run_stage0_suite.ps1
   - .github/workflows/ci.yml
@@ -49,7 +50,9 @@ Implementation complexity and schedule risk are tracked in milestone updates and
 
 ## Compatibility
 
-Compatibility impact must be documented before Implemented status.
+This adds reproducibility gates without changing source-language semantics.
+Changes to witness hashes, deterministic output contracts, or reproducibility
+scope require an explicit FIP/test update.
 
 ## Test Plan
 

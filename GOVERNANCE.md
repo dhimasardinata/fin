@@ -2,7 +2,7 @@
 
 ## Scope
 
-This document governs language, compiler, runtime, package, and release decisions for Fin.
+This document governs language, compiler, runtime, package, and release decisions for Fin. Decision-making follows the language charter in `FIP-0001`.
 
 ## Proposal System
 
@@ -29,7 +29,7 @@ Status transitions are only valid when the proposal metadata `status` and change
 ## Decision Rules
 
 - Any feature or behavior change must reference a FIP.
-- Merge gate: feature pull requests must link a FIP in status `Accepted` or `Scheduled`.
+- Merge gate: feature pull requests must link a FIP in status `Accepted`, `Scheduled`, `InProgress`, `Implemented`, or `Released`.
 - Breaking changes additionally require compatibility analysis per `COMPATIBILITY.md`.
 
 ## Branch and Release Policy

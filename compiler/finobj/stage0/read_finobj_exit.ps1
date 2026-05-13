@@ -15,7 +15,7 @@ if (-not (Test-Path $objFull)) {
 function Assert-SupportedTarget {
     param([string]$Target)
 
-    if ($Target -ne "x86_64-linux-elf" -and $Target -ne "x86_64-windows-pe") {
+    if ($Target -cne "x86_64-linux-elf" -and $Target -cne "x86_64-windows-pe") {
         throw "Unsupported target: $Target"
     }
 }
@@ -37,7 +37,7 @@ function Parse-SymbolList {
         if ([string]::IsNullOrWhiteSpace($symbol)) {
             continue
         }
-        if ($symbol -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
+        if ($symbol -cnotmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
             throw ("Invalid {0} symbol: {1}" -f $Key, $symbol)
         }
         if (-not $seen.Add($symbol)) {
@@ -47,7 +47,7 @@ function Parse-SymbolList {
     }
 
     $ordered = @($symbols | Sort-Object `
-            @{Expression = { if ($_ -eq "main") { 0 } else { 1 } } }, `
+            @{Expression = { if ($_ -ceq "main") { 0 } else { 1 } } }, `
             @{Expression = { $_ } })
     return @($ordered)
 }
@@ -68,7 +68,7 @@ function Parse-RelocationList {
         if ([string]::IsNullOrWhiteSpace($token)) {
             continue
         }
-        if ($token -notmatch '^([A-Za-z_][A-Za-z0-9_]*)@([0-9]+)(?::([A-Za-z0-9_]+))?$') {
+        if ($token -cnotmatch '^([A-Za-z_][A-Za-z0-9_]*)@([0-9]+)(?::([A-Za-z0-9_]+))?$') {
             throw ("Invalid relocs entry: {0}. Expected <symbol>@<offset>[:<kind>]." -f $token)
         }
 
@@ -81,7 +81,7 @@ function Parse-RelocationList {
             throw ("Relocation offset out of stage0 range (0..4294967295): {0}" -f $offset)
         }
         $kind = if ([string]::IsNullOrWhiteSpace($Matches[3])) { "abs32" } else { $Matches[3].ToLowerInvariant() }
-        if ($kind -ne "abs32" -and $kind -ne "rel32") {
+        if ($kind -cne "abs32" -and $kind -cne "rel32") {
             throw ("Unsupported relocation kind in stage0: {0}" -f $kind)
         }
 
@@ -128,7 +128,7 @@ function Parse-SymbolValueMap {
         if ([string]::IsNullOrWhiteSpace($token)) {
             continue
         }
-        if ($token -notmatch '^([A-Za-z_][A-Za-z0-9_]*)=([0-9]+)$') {
+        if ($token -cnotmatch '^([A-Za-z_][A-Za-z0-9_]*)=([0-9]+)$') {
             throw ("Invalid symbol_values entry: {0}. Expected <symbol>=<u32>." -f $token)
         }
 
@@ -170,12 +170,12 @@ function Parse-SymbolValueMap {
 }
 
 $raw = Get-Content -Path $objFull -Raw
-$map = @{}
+$map = [hashtable]::new([System.StringComparer]::Ordinal)
 foreach ($line in ([regex]::Split($raw, "`r?`n"))) {
     $trimmed = $line.Trim()
     if ([string]::IsNullOrWhiteSpace($trimmed)) { continue }
     if ($trimmed.StartsWith("#")) { continue }
-    if ($trimmed -notmatch '^([A-Za-z0-9_.-]+)\s*=\s*(.*)$') {
+    if ($trimmed -cnotmatch '^([A-Za-z0-9_.-]+)\s*=\s*(.*)$') {
         throw "Invalid finobj line: $trimmed"
     }
     $key = $Matches[1]
@@ -200,20 +200,20 @@ foreach ($k in $required) {
     }
 }
 
-if ($map["finobj_format"] -ne "finobj-stage0") {
+if ($map["finobj_format"] -cne "finobj-stage0") {
     throw "Unsupported finobj format: $($map["finobj_format"])"
 }
-if ($map["finobj_version"] -ne "1") {
+if ($map["finobj_version"] -cne "1") {
     throw "Unsupported finobj version: $($map["finobj_version"])"
 }
 $entrySymbol = $map["entry_symbol"]
-if ($entrySymbol -ne "main" -and $entrySymbol -ne "unit") {
+if ($entrySymbol -cne "main" -and $entrySymbol -cne "unit") {
     throw "Unsupported entry_symbol: $entrySymbol"
 }
 Assert-SupportedTarget -Target $map["target"]
 if (-not [string]::IsNullOrWhiteSpace($ExpectedTarget)) {
     Assert-SupportedTarget -Target $ExpectedTarget
-    if ($map["target"] -ne $ExpectedTarget) {
+    if ($map["target"] -cne $ExpectedTarget) {
         throw "finobj target mismatch: expected '$ExpectedTarget', got '$($map["target"])'"
     }
 }
@@ -244,7 +244,7 @@ $providedSymbols = @(if ($map.ContainsKey("provides")) {
         Parse-SymbolList -RawValue $map["provides"] -Key "provides"
     }
     else {
-        if ($entrySymbol -eq "main") {
+    if ($entrySymbol -ceq "main") {
             "main"
         }
     })

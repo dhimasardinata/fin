@@ -10,6 +10,26 @@ $tmpDir = $tmpState.TmpDir
 $manifest = Join-Path $tmpDir "fin.toml"
 $lock = Join-Path $tmpDir "fin.lock"
 
+function Assert-Fails {
+    param(
+        [scriptblock]$Action,
+        [string]$Label
+    )
+
+    $failed = $false
+    try {
+        & $Action
+    }
+    catch {
+        $failed = $true
+    }
+
+    if (-not $failed) {
+        Write-Error ("Expected failure: {0}" -f $Label)
+        exit 1
+    }
+}
+
 & $fin init --dir $tmpDir --name pkg_smoke
 
 & $fin pkg add serde --version 1.2.3 --manifest $manifest
@@ -72,16 +92,57 @@ if ($hashBefore -ne $hashAfter) {
     exit 1
 }
 
+# Case-distinct dependency names should not be folded together.
+& $fin pkg add Serde --version 4.0.0 --manifest $manifest
+$content = Get-Content -Path $manifest -Raw
+if ($content -cnotmatch '(?m)^Serde\s*=\s*"4\.0\.0"\s*$') {
+    Write-Error "Expected case-distinct Serde dependency with version 4.0.0."
+    exit 1
+}
+if ($content -cnotmatch '(?m)^serde\s*=\s*"3\.0\.0"\s*$') {
+    Write-Error "Expected lowercase serde dependency to remain after adding Serde."
+    exit 1
+}
+$manifestSerdeUpperIndex = $content.IndexOf('Serde = "4.0.0"')
+$manifestHttpIndex = $content.IndexOf('http = "2.0.0"')
+$manifestSerdeLowerIndex = $content.IndexOf('serde = "3.0.0"')
+if (-not ($manifestSerdeUpperIndex -lt $manifestHttpIndex -and $manifestHttpIndex -lt $manifestSerdeLowerIndex)) {
+    Write-Error "Expected ordinal dependency order in manifest (Serde before http before serde)."
+    exit 1
+}
+$lockContent = Get-Content -Path $lock -Raw
+if ($lockContent -cnotmatch '(?m)^\s*\{\s*name\s*=\s*"Serde",\s*version\s*=\s*"4\.0\.0"\s*\}\s*,?\s*$') {
+    Write-Error "Expected case-distinct Serde dependency in fin.lock."
+    exit 1
+}
+if ($lockContent -cnotmatch '(?m)^\s*\{\s*name\s*=\s*"serde",\s*version\s*=\s*"3\.0\.0"\s*\}\s*,?\s*$') {
+    Write-Error "Expected lowercase serde dependency to remain in fin.lock."
+    exit 1
+}
+$serdeUpperIndex = $lockContent.IndexOf('{ name = "Serde", version = "4.0.0" }')
+$httpIndex = $lockContent.IndexOf('{ name = "http", version = "2.0.0" }')
+$serdeLowerIndex = $lockContent.IndexOf('{ name = "serde", version = "3.0.0" }')
+if ($serdeUpperIndex -lt 0 -or $httpIndex -lt 0 -or $serdeLowerIndex -lt 0) {
+    Write-Error "Expected Serde, http, and serde entries in fin.lock."
+    exit 1
+}
+if (-not ($serdeUpperIndex -lt $httpIndex -and $httpIndex -lt $serdeLowerIndex)) {
+    Write-Error "Expected ordinal dependency order in fin.lock (Serde before http before serde)."
+    exit 1
+}
+
 # Invalid package name should fail.
-$failed = $false
-try {
-    & $fin pkg add "bad.name" --manifest $manifest | Out-Null
-}
-catch {
-    $failed = $true
-}
-if (-not $failed) {
-    Write-Error "Expected pkg add to fail for invalid package name."
+Assert-Fails -Action { & $fin pkg add "bad.name" --manifest $manifest | Out-Null } -Label "invalid package name"
+
+# Invalid manifest policy should fail before mutation.
+$validManifestContent = Get-Content -Path $manifest -Raw
+$invalidManifestContent = $validManifestContent -replace 'external_toolchain_forbidden = true', 'external_toolchain_forbidden = false'
+Set-Content -Path $manifest -Value $invalidManifestContent -NoNewline
+$hashBeforeInvalidAdd = (Get-FileHash -Path $manifest -Algorithm SHA256).Hash
+Assert-Fails -Action { & $fin pkg add blocked --version 1.0.0 --manifest $manifest | Out-Null } -Label "invalid manifest policy"
+$hashAfterInvalidAdd = (Get-FileHash -Path $manifest -Algorithm SHA256).Hash
+if ($hashBeforeInvalidAdd -ne $hashAfterInvalidAdd) {
+    Write-Error "pkg add mutated manifest after policy failure."
     exit 1
 }
 

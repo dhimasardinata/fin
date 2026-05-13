@@ -182,6 +182,8 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_block_shado
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_if_statement_then.fn" -ExpectedExit 169
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_if_statement_else.fn" -ExpectedExit 170
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_helper_if_statement_return.fn" -ExpectedExit 171
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_case_sensitive_locals.fn" -ExpectedExit 42
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_case_sensitive_functions.fn" -ExpectedExit 42
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_drop_unused.fn" -ExpectedExit 15
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_move_binding.fn" -ExpectedExit 16
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_move_reinit_var.fn" -ExpectedExit 17
@@ -262,6 +264,11 @@ Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_logic
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_logic_not_use_after_move.fn" -ExpectedMessagePart "use after move for identifier 'value'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_bool_keyword_binding_true.fn" -ExpectedMessagePart "reserved keyword cannot be used as identifier 'true'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_bool_keyword_assignment_true.fn" -ExpectedMessagePart "reserved keyword cannot be used as identifier 'true'"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_uppercase_bool_literal.fn" -ExpectedMessagePart "undefined identifier 'TRUE'"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_uppercase_statement_keyword.fn" -ExpectedMessagePart "unsupported statement 'LET code = 7'"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_uppercase_else_keyword.fn" -ExpectedMessagePart "unsupported trailing tokens after if statement 'ELSE"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_uppercase_result_constructor.fn" -ExpectedMessagePart "undefined function 'OK'"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_uppercase_type_annotation.fn" -ExpectedMessagePart "unsupported type annotation 'U8'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_unsupported_type_annotation.fn" -ExpectedMessagePart "unsupported type annotation 'i32'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_unsupported_return_annotation.fn" -ExpectedMessagePart "unsupported type annotation 'i32'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_result_return_annotation.fn" -ExpectedMessagePart "entrypoint return type must be u8 in stage0 bootstrap, found Result<u8,u8>"

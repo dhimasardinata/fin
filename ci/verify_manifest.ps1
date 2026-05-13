@@ -1,5 +1,6 @@
 param(
-    [string]$Manifest = "fin.toml"
+    [string]$Manifest = "fin.toml",
+    [switch]$Quiet
 )
 
 Set-StrictMode -Version Latest
@@ -19,7 +20,7 @@ function Parse-ManifestMap {
     param([string]$Path)
 
     $raw = Get-Content -Path $Path -Raw
-    $map = @{}
+    $map = [System.Collections.Generic.Dictionary[string, string]]::new([System.StringComparer]::Ordinal)
     $section = ""
 
     foreach ($line in ([regex]::Split($raw, "`r?`n"))) {
@@ -27,12 +28,12 @@ function Parse-ManifestMap {
         if ([string]::IsNullOrWhiteSpace($trimmed)) { continue }
         if ($trimmed.StartsWith("#")) { continue }
 
-        if ($trimmed -match '^\[([A-Za-z0-9_.-]+)\]\s*$') {
+        if ($trimmed -cmatch '^\[([A-Za-z0-9_.-]+)\]\s*$') {
             $section = $Matches[1]
             continue
         }
 
-        if ($trimmed -notmatch '^([A-Za-z0-9_.-]+)\s*=\s*(.+)$') {
+        if ($trimmed -cnotmatch '^([A-Za-z0-9_.-]+)\s*=\s*(.+)$') {
             throw "Invalid manifest line: $trimmed"
         }
 
@@ -46,15 +47,15 @@ function Parse-ManifestMap {
         if ($map.ContainsKey($key)) {
             throw "Duplicate manifest key: $key"
         }
-        $map[$key] = $Matches[2].Trim()
+        $map.Add($key, $Matches[2].Trim())
     }
 
-    return $map
+    return ,$map
 }
 
 function Get-RequiredValue {
     param(
-        [hashtable]$Map,
+        [System.Collections.Generic.IDictionary[string, string]]$Map,
         [string]$Key
     )
 
@@ -67,10 +68,57 @@ function Get-RequiredValue {
 function Decode-StringValue {
     param([string]$Value)
 
-    if ($Value -match '^"([^"]*)"$') {
+    if ($Value -cmatch '^"([^"]*)"$') {
         return $Matches[1]
     }
     return ""
+}
+
+function Assert-RequiredCanonicalString {
+    param(
+        [System.Collections.Generic.IDictionary[string, string]]$Map,
+        [string]$Key
+    )
+
+    $raw = Get-RequiredValue -Map $Map -Key $Key
+    $decoded = Decode-StringValue -Value $raw
+    if ([string]::IsNullOrWhiteSpace($decoded)) {
+        throw ("{0} must be a non-empty quoted string" -f $Key)
+    }
+
+    return $decoded
+}
+
+function Assert-RequiredTrueBoolean {
+    param(
+        [System.Collections.Generic.IDictionary[string, string]]$Map,
+        [string]$Key
+    )
+
+    $raw = Get-RequiredValue -Map $Map -Key $Key
+    if ($raw -cne "true") {
+        throw ("{0} must be canonical true" -f $Key)
+    }
+}
+
+function Assert-DependencyEntries {
+    param([System.Collections.Generic.IDictionary[string, string]]$Map)
+
+    foreach ($key in @($Map.Keys | Sort-Object)) {
+        if (-not $key.StartsWith("dependencies.", [System.StringComparison]::Ordinal)) {
+            continue
+        }
+
+        $dependencyName = $key.Substring("dependencies.".Length)
+        if ($dependencyName -cnotmatch '^[A-Za-z][A-Za-z0-9_-]*$') {
+            throw ("dependency name '{0}' must match ^[A-Za-z][A-Za-z0-9_-]*$" -f $dependencyName)
+        }
+
+        $dependencyVersion = Decode-StringValue -Value ([string]$Map[$key])
+        if ([string]::IsNullOrWhiteSpace($dependencyVersion)) {
+            throw ("dependencies.{0} must be a non-empty quoted string" -f $dependencyName)
+        }
+    }
 }
 
 try {
@@ -82,26 +130,25 @@ catch {
 }
 
 try {
-    $independent = (Get-RequiredValue -Map $map -Key "workspace.independent").ToLowerInvariant()
-    if ($independent -ne "true") {
-        throw "workspace.independent must be true"
+    $workspaceName = Assert-RequiredCanonicalString -Map $map -Key "workspace.name"
+    if ($workspaceName -cnotmatch '^[A-Za-z][A-Za-z0-9_-]*$') {
+        throw "workspace.name must match ^[A-Za-z][A-Za-z0-9_-]*$"
     }
 
-    $seedHashRaw = Get-RequiredValue -Map $map -Key "workspace.seed_hash"
-    $seedHash = Decode-StringValue -Value $seedHashRaw
-    if ([string]::IsNullOrWhiteSpace($seedHash)) {
-        throw "workspace.seed_hash must be a quoted string"
+    $workspaceVersion = Assert-RequiredCanonicalString -Map $map -Key "workspace.version"
+    if ($workspaceVersion -cmatch '"') {
+        throw "workspace.version may not contain quote characters"
     }
 
-    $extPolicy = (Get-RequiredValue -Map $map -Key "policy.external_toolchain_forbidden").ToLowerInvariant()
-    if ($extPolicy -ne "true") {
-        throw "policy.external_toolchain_forbidden must be true"
+    Assert-RequiredTrueBoolean -Map $map -Key "workspace.independent"
+
+    $seedHash = Assert-RequiredCanonicalString -Map $map -Key "workspace.seed_hash"
+    if ($seedHash -cne "UNSET" -and $seedHash -cnotmatch '^[0-9a-f]{64}$') {
+        throw "workspace.seed_hash must be UNSET or a lowercase SHA-256 hex digest"
     }
 
-    $reproPolicy = (Get-RequiredValue -Map $map -Key "policy.reproducible_build_required").ToLowerInvariant()
-    if ($reproPolicy -ne "true") {
-        throw "policy.reproducible_build_required must be true"
-    }
+    Assert-RequiredTrueBoolean -Map $map -Key "policy.external_toolchain_forbidden"
+    Assert-RequiredTrueBoolean -Map $map -Key "policy.reproducible_build_required"
 
     $primaryRaw = Get-RequiredValue -Map $map -Key "targets.primary"
     $secondaryRaw = Get-RequiredValue -Map $map -Key "targets.secondary"
@@ -114,19 +161,23 @@ try {
     if ([string]::IsNullOrWhiteSpace($secondary)) {
         throw "targets.secondary must be a quoted string"
     }
-    if ($allowedTargets -notcontains $primary) {
+    if ($allowedTargets -cnotcontains $primary) {
         throw ("targets.primary must be one of: {0}" -f ($allowedTargets -join ", "))
     }
-    if ($allowedTargets -notcontains $secondary) {
+    if ($allowedTargets -cnotcontains $secondary) {
         throw ("targets.secondary must be one of: {0}" -f ($allowedTargets -join ", "))
     }
-    if ($primary -eq $secondary) {
+    if ($primary -ceq $secondary) {
         throw "targets.primary and targets.secondary must differ"
     }
+
+    Assert-DependencyEntries -Map $map
 }
 catch {
     Write-Error $_
     exit 1
 }
 
-Write-Host "Manifest policy check passed."
+if (-not $Quiet) {
+    Write-Host "Manifest policy check passed."
+}

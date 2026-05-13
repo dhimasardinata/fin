@@ -101,13 +101,13 @@ function Parse-KeyValueFile {
         throw "Missing key-value file: $Path"
     }
 
-    $map = @{}
+    $map = [System.Collections.Generic.Dictionary[string, string]]::new([System.StringComparer]::Ordinal)
     $orderedKeys = [System.Collections.Generic.List[string]]::new()
     foreach ($line in ([regex]::Split((Get-Content -Path $Path -Raw), "`r?`n"))) {
         $trimmed = $line.Trim()
         if ([string]::IsNullOrWhiteSpace($trimmed)) { continue }
         if ($trimmed.StartsWith("#")) { continue }
-        if ($trimmed -notmatch '^([A-Za-z0-9_.-]+)\s*=\s*(.+)$') {
+        if ($trimmed -cnotmatch '^([A-Za-z0-9_.-]+)\s*=\s*(.+)$') {
             throw "Invalid key-value line in ${Path}: $trimmed"
         }
         $key = $Matches[1]
@@ -360,7 +360,7 @@ function Invoke-ClosureWorkspacePrune {
 
     $keepClosureRuns = [string]$env:FIN_KEEP_CLOSURE_RUNS
     if (-not [string]::IsNullOrWhiteSpace($keepClosureRuns)) {
-        if ($keepClosureRuns -ne "1") {
+        if ($keepClosureRuns -cne "1") {
             throw ("FIN_KEEP_CLOSURE_RUNS must be 1 when set, found: {0}" -f $keepClosureRuns)
         }
         return
@@ -402,7 +402,7 @@ if (-not (Test-Path $outDirFull)) {
 }
 Invoke-ClosureWorkspacePrune -ClosureRoot $outDirFull
 
-$runToken = "{0}-{1}" -f $PID, [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+$runToken = "{0}-{1}-{2}" -f $PID, [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds(), [Guid]::NewGuid().ToString("N")
 $runWorkspace = Join-Path $outDirFull ("run-" + $runToken)
 New-Item -ItemType Directory -Path $runWorkspace -Force | Out-Null
 Set-ClosureWorkspaceOwnerMetadata -WorkspaceDir $runWorkspace -OwnerPid $PID -OwnerStartUtc (Get-ClosureWorkspaceProcessStartUtc -OwnerPid $PID)
@@ -425,7 +425,7 @@ function Invoke-ClosureCase {
         [string]$Pipeline
     )
 
-    $isWindowsTarget = ($Target -eq "x86_64-windows-pe")
+    $isWindowsTarget = ($Target -ceq "x86_64-windows-pe")
     $ext = if ($isWindowsTarget) { ".exe" } else { "" }
     $caseToken = "{0}-{1}" -f $runToken, $CaseId
     $gen1 = Join-Path $runWorkspace ("gen1-{0}{1}" -f $caseToken, $ext)
@@ -436,7 +436,7 @@ function Invoke-ClosureCase {
 
     $gen1Hash = Get-FileHashHex -Path $gen1
     $gen2Hash = Get-FileHashHex -Path $gen2
-    if ($gen1Hash -ne $gen2Hash) {
+    if ($gen1Hash -cne $gen2Hash) {
         Write-Error ("Stage0 closure proxy mismatch ({0}): gen1={1}, gen2={2}" -f $CaseId, $gen1Hash, $gen2Hash)
         exit 1
     }
@@ -457,13 +457,13 @@ $linuxFinobj = Invoke-ClosureCase -CaseId "linux-finobj" -Target "x86_64-linux-e
 $windowsDirect = Invoke-ClosureCase -CaseId "windows-direct" -Target "x86_64-windows-pe" -Pipeline "direct"
 $windowsFinobj = Invoke-ClosureCase -CaseId "windows-finobj" -Target "x86_64-windows-pe" -Pipeline "finobj"
 
-$linuxParity = ($linuxDirect.Generation1Hash -eq $linuxFinobj.Generation1Hash)
+$linuxParity = ($linuxDirect.Generation1Hash -ceq $linuxFinobj.Generation1Hash)
 if (-not $linuxParity) {
     Write-Error ("Stage0 closure parity mismatch (linux): direct={0}, finobj={1}" -f $linuxDirect.Generation1Hash, $linuxFinobj.Generation1Hash)
     exit 1
 }
 
-$windowsParity = ($windowsDirect.Generation1Hash -eq $windowsFinobj.Generation1Hash)
+$windowsParity = ($windowsDirect.Generation1Hash -ceq $windowsFinobj.Generation1Hash)
 if (-not $windowsParity) {
     Write-Error ("Stage0 closure parity mismatch (windows): direct={0}, finobj={1}" -f $windowsDirect.Generation1Hash, $windowsFinobj.Generation1Hash)
     exit 1
@@ -494,7 +494,7 @@ $seedSnapshot = Get-Snapshot -RelativePaths @(
 
 $seedManifestRaw = Get-Content -Path (Join-Path $repoRoot "seed/manifest.toml") -Raw
 $declaredSeed = "UNSET"
-if ($seedManifestRaw -match 'sha256\s*=\s*"([^"]+)"') {
+if ($seedManifestRaw -cmatch 'sha256\s*=\s*"([^"]+)"') {
     $declaredSeed = $Matches[1]
 }
 
@@ -554,18 +554,18 @@ foreach ($k in $requiredKeys) {
         continue
     }
 
-    if ([string]$witnessMap[$k] -ne [string]$actualWitness[$k]) {
+    if ([string]$witnessMap[$k] -cne [string]$actualWitness[$k]) {
         $witnessMismatch += ("{0}: expected={1} actual={2}" -f $k, $actualWitness[$k], $witnessMap[$k])
     }
 }
 
 foreach ($k in ($witnessMap.Keys | Sort-Object)) {
-    if ($requiredKeys -notcontains $k) {
+    if ($requiredKeys -cnotcontains $k) {
         $witnessUnexpected += $k
     }
 }
 
-if ($witnessMissing.Count -eq 0 -and $witnessUnexpected.Count -eq 0 -and $witnessOrder -ne $requiredOrder) {
+if ($witnessMissing.Count -eq 0 -and $witnessUnexpected.Count -eq 0 -and $witnessOrder -cne $requiredOrder) {
     $witnessOrderMismatch = $true
 }
 
@@ -607,18 +607,18 @@ if ($VerifyBaseline) {
             $missing += $k
             continue
         }
-        if ([string]$expected[$k] -ne [string]$witnessMap[$k]) {
+        if ([string]$expected[$k] -cne [string]$witnessMap[$k]) {
             $mismatch += ("{0}: expected={1} actual={2}" -f $k, $expected[$k], $witnessMap[$k])
         }
     }
 
     foreach ($k in ($expected.Keys | Sort-Object)) {
-        if ($requiredKeys -notcontains $k) {
+        if ($requiredKeys -cnotcontains $k) {
             $unexpected += $k
         }
     }
 
-    if ($missing.Count -eq 0 -and $unexpected.Count -eq 0 -and $baselineOrder -ne $requiredOrder) {
+    if ($missing.Count -eq 0 -and $unexpected.Count -eq 0 -and $baselineOrder -cne $requiredOrder) {
         $orderMismatch = $true
     }
 

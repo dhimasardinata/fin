@@ -1,0 +1,9 @@
+fn main() {
+  var code = 0
+  if (0) {
+    code = 1
+  } ELSE {
+    code = 2
+  }
+  exit(code)
+}

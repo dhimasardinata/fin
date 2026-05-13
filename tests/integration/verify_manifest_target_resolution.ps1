@@ -46,7 +46,9 @@ $missingManifest = Join-Path $tmpDir "missing-fin.toml"
 & $fin init --dir $project --name manifest_target_proj
 
 $manifestRaw = Get-Content -Path $manifest -Raw
-$manifestUpdated = $manifestRaw -replace 'primary = "x86_64-linux-elf"', 'primary = "x86_64-windows-pe"'
+$manifestUpdated = $manifestRaw `
+    -replace 'primary = "x86_64-linux-elf"', 'primary = "x86_64-windows-pe"' `
+    -replace 'secondary = "x86_64-windows-pe"', 'secondary = "x86_64-linux-elf"'
 Set-Content -Path $manifest -Value $manifestUpdated
 
 & $fin build --manifest $manifest --src $source --out $winOut
@@ -83,6 +85,21 @@ Assert-FinobjTempArtifactCleaned -Path $buildLinuxFinobjObj -Label "manifest bui
 Assert-Fails -Action {
     & $fin build --manifest $missingManifest --src $source --out (Join-Path $tmpDir "missing-manifest-out") | Out-Null
 } -Label "explicit missing manifest path"
+
+$invalidPolicyManifest = $manifestUpdated -replace 'external_toolchain_forbidden = true', 'external_toolchain_forbidden = false'
+Set-Content -Path $manifest -Value $invalidPolicyManifest
+
+Assert-Fails -Action {
+    & $fin build --manifest $manifest --src $source --out (Join-Path $tmpDir "invalid-policy-out") | Out-Null
+} -Label "invalid manifest policy during build"
+
+Assert-Fails -Action {
+    & $fin build --manifest $manifest --src $source --target x86_64-linux-elf --out (Join-Path $tmpDir "invalid-policy-target-out") | Out-Null
+} -Label "invalid manifest policy with explicit build target"
+
+Assert-Fails -Action {
+    & $fin run --manifest $manifest --src $source --out (Join-Path $tmpDir "invalid-policy-run") --expect-exit 0 | Out-Null
+} -Label "invalid manifest policy during run"
 
 Finalize-TestTmpWorkspace -State $tmpState
 

@@ -16,6 +16,10 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Verify FIP metadata
+        shell: pwsh
+        run: ./ci/verify_fip_metadata.ps1
+
       - name: Verify manifest policy
         shell: pwsh
         run: ./ci/verify_manifest.ps1

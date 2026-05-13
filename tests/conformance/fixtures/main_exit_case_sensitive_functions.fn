@@ -1,0 +1,7 @@
+fn Main(Value: u8, value: u8) -> u8 {
+  return Value + value
+}
+
+fn main() {
+  exit(Main(20, 22))
+}

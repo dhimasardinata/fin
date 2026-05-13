@@ -108,7 +108,7 @@ function Get-RecordSymbolValue {
         }
     }
 
-    if (@($Record.ProvidedSymbols) -contains $Symbol) {
+    if (@($Record.ProvidedSymbols) -ccontains $Symbol) {
         return [UInt32]$Record.ExitCode
     }
 
@@ -167,11 +167,11 @@ foreach ($record in $records) {
 }
 
 $orderedRecords = @($records | Sort-Object `
-        @{Expression = { if ($_.EntrySymbol -eq "main") { 0 } else { 1 } } }, `
+        @{Expression = { if ($_.EntrySymbol -ceq "main") { 0 } else { 1 } } }, `
         @{Expression = { $_.SourcePath } }, `
         @{Expression = { $_.SourceSha256 } })
 
-$entryRecords = @($orderedRecords | Where-Object { $_.EntrySymbol -eq "main" })
+$entryRecords = @($orderedRecords | Where-Object { $_.EntrySymbol -ceq "main" })
 if ($entryRecords.Count -eq 0) {
     throw "Link requires exactly one entry object with entry_symbol=main; found none."
 }
@@ -181,7 +181,7 @@ if ($entryRecords.Count -gt 1) {
 
 $entryRecord = $entryRecords[0]
 
-$symbolProviders = @{}
+$symbolProviders = [hashtable]::new([System.StringComparer]::Ordinal)
 $requiredCount = 0
 $relocationCount = 0
 foreach ($record in $orderedRecords) {
@@ -205,7 +205,7 @@ if (-not $symbolProviders.ContainsKey("main")) {
 }
 
 $mainProvider = $symbolProviders["main"]
-if ([string]$mainProvider.Record.ObjectPath -ne [string]$entryRecord.ObjectPath) {
+if ([string]$mainProvider.Record.ObjectPath -cne [string]$entryRecord.ObjectPath) {
     throw ("Entry object mismatch: entry_symbol=main object '{0}' does not provide symbol 'main' (provided by '{1}')." -f $entryRecord.SourcePath, $mainProvider.Record.SourcePath)
 }
 
@@ -264,7 +264,7 @@ $relocationPlans = [System.Collections.Generic.List[object]]::new()
 $relocationResolutionLines = [System.Collections.Generic.List[string]]::new()
 foreach ($record in $orderedRecords) {
     foreach ($reloc in @($record.Relocations | Sort-Object @{Expression = { [UInt64]$_.Offset } }, @{Expression = { $_.Symbol } }, @{Expression = { $_.Kind } })) {
-        if (-not ($allowedKinds -contains [string]$reloc.Kind)) {
+        if (-not ($allowedKinds -ccontains [string]$reloc.Kind)) {
             throw ("Relocation kind not supported for stage0 {0}: {1} (allowed: {2})" -f `
                     $Target, `
                     $reloc.Key, `
@@ -308,10 +308,10 @@ foreach ($record in $orderedRecords) {
 $objectSetPayload = ($objectSetLines.ToArray() -join "`n") + "`n"
 $objectSetHash = Get-TextSha256 -Text $objectSetPayload
 [int]$exitCode = [int]$entryRecord.ExitCode
-if ($Target -eq "x86_64-linux-elf") {
+if ($Target -ceq "x86_64-linux-elf") {
     & $emitElf -OutFile $outFull -ExitCode $exitCode
 }
-elseif ($Target -eq "x86_64-windows-pe") {
+elseif ($Target -ceq "x86_64-windows-pe") {
     & $emitPe -OutFile $outFull -ExitCode $exitCode
 }
 else {

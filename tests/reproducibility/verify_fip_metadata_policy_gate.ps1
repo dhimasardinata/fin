@@ -1,0 +1,275 @@
+Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
+
+$repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..")
+$policy = Join-Path $repoRoot "ci/verify_fip_metadata.ps1"
+$tmpWorkspace = Join-Path $repoRoot "tests/common/test_tmp_workspace.ps1"
+. $tmpWorkspace
+
+$tmpState = Initialize-TestTmpWorkspace -RepoRoot $repoRoot -Prefix "fip-metadata-policy-gate-"
+$tmpRoot = $tmpState.TmpDir
+
+function Assert-Passes {
+    param(
+        [scriptblock]$Action,
+        [string]$Label
+    )
+
+    try {
+        & $Action | Out-Null
+    }
+    catch {
+        Write-Error ("Expected FIP metadata policy pass: {0}" -f $Label)
+        exit 1
+    }
+}
+
+function Assert-Fails {
+    param(
+        [scriptblock]$Action,
+        [string]$Label
+    )
+
+    $failed = $false
+    try {
+        & $Action | Out-Null
+    }
+    catch {
+        $failed = $true
+    }
+
+    if (-not $failed) {
+        Write-Error ("Expected FIP metadata policy failure: {0}" -f $Label)
+        exit 1
+    }
+}
+
+function Write-MinimalFipRepo {
+    param(
+        [string]$Status = "Accepted",
+        [string]$Requires = "[]",
+        [string]$ImplementationBlock = @"
+- implementation:
+  - README.md
+"@,
+        [string]$AcceptanceBlock = @"
+- acceptance:
+  - Minimal policy passes.
+"@,
+        [string]$AuthorsLine = "- authors: @fin-maintainers",
+        [string]$CreatedLine = "- created: 2026-02-27",
+        [string]$TargetRelease = "M0",
+        [string]$Discussion = "TBD",
+        [string]$CompatibilityBody = "Minimal.",
+        [string]$IndexTitle = "Minimal Policy",
+        [string]$IndexStatus = "",
+        [string]$IndexAddress = "fin://fip/FIP-0001",
+        [string]$IndexId = "FIP-0001",
+        [string[]]$OmitLabels = @(),
+        [string]$CiText = "run: ./ci/verify_fip_metadata.ps1",
+        [string]$DoctorText = "ci/verify_fip_metadata.ps1",
+        [switch]$UppercaseImplementedLabel,
+        [switch]$CreateReadme
+    )
+
+    Remove-Item -Recurse -Force (Join-Path $tmpRoot "*") -ErrorAction SilentlyContinue
+
+    New-Item -ItemType Directory -Path (Join-Path $tmpRoot "fips") -Force | Out-Null
+    New-Item -ItemType Directory -Path (Join-Path $tmpRoot ".github/workflows") -Force | Out-Null
+    New-Item -ItemType Directory -Path (Join-Path $tmpRoot "cmd/fin") -Force | Out-Null
+
+    if ($CreateReadme) {
+        Set-Content -Path (Join-Path $tmpRoot "README.md") -Value "# Minimal"
+    }
+
+    if ([string]::IsNullOrWhiteSpace($IndexStatus)) {
+        $IndexStatus = $Status
+    }
+
+    $labelRows = @(
+        "Draft",
+        "Review",
+        "Accepted",
+        "Scheduled",
+        "InProgress",
+        "Implemented",
+        "Released",
+        "Deferred",
+        "Rejected"
+    ) | Where-Object {
+        $OmitLabels -notcontains $_
+    } | ForEach-Object {
+        $labelName = "status/{0}" -f $_.ToLowerInvariant()
+        if ($UppercaseImplementedLabel -and $_ -eq "Implemented") {
+            $labelName = "STATUS/implemented"
+        }
+        '  {{ "name": "{0}", "color": "000000", "description": "{1}" }}' -f $labelName, $_
+    }
+    Set-Content -Path (Join-Path $tmpRoot ".github/labels.json") -Value ("[`n{0}`n]" -f ($labelRows -join ",`n"))
+    Set-Content -Path (Join-Path $tmpRoot ".github/workflows/ci.yml") -Value $CiText
+    Set-Content -Path (Join-Path $tmpRoot "cmd/fin/fin.ps1") -Value $DoctorText
+
+    Set-Content -Path (Join-Path $tmpRoot "fips/INDEX.md") -Value @"
+# FIP Index
+
+| ID | Title | Status | Address |
+|---|---|---|---|
+| $IndexId | $IndexTitle | $IndexStatus | ``$IndexAddress`` |
+"@
+
+    Set-Content -Path (Join-Path $tmpRoot "fips/FIP-0001-minimal-policy.md") -Value @"
+# FIP-0001: Minimal Policy
+
+- id: FIP-0001
+- address: fin://fip/FIP-0001
+- status: $Status
+$AuthorsLine
+$CreatedLine
+- requires: $Requires
+- target_release: $TargetRelease
+- discussion: $Discussion
+$ImplementationBlock
+$AcceptanceBlock
+
+## Summary
+
+Minimal.
+
+## Motivation
+
+Minimal.
+
+## Design
+
+Minimal.
+
+## Alternatives
+
+Minimal.
+
+## Risks
+
+Minimal.
+
+## Compatibility
+
+$CompatibilityBody
+
+## Test Plan
+
+Minimal.
+"@
+}
+
+try {
+    Write-MinimalFipRepo -CreateReadme
+    Assert-Passes -Label "valid minimal FIP repo" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -AuthorsLine "" -CreateReadme
+    Assert-Fails -Label "missing authors metadata" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -CreatedLine "- created: 2026-2-27" -CreateReadme
+    Assert-Fails -Label "created metadata with non-canonical date format" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -CreatedLine "- created: 2026-02-30" -CreateReadme
+    Assert-Fails -Label "created metadata with invalid date" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -AcceptanceBlock "- acceptance:" -CreateReadme
+    Assert-Fails -Label "empty acceptance metadata block" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -Status "accepted" -CreateReadme
+    Assert-Fails -Label "lowercase status metadata" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -TargetRelease "milestone-0" -CreateReadme
+    Assert-Fails -Label "invalid target_release metadata" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -TargetRelease "m0" -CreateReadme
+    Assert-Fails -Label "lowercase target_release metadata" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -Discussion "not-a-discussion-uri" -CreateReadme
+    Assert-Fails -Label "invalid discussion metadata" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -Discussion "fin://fip/fip-0001" -CreateReadme
+    Assert-Fails -Label "lowercase discussion FIP URI" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -ImplementationBlock "- Implementation: []"
+    Assert-Fails -Label "uppercase implementation key" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -IndexId "FIP-0002" -CreateReadme
+    Assert-Fails -Label "index FIP id mismatch" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -IndexTitle "Wrong Policy" -CreateReadme
+    Assert-Fails -Label "index title mismatch" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -IndexStatus "Implemented" -CreateReadme
+    Assert-Fails -Label "index status mismatch" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -IndexAddress "fin://fip/FIP-9999" -CreateReadme
+    Assert-Fails -Label "index address mismatch" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -OmitLabels @("Implemented") -CreateReadme
+    Assert-Fails -Label "missing status label" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -UppercaseImplementedLabel -CreateReadme
+    Assert-Fails -Label "uppercase status label prefix" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -CiText "run: ./ci/check_fip_link.ps1" -CreateReadme
+    Assert-Fails -Label "CI workflow missing metadata verifier" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -CiText "run: ./CI/verify_fip_metadata.ps1" -CreateReadme
+    Assert-Fails -Label "CI workflow metadata verifier wrong case" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -DoctorText "ci/check_fip_link.ps1" -CreateReadme
+    Assert-Fails -Label "doctor missing metadata verifier" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -ImplementationBlock @"
+- implementation:
+  - missing.md
+"@
+    Assert-Fails -Label "missing implementation path" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -Requires '["FIP-9999"]' -CreateReadme
+    Assert-Fails -Label "unknown requires FIP" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -Requires '["not-a-fip"]' -CreateReadme
+    Assert-Fails -Label "invalid requires FIP format" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -Requires '["FIP-0001"]' -CreateReadme
+    Assert-Fails -Label "self requires FIP" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -Requires '["FIP-9999", "FIP-9999"]' -CreateReadme
+    Assert-Fails -Label "duplicate requires FIP" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -ImplementationBlock "- implementation: []"
+    Assert-Fails -Label "accepted FIP with empty implementation list" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -ImplementationBlock @"
+- implementation:
+  - ../README.md
+"@
+    Assert-Fails -Label "parent traversal implementation path" -Action { & $policy -Root $tmpRoot }
+
+    $absoluteImplementation = [System.IO.Path]::GetFullPath((Join-Path $tmpRoot "absolute.md"))
+    Write-MinimalFipRepo -ImplementationBlock @"
+- implementation:
+  - $absoluteImplementation
+"@
+    Assert-Fails -Label "absolute implementation path" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -Status "Draft" -ImplementationBlock "- implementation: []"
+    Assert-Passes -Label "draft FIP with empty implementation list" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -Status "Implemented" -Discussion "fin://fip/FIP-0001" -CreateReadme
+    Assert-Passes -Label "implemented FIP with completed discussion and compatibility" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -Status "Implemented" -CreateReadme
+    Assert-Fails -Label "implemented FIP with discussion placeholder" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -Status "Implemented" -Discussion "fin://fip/FIP-0001" -CompatibilityBody "Compatibility impact must be documented before Implemented status." -CreateReadme
+    Assert-Fails -Label "implemented FIP with compatibility placeholder" -Action { & $policy -Root $tmpRoot }
+}
+finally {
+    Finalize-TestTmpWorkspace -State $tmpState
+}
+
+Write-Host "FIP metadata policy gate self-check passed."

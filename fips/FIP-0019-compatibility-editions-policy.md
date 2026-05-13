@@ -8,7 +8,13 @@
 - requires: ["FIP-0002"]
 - target_release: M0
 - discussion: TBD
-- implementation: []
+- implementation:
+  - COMPATIBILITY.md
+  - GOVERNANCE.md
+  - .github/PULL_REQUEST_TEMPLATE.md
+  - .github/workflows/release.yml
+  - docs/release-provenance.md
+  - ci/verify_fip_metadata.ps1
 - acceptance:
   - Compatibility policy is published and referenced by release process.
 
@@ -22,7 +28,14 @@ This proposal is part of the Fin independent-toolchain baseline and is required 
 
 ## Design
 
-Initial design details are tracked in the corresponding spec and architecture documents. Concrete implementation deltas must be appended to this section before status changes to InProgress.
+Current compatibility implementation:
+
+1. `COMPATIBILITY.md` defines versioning, stability buckets, breaking-change rules, edition policy, and release reproducibility requirements.
+2. `GOVERNANCE.md` requires compatibility analysis for breaking changes.
+3. `.github/PULL_REQUEST_TEMPLATE.md` includes a compatibility-impact checklist item.
+4. `.github/workflows/release.yml` publishes release metadata, including seed and reproducibility references.
+5. `docs/release-provenance.md` links compatibility notes to release provenance expectations.
+6. `ci/verify_fip_metadata.ps1` keeps FIP status/index references synchronized in CI.
 
 ## Alternatives
 
@@ -38,4 +51,8 @@ Compatibility impact must be documented before Implemented status.
 
 ## Test Plan
 
-Acceptance criteria listed above are normative; CI coverage for this proposal must be linked in implementation once available.
+Current checks:
+
+1. `ci/verify_fip_metadata.ps1` validates FIP metadata/index consistency.
+2. `.github/workflows/release.yml` requires release metadata to be produced for tagged releases.
+3. Pull request template review requires compatibility impact to be documented.

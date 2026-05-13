@@ -8,7 +8,7 @@
 - Relocation processing.
 - Minimal static linking first.
 
-This component is deferred until direct executable emitters are stable.
+Direct executable emitters are stable enough for the stage0 linker checkpoint; full native linking remains milestone work.
 
 ## Stage0 Starter
 

@@ -23,7 +23,7 @@ function Parse-U8Literal {
     param([string]$Text)
 
     $trimmed = $Text.Trim()
-    if ($trimmed -match '^0[bB][01]+$') {
+    if ($trimmed -cmatch '^0[bB][01]+$') {
         $binDigits = $trimmed.Substring(2)
         $value = 0
         try {
@@ -39,11 +39,11 @@ function Parse-U8Literal {
         return $value
     }
 
-    if ($trimmed -match '^0[bB]') {
+    if ($trimmed -cmatch '^0[bB]') {
         Fail-Parse ("invalid binary literal '{0}'" -f $trimmed)
     }
 
-    if ($trimmed -match '^0[xX][0-9A-Fa-f]+$') {
+    if ($trimmed -cmatch '^0[xX][0-9A-Fa-f]+$') {
         $hexDigits = $trimmed.Substring(2)
         $value = 0
         try {
@@ -59,11 +59,11 @@ function Parse-U8Literal {
         return $value
     }
 
-    if ($trimmed -match '^0[xX]') {
+    if ($trimmed -cmatch '^0[xX]') {
         Fail-Parse ("invalid hex literal '{0}'" -f $trimmed)
     }
 
-    if ($trimmed -notmatch '^[0-9]+$') {
+    if ($trimmed -cnotmatch '^[0-9]+$') {
         return $null
     }
 
@@ -81,10 +81,10 @@ function Parse-BoolLiteral {
     param([string]$Text)
 
     $trimmed = $Text.Trim()
-    if ($trimmed -eq "true") {
+    if ($trimmed -ceq "true") {
         return 1
     }
-    if ($trimmed -eq "false") {
+    if ($trimmed -ceq "false") {
         return 0
     }
     return $null
@@ -93,7 +93,7 @@ function Parse-BoolLiteral {
 function Assert-NonKeywordIdentifier {
     param([string]$Name)
 
-    if (($Name -eq "true") -or ($Name -eq "false")) {
+    if (($Name -ceq "true") -or ($Name -ceq "false")) {
         Fail-Parse ("reserved keyword cannot be used as identifier '{0}'" -f $Name)
     }
 }
@@ -110,10 +110,10 @@ function Parse-TypeAnnotation {
 
     if ($normalizedType.StartsWith("&")) {
         $inner = $normalizedType.Substring(1)
-        if ($inner -eq "u8") {
+        if ($inner -ceq "u8") {
             return "&u8"
         }
-        if ($inner -eq "Result<u8,u8>") {
+        if ($inner -ceq "Result<u8,u8>") {
             return "&Result<u8,u8>"
         }
 
@@ -124,11 +124,11 @@ function Parse-TypeAnnotation {
         Fail-Parse "unsupported type annotation '$typeName'"
     }
 
-    if ($normalizedType -eq "u8") {
+    if ($normalizedType -ceq "u8") {
         return "u8"
     }
 
-    if ($normalizedType -eq "Result<u8,u8>") {
+    if ($normalizedType -ceq "Result<u8,u8>") {
         return "Result<u8,u8>"
     }
 
@@ -138,11 +138,15 @@ function Parse-TypeAnnotation {
 function Copy-Hashtable {
     param([hashtable]$Table)
 
-    $copy = @{}
+    $copy = New-Stage0Map
     foreach ($key in $Table.Keys) {
         $copy[$key] = $Table[$key]
     }
     return $copy
+}
+
+function New-Stage0Map {
+    return [hashtable]::new([System.StringComparer]::Ordinal)
 }
 
 function Copy-Stage0ScopeFrames {
@@ -160,11 +164,11 @@ function Copy-Stage0ScopeFrames {
     return (, $copy)
 }
 
-$script:FunctionDefinitions = @{}
+$script:FunctionDefinitions = New-Stage0Map
 $script:FunctionCallStack = [System.Collections.Generic.List[string]]::new()
 $script:Stage0BindingCounter = 0
 $script:Stage0ScopeFrames = [System.Collections.Generic.List[hashtable]]::new()
-$script:Stage0BindingDisplayNames = @{}
+$script:Stage0BindingDisplayNames = New-Stage0Map
 
 function New-Stage0BindingKey {
     param([string]$Name)
@@ -174,7 +178,7 @@ function New-Stage0BindingKey {
 }
 
 function Push-Stage0ScopeFrame {
-    $frame = @{}
+    $frame = New-Stage0Map
     $script:Stage0ScopeFrames.Add($frame) | Out-Null
     return $frame
 }
@@ -394,7 +398,7 @@ function Get-Stage0Statements {
         $isStatementBreak = (($ch -eq ';') -or ($ch -eq "`n") -or ($ch -eq "`r"))
         if ($isStatementBreak -and ($parenDepth -eq 0) -and ($braceDepth -eq 0)) {
             $stmt = $BodyText.Substring($start, $i - $start).Trim()
-            if ((-not [string]::IsNullOrWhiteSpace($stmt)) -and ($stmt -match '^if(?:\s|\()') -and (Has-Stage0PendingElse -Text $BodyText -StartIndex ($i + 1))) {
+            if ((-not [string]::IsNullOrWhiteSpace($stmt)) -and ($stmt -cmatch '^if(?:\s|\()') -and (Has-Stage0PendingElse -Text $BodyText -StartIndex ($i + 1))) {
                 if (($ch -eq "`r") -and (($i + 1) -lt $BodyText.Length) -and ($BodyText[$i + 1] -eq "`n")) {
                     $i += 1
                 }
@@ -440,7 +444,7 @@ function Has-Stage0PendingElse {
         return $false
     }
 
-    if ($Text.Substring($position, 4) -ne "else") {
+    if ($Text.Substring($position, 4) -cne "else") {
         return $false
     }
 
@@ -460,7 +464,7 @@ function Try-ParseStage0IfStatement {
     )
 
     $trimmed = $Statement.Trim()
-    if ($trimmed -notmatch '^if(?:\s|\()') {
+    if ($trimmed -cnotmatch '^if(?:\s|\()') {
         return $null
     }
 
@@ -522,8 +526,8 @@ function Get-ExpectedFunctionReturnType {
         [string]$DeclaredReturnType
     )
 
-    if ($FunctionName -eq "main") {
-        if (-not [string]::IsNullOrWhiteSpace($DeclaredReturnType) -and ([string]$DeclaredReturnType -ne "u8")) {
+    if ($FunctionName -ceq "main") {
+        if (-not [string]::IsNullOrWhiteSpace($DeclaredReturnType) -and ([string]$DeclaredReturnType -cne "u8")) {
             Fail-Parse ("entrypoint return type must be u8 in stage0 bootstrap, found {0}" -f $DeclaredReturnType)
         }
         return "u8"
@@ -533,7 +537,7 @@ function Get-ExpectedFunctionReturnType {
         return "u8"
     }
 
-    if (($DeclaredReturnType -ne "u8") -and ($DeclaredReturnType -ne "Result<u8,u8>")) {
+    if (($DeclaredReturnType -cne "u8") -and ($DeclaredReturnType -cne "Result<u8,u8>")) {
         Fail-Parse ("function '{0}' return type must be u8 or Result<u8,u8> in stage0 bootstrap, found {1}" -f $FunctionName, $DeclaredReturnType)
     }
 
@@ -595,20 +599,20 @@ function Parse-Stage0FunctionParameters {
         return @()
     }
 
-    if ($FunctionName -eq "main") {
+    if ($FunctionName -ceq "main") {
         Fail-Parse "entrypoint function 'main' does not support parameters in stage0"
     }
 
     $parameters = [System.Collections.Generic.List[object]]::new()
-    $seenNames = @{}
+    $seenNames = New-Stage0Map
     foreach ($part in @(Split-TopLevelTypeList -Text $ParameterText)) {
         $parameterDecl = [string]$part
         if ([string]::IsNullOrWhiteSpace($parameterDecl)) {
             Fail-Parse ("function '{0}' parameters must not contain empty entries" -f $FunctionName)
         }
 
-        if ($parameterDecl -notmatch '^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(.+)$') {
-            if ($parameterDecl -match '^[A-Za-z_][A-Za-z0-9_]*$') {
+        if ($parameterDecl -cnotmatch '^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(.+)$') {
+            if ($parameterDecl -cmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
                 Fail-Parse ("function parameter '{0}' requires explicit type annotation in stage0" -f $parameterDecl)
             }
             Fail-Parse ("invalid parameter declaration '{0}' in function '{1}'" -f $parameterDecl, $FunctionName)
@@ -622,7 +626,7 @@ function Parse-Stage0FunctionParameters {
         }
 
         $parameterType = Parse-TypeAnnotation -TypeText $parameterTypeText
-        if (($parameterType -ne "u8") -and ($parameterType -ne "Result<u8,u8>")) {
+        if (($parameterType -cne "u8") -and ($parameterType -cne "Result<u8,u8>")) {
             Fail-Parse ("function parameter '{0}' type must be u8 or Result<u8,u8> in stage0 bootstrap, found {1}" -f $parameterName, $parameterType)
         }
 
@@ -639,7 +643,7 @@ function Parse-Stage0FunctionParameters {
 function Get-Stage0FunctionDefinitions {
     param([string]$ProgramText)
 
-    $definitions = @{}
+    $definitions = New-Stage0Map
     $sanitizedProgram = Strip-Stage0LineComments -Text $ProgramText
     $position = 0
 
@@ -811,7 +815,7 @@ function Remove-BlockScopedBindings {
         [hashtable]$ReferenceTargets
     )
 
-    $localNameSet = @{}
+    $localNameSet = New-Stage0Map
     foreach ($bindingKey in $BindingKeys) {
         $localNameSet[$bindingKey] = $true
     }
@@ -1005,10 +1009,10 @@ function Parse-Expr {
     Assert-BalancedParentheses -Expr $trimmedExpr
     $trimmedExpr = Strip-OuterParentheses -Expr $trimmedExpr
 
-    if ($trimmedExpr -match '^&\s*$') {
+    if ($trimmedExpr -cmatch '^&\s*$') {
         Fail-Parse "borrow '&' requires an identifier operand"
     }
-    if ($trimmedExpr -match '^&\s*([A-Za-z_][A-Za-z0-9_]*)$') {
+    if ($trimmedExpr -cmatch '^&\s*([A-Za-z_][A-Za-z0-9_]*)$') {
         $name = $Matches[1]
         $bindingKey = Resolve-Stage0BindingKeyOrFail -Name $name -UndefinedMessage "borrow for undefined identifier '$name'"
         $state = [string]$LifecycleStates[$bindingKey]
@@ -1037,10 +1041,10 @@ function Parse-Expr {
     if ($trimmedExpr.StartsWith("&")) {
         Fail-Parse "borrow '&' expects identifier operand in stage0"
     }
-    if ($trimmedExpr -match '^\*\s*$') {
+    if ($trimmedExpr -cmatch '^\*\s*$') {
         Fail-Parse "dereference '*' requires an operand"
     }
-    if (($trimmedExpr -match '^\*\s*([A-Za-z_][A-Za-z0-9_]*)$') -or ($trimmedExpr -match '^\*\s*\((.+)\)$')) {
+    if (($trimmedExpr -cmatch '^\*\s*([A-Za-z_][A-Za-z0-9_]*)$') -or ($trimmedExpr -cmatch '^\*\s*\((.+)\)$')) {
         $innerExpr = $Matches[1].Trim()
         if ([string]::IsNullOrWhiteSpace($innerExpr)) {
             Fail-Parse "dereference '*' requires an operand"
@@ -1085,7 +1089,7 @@ function Parse-Expr {
             ReferenceTarget = ""
         }
     }
-    if ($trimmedExpr -match '^if\s*\(\s*(.*)\s*\)$') {
+    if ($trimmedExpr -cmatch '^if\s*\(\s*(.*)\s*\)$') {
         $argText = $Matches[1]
         if ([string]::IsNullOrWhiteSpace($argText)) {
             Fail-Parse "if(...) requires exactly 3 arguments: condition, then, else"
@@ -1309,10 +1313,10 @@ function Parse-Expr {
         }
     }
 
-    if ($trimmedExpr -match '^!\s*$') {
+    if ($trimmedExpr -cmatch '^!\s*$') {
         Fail-Parse "logical not '!' requires an operand"
     }
-    if ($trimmedExpr -match '^~\s*$') {
+    if ($trimmedExpr -cmatch '^~\s*$') {
         Fail-Parse "bitwise not '~' requires an operand"
     }
     if ($trimmedExpr.StartsWith("!")) {
@@ -1350,7 +1354,7 @@ function Parse-Expr {
         }
     }
 
-    if ($trimmedExpr -match '^move\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)$') {
+    if ($trimmedExpr -cmatch '^move\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)$') {
         $name = $Matches[1]
         $bindingKey = Resolve-Stage0BindingKeyOrFail -Name $name -UndefinedMessage "move for undefined identifier '$name'"
         $state = [string]$LifecycleStates[$bindingKey]
@@ -1396,7 +1400,7 @@ function Parse-Expr {
         }
     }
 
-    if ($trimmedExpr -match '^ok\s*\(\s*(.*)\s*\)$') {
+    if ($trimmedExpr -cmatch '^ok\s*\(\s*(.*)\s*\)$') {
         $innerExpr = $Matches[1]
         if ([string]::IsNullOrWhiteSpace($innerExpr)) {
             Fail-Parse "ok(...) requires an inner expression"
@@ -1414,7 +1418,7 @@ function Parse-Expr {
         }
     }
 
-    if ($trimmedExpr -match '^err\s*\(\s*(.*)\s*\)$') {
+    if ($trimmedExpr -cmatch '^err\s*\(\s*(.*)\s*\)$') {
         $innerExpr = $Matches[1]
         if ([string]::IsNullOrWhiteSpace($innerExpr)) {
             Fail-Parse "err(...) requires an inner expression"
@@ -1432,7 +1436,7 @@ function Parse-Expr {
         }
     }
 
-    if ($trimmedExpr -match '^try\s*\(\s*(.*)\s*\)$') {
+    if ($trimmedExpr -cmatch '^try\s*\(\s*(.*)\s*\)$') {
         $innerExpr = $Matches[1]
         if ([string]::IsNullOrWhiteSpace($innerExpr)) {
             Fail-Parse "try(...) requires an inner expression"
@@ -1456,11 +1460,11 @@ function Parse-Expr {
         Fail-Parse ("try(...) expects Result<u8,u8> in stage0 bootstrap, found {0}" -f $innerValue.Type)
     }
 
-    if ($trimmedExpr -eq "try") {
+    if ($trimmedExpr -ceq "try") {
         Fail-Parse "try keyword requires expression"
     }
 
-    if ($trimmedExpr -match '^try\s+(.+)$') {
+    if ($trimmedExpr -cmatch '^try\s+(.+)$') {
         $innerExpr = $Matches[1].Trim()
         if ([string]::IsNullOrWhiteSpace($innerExpr)) {
             Fail-Parse "try keyword requires expression"
@@ -1508,10 +1512,10 @@ function Parse-Expr {
         Fail-Parse ("postfix '?' expects Result<u8,u8> in stage0 bootstrap, found {0}" -f $innerValue.Type)
     }
 
-    if ($trimmedExpr -match '^([A-Za-z_][A-Za-z0-9_]*)\s*\((.*)\)$') {
+    if ($trimmedExpr -cmatch '^([A-Za-z_][A-Za-z0-9_]*)\s*\((.*)\)$') {
         $functionName = $Matches[1]
         $argText = $Matches[2].Trim()
-        if ($functionName -eq "main") {
+        if ($functionName -ceq "main") {
             Fail-Parse "entrypoint function 'main' cannot be called as expression in stage0"
         }
         if (-not $script:FunctionDefinitions.ContainsKey($functionName)) {
@@ -1566,7 +1570,7 @@ function Parse-Expr {
     }
 
     $name = $Expr.Trim()
-    if ($name -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
+    if ($name -cnotmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
         Fail-Parse "unsupported expression '$Expr'"
     }
     $bindingKey = Resolve-Stage0BindingKeyOrFail -Name $name -UndefinedMessage "undefined identifier '$name'"
@@ -1704,11 +1708,11 @@ function Invoke-Stage0Statements {
                 continue
             }
 
-            if ($stmt -match '^let\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([^?=]+?))?\s*\?=\s*$') {
+            if ($stmt -cmatch '^let\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([^?=]+?))?\s*\?=\s*$') {
                 Fail-Parse 'unwrap binding requires expression'
             }
 
-            if ($stmt -match '^let\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([^?=]+?))?\s*\?=\s*(.+)$') {
+            if ($stmt -cmatch '^let\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([^?=]+?))?\s*\?=\s*(.+)$') {
                 $name = $Matches[1]
                 Assert-NonKeywordIdentifier -Name $name
                 $declaredTypeRaw = $Matches[2]
@@ -1732,7 +1736,7 @@ function Invoke-Stage0Statements {
                 continue
             }
 
-            if ($stmt -match '^let\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([^=]+?))?\s*=\s*(.+)$') {
+            if ($stmt -cmatch '^let\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([^=]+?))?\s*=\s*(.+)$') {
                 $name = $Matches[1]
                 Assert-NonKeywordIdentifier -Name $name
                 $declaredTypeRaw = $Matches[2]
@@ -1756,7 +1760,7 @@ function Invoke-Stage0Statements {
                 continue
             }
 
-            if ($stmt -match '^var\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([^=]+?))?\s*=\s*(.+)$') {
+            if ($stmt -cmatch '^var\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([^=]+?))?\s*=\s*(.+)$') {
                 $name = $Matches[1]
                 Assert-NonKeywordIdentifier -Name $name
                 $declaredTypeRaw = $Matches[2]
@@ -1780,11 +1784,11 @@ function Invoke-Stage0Statements {
                 continue
             }
 
-            if ($stmt -match '^var\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([^?=]+?))?\s*\?=\s*$') {
+            if ($stmt -cmatch '^var\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([^?=]+?))?\s*\?=\s*$') {
                 Fail-Parse 'unwrap var binding requires expression'
             }
 
-            if ($stmt -match '^var\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([^?=]+?))?\s*\?=\s*(.+)$') {
+            if ($stmt -cmatch '^var\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([^?=]+?))?\s*\?=\s*(.+)$') {
                 $name = $Matches[1]
                 Assert-NonKeywordIdentifier -Name $name
                 $declaredTypeRaw = $Matches[2]
@@ -1808,15 +1812,15 @@ function Invoke-Stage0Statements {
                 continue
             }
 
-            if ($stmt -match '^([A-Za-z_][A-Za-z0-9_]*)\s*\?=\s*$') {
+            if ($stmt -cmatch '^([A-Za-z_][A-Za-z0-9_]*)\s*\?=\s*$') {
                 Fail-Parse 'unwrap assignment requires expression'
             }
 
-            if ($stmt -match '^([A-Za-z_][A-Za-z0-9_]*)\s*\+=\s*$') {
+            if ($stmt -cmatch '^([A-Za-z_][A-Za-z0-9_]*)\s*\+=\s*$') {
                 Fail-Parse "compound assignment '+=' requires expression"
             }
 
-            if ($stmt -match '^([A-Za-z_][A-Za-z0-9_]*)\s*\+=\s*(.+)$') {
+            if ($stmt -cmatch '^([A-Za-z_][A-Za-z0-9_]*)\s*\+=\s*(.+)$') {
                 $name = $Matches[1]
                 Assert-NonKeywordIdentifier -Name $name
                 $expr = $Matches[2]
@@ -1870,7 +1874,7 @@ function Invoke-Stage0Statements {
                 continue
             }
 
-            if ($stmt -match '^([A-Za-z_][A-Za-z0-9_]*)\s*\?=\s*(.+)$') {
+            if ($stmt -cmatch '^([A-Za-z_][A-Za-z0-9_]*)\s*\?=\s*(.+)$') {
                 $name = $Matches[1]
                 Assert-NonKeywordIdentifier -Name $name
                 $expr = $Matches[2]
@@ -1929,7 +1933,7 @@ function Invoke-Stage0Statements {
                 continue
             }
 
-            if ($stmt -match '^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$') {
+            if ($stmt -cmatch '^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$') {
                 $name = $Matches[1]
                 Assert-NonKeywordIdentifier -Name $name
                 $expr = $Matches[2]
@@ -1988,7 +1992,7 @@ function Invoke-Stage0Statements {
                 continue
             }
 
-            if ($stmt -match '^drop\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)$') {
+            if ($stmt -cmatch '^drop\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)$') {
                 $name = $Matches[1]
                 $bindingKey = Resolve-Stage0BindingKeyOrFail -Name $name -UndefinedMessage "drop for undefined identifier '$name'"
                 $state = [string]$LifecycleStates[$bindingKey]
@@ -2014,8 +2018,8 @@ function Invoke-Stage0Statements {
                 continue
             }
 
-            if ($stmt -match '^exit\s*\(\s*(.+)\s*\)$') {
-                if ($FunctionName -ne 'main') {
+            if ($stmt -cmatch '^exit\s*\(\s*(.+)\s*\)$') {
+                if ($FunctionName -cne 'main') {
                     Fail-Parse ("exit(...) is only allowed in entrypoint function 'main', found in function '{0}'" -f $FunctionName)
                 }
 
@@ -2033,11 +2037,11 @@ function Invoke-Stage0Statements {
                 continue
             }
 
-            if (($stmt -match '^return\s*$') -or ($stmt -match '^return\s*\(\s*\)\s*$')) {
+            if (($stmt -cmatch '^return\s*$') -or ($stmt -cmatch '^return\s*\(\s*\)\s*$')) {
                 Fail-Parse 'return statement requires expression'
             }
 
-            if (($stmt -match '^return\s+(.+)$') -or ($stmt -match '^return\s*\(\s*(.+)\s*\)$')) {
+            if (($stmt -cmatch '^return\s+(.+)$') -or ($stmt -cmatch '^return\s*\(\s*(.+)\s*\)$')) {
                 $exprValue = Parse-Expr -Expr $Matches[1] -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates -ReferenceTargets $ReferenceTargets
                 if ([string]$exprValue.Type -ne [string]$ExpectedReturnType) {
                     Fail-Parse ("return expression type must be {0}, found {1}" -f $ExpectedReturnType, $exprValue.Type)
@@ -2095,15 +2099,15 @@ function Invoke-Stage0Function {
 
     try {
         $script:Stage0ScopeFrames = [System.Collections.Generic.List[hashtable]]::new()
-        $script:Stage0BindingDisplayNames = @{}
+        $script:Stage0BindingDisplayNames = New-Stage0Map
         Push-Stage0ScopeFrame | Out-Null
 
-        $values = @{}
-        $mutable = @{}
-        $types = @{}
-        $resultStates = @{}
-        $lifecycleStates = @{}
-        $referenceTargets = @{}
+        $values = New-Stage0Map
+        $mutable = New-Stage0Map
+        $types = New-Stage0Map
+        $resultStates = New-Stage0Map
+        $lifecycleStates = New-Stage0Map
+        $referenceTargets = New-Stage0Map
 
         for ($i = 0; $i -lt $definition.Parameters.Count; $i++) {
             $parameter = $definition.Parameters[$i]
@@ -2123,7 +2127,7 @@ function Invoke-Stage0Function {
 
         $executionResult = Invoke-Stage0Statements -FunctionName $FunctionName -ExpectedReturnType $definition.ExpectedReturnType -Statements $definition.Statements -Values $values -Mutable $mutable -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets
         if (-not $executionResult.HaveTerminal) {
-            if ($FunctionName -eq 'main') {
+            if ($FunctionName -ceq 'main') {
                 Fail-Parse 'missing terminal statement (exit(<expr>) or return <expr>)'
             }
             Fail-Parse ("function '{0}' is missing terminal return" -f $FunctionName)

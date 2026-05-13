@@ -8,7 +8,12 @@
 - requires: []
 - target_release: M0
 - discussion: TBD
-- implementation: []
+- implementation:
+  - README.md
+  - SPEC.md
+  - GOVERNANCE.md
+  - docs/architecture.md
+  - ci/verify_fip_metadata.ps1
 - acceptance:
   - Charter is merged and referenced by spec and governance docs.
 
@@ -22,7 +27,13 @@ This proposal is part of the Fin independent-toolchain baseline and is required 
 
 ## Design
 
-Initial design details are tracked in the corresponding spec and architecture documents. Concrete implementation deltas must be appended to this section before status changes to InProgress.
+Current charter implementation:
+
+1. `README.md` publishes the project goals, current status, and non-negotiable constraints.
+2. `SPEC.md` keeps the language design principles visible as the living specification baseline.
+3. `GOVERNANCE.md` references this charter as the decision-making basis for language, compiler, runtime, package, and release changes.
+4. `docs/architecture.md` records the staged independent-toolchain architecture used to keep the charter actionable.
+5. `ci/verify_fip_metadata.ps1` keeps FIP metadata and index references synchronized in CI.
 
 ## Alternatives
 
@@ -38,4 +49,7 @@ Compatibility impact must be documented before Implemented status.
 
 ## Test Plan
 
-Acceptance criteria listed above are normative; CI coverage for this proposal must be linked in implementation once available.
+Current checks:
+
+1. `ci/verify_fip_metadata.ps1` validates FIP metadata/index consistency.
+2. `cmd/fin/fin.ps1 doctor` and GitHub Actions both run the metadata verifier.

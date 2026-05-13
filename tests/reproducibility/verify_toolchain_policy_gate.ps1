@@ -9,6 +9,34 @@ $tmpState = Initialize-TestTmpWorkspace -RepoRoot $repoRoot -Prefix "policy-gate
 $tmpRoot = $tmpState.TmpDir
 $workflows = Join-Path $tmpRoot ".github/workflows"
 $workflowFile = Join-Path $workflows "ci.yml"
+
+function Assert-Fails {
+    param(
+        [scriptblock]$Action,
+        [string]$Label
+    )
+
+    $failed = $false
+    try {
+        & $Action
+    }
+    catch {
+        $failed = $true
+    }
+
+    if (-not $failed) {
+        Write-Error ("Expected toolchain policy failure: {0}" -f $Label)
+        exit 1
+    }
+}
+
+$missingRoot = Join-Path $tmpRoot "missing-root"
+Assert-Fails -Action { & $policy -Root $missingRoot | Out-Null } -Label "missing policy root"
+
+$emptyRoot = Join-Path $tmpRoot "empty-root"
+New-Item -ItemType Directory -Path $emptyRoot -Force | Out-Null
+& $policy -Root $emptyRoot
+
 New-Item -ItemType Directory -Path $workflows -Force | Out-Null
 
 # Should fail: disallowed toolchain command in workflow.
@@ -21,18 +49,19 @@ jobs:
       - run: gcc --version
 "@
 
-$failed = $false
-try {
-    & $policy -Root $tmpRoot | Out-Null
-}
-catch {
-    $failed = $true
-}
+Assert-Fails -Action { & $policy -Root $tmpRoot | Out-Null } -Label "disallowed workflow command"
 
-if (-not $failed) {
-    Write-Error "Expected policy gate to fail for disallowed workflow command."
-    exit 1
-}
+# Should fail: disallowed command matching is case-insensitive.
+Set-Content -Path $workflowFile -Value @"
+name: ci
+jobs:
+  bad:
+    runs-on: ubuntu-latest
+    steps:
+      - run: GCC --version
+"@
+
+Assert-Fails -Action { & $policy -Root $tmpRoot | Out-Null } -Label "uppercase disallowed workflow command"
 
 # Should pass: allow-tagged line for controlled exception.
 Set-Content -Path $workflowFile -Value @"

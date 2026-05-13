@@ -14,13 +14,16 @@ $emitPe = Join-Path $repoRoot "compiler/finc/stage0/emit_pe_exit0.ps1"
 $verifyElf = Join-Path $repoRoot "tests/bootstrap/verify_elf_exit0.ps1"
 $verifyPe = Join-Path $repoRoot "tests/bootstrap/verify_pe_exit0.ps1"
 $verifyClosure = Join-Path $repoRoot "tests/bootstrap/verify_stage0_closure.ps1"
+$verifyClosureBaselineContract = Join-Path $repoRoot "tests/reproducibility/verify_closure_baseline_contract.ps1"
 $verifyGrammar = Join-Path $repoRoot "tests/conformance/verify_stage0_grammar.ps1"
 $verifyFinobjRoundtrip = Join-Path $repoRoot "tests/conformance/verify_finobj_roundtrip.ps1"
 $verifyInit = Join-Path $repoRoot "tests/integration/verify_init.ps1"
 $verifyFmt = Join-Path $repoRoot "tests/integration/verify_fmt.ps1"
 $verifyDoc = Join-Path $repoRoot "tests/integration/verify_doc.ps1"
+$verifyCliContract = Join-Path $repoRoot "tests/integration/verify_cli_contract.ps1"
 $verifyPkg = Join-Path $repoRoot "tests/integration/verify_pkg.ps1"
 $verifyPkgPublish = Join-Path $repoRoot "tests/integration/verify_pkg_publish.ps1"
+$verifyExamples = Join-Path $repoRoot "tests/integration/verify_examples.ps1"
 $verifyLinuxWriteExit = Join-Path $repoRoot "tests/integration/verify_linux_write_exit.ps1"
 $verifyWindowsPeExit = Join-Path $repoRoot "tests/integration/verify_windows_pe_exit.ps1"
 $verifyBuildTargetWindows = Join-Path $repoRoot "tests/integration/verify_build_target_windows.ps1"
@@ -29,8 +32,14 @@ $verifyFinobjLink = Join-Path $repoRoot "tests/integration/verify_finobj_link.ps
 $verifyBuildPipelineFinobj = Join-Path $repoRoot "tests/integration/verify_build_pipeline_finobj.ps1"
 $verifyRepro = Join-Path $repoRoot "tests/reproducibility/verify_stage0_reproducibility.ps1"
 $verifyTmpWorkspacePolicy = Join-Path $repoRoot "tests/reproducibility/verify_test_tmp_workspace_policy.ps1"
+$verifyClosureBaselineContractPolicyGate = Join-Path $repoRoot "tests/reproducibility/verify_closure_baseline_contract_policy_gate.ps1"
 $verifyClosureWorkspacePolicy = Join-Path $repoRoot "tests/reproducibility/verify_closure_workspace_policy.ps1"
 $verifyManifestPolicyGate = Join-Path $repoRoot "tests/reproducibility/verify_manifest_policy_gate.ps1"
+$verifySeedHashPolicyGate = Join-Path $repoRoot "tests/reproducibility/verify_seed_hash_policy_gate.ps1"
+$verifyFipMetadataPolicyGate = Join-Path $repoRoot "tests/reproducibility/verify_fip_metadata_policy_gate.ps1"
+$verifyFipPolicyGate = Join-Path $repoRoot "tests/reproducibility/verify_fip_policy_gate.ps1"
+$verifyStdlibContract = Join-Path $repoRoot "tests/reproducibility/verify_stdlib_contract.ps1"
+$verifyStdlibContractPolicyGate = Join-Path $repoRoot "tests/reproducibility/verify_stdlib_contract_policy_gate.ps1"
 $verifyPolicyGate = Join-Path $repoRoot "tests/reproducibility/verify_toolchain_policy_gate.ps1"
 
 Write-Host "fin test: stage0 suite starting"
@@ -43,6 +52,7 @@ if (-not $SkipDoctor) {
 & $verifyElf -Path (Join-Path $repoRoot "artifacts/fin-elf-exit0") -ExpectedExitCode 0
 & $emitPe -OutFile (Join-Path $repoRoot "artifacts/fin-pe-exit0.exe") -ExitCode 0
 & $verifyPe -Path (Join-Path $repoRoot "artifacts/fin-pe-exit0.exe") -ExpectedExitCode 0
+& $verifyClosureBaselineContract
 & $verifyClosure -VerifyBaseline
 
 & $verifyGrammar
@@ -50,8 +60,10 @@ if (-not $SkipDoctor) {
 & $verifyInit
 & $verifyFmt
 & $verifyDoc
+& $verifyCliContract
 & $verifyPkg
 & $verifyPkgPublish
+& $verifyExamples
 & $verifyLinuxWriteExit
 & $verifyWindowsPeExit
 & $verifyBuildTargetWindows
@@ -60,11 +72,24 @@ if (-not $SkipDoctor) {
 & $verifyBuildPipelineFinobj
 & $verifyRepro
 & $verifyTmpWorkspacePolicy
+& $verifyClosureBaselineContractPolicyGate
 & $verifyClosureWorkspacePolicy
 & $verifyManifestPolicyGate
+& $verifySeedHashPolicyGate
+& $verifyFipMetadataPolicyGate
+& $verifyFipPolicyGate
+& $verifyStdlibContract
+& $verifyStdlibContractPolicyGate
 & $verifyPolicyGate
 
 & $fin build --src tests/conformance/fixtures/main_exit0.fn --out artifacts/test-exit0
+
+if ($Quick) {
+    & $fin build --src tests/conformance/fixtures/main_exit7.fn --out artifacts/test-exit7
+    & $fin build --src tests/conformance/fixtures/main_exit_var_assign.fn --out artifacts/test-exit8
+    & $fin build --src tests/conformance/fixtures/main_exit_helper_params_add.fn --out artifacts/test-exit163
+}
+else {
 & $fin build --src tests/conformance/fixtures/main_exit7.fn --out artifacts/test-exit7
 & $fin build --src tests/conformance/fixtures/main_exit_var_assign.fn --out artifacts/test-exit8
 & $fin build --src tests/conformance/fixtures/main_exit_typed_u8.fn --out artifacts/test-exit9
@@ -192,10 +217,16 @@ if (-not $SkipDoctor) {
 & $fin build --src tests/conformance/fixtures/main_result_drop_reinit_drop_reinit.fn --out artifacts/test-exit27
 & $fin build --src tests/conformance/fixtures/main_exit_err_unused.fn --out artifacts/test-exit28
 & $fin build --src tests/conformance/fixtures/main_exit_err_binding_ok_path.fn --out artifacts/test-exit29
+}
 
 if (-not $SkipRun) {
     & $fin run --no-build --out artifacts/test-exit0 --expect-exit 0
-    if (-not $Quick) {
+    if ($Quick) {
+        & $fin run --no-build --out artifacts/test-exit7 --expect-exit 7
+        & $fin run --no-build --out artifacts/test-exit8 --expect-exit 8
+        & $fin run --no-build --out artifacts/test-exit163 --expect-exit 163
+    }
+    else {
         & $fin run --no-build --out artifacts/test-exit7 --expect-exit 7
         & $fin run --no-build --out artifacts/test-exit8 --expect-exit 8
         & $fin run --no-build --out artifacts/test-exit9 --expect-exit 9

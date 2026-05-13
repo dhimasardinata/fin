@@ -25,8 +25,10 @@ $objLinuxMainRequiresHelperRel32 = Join-Path $tmpDir "main-requires-helper-rel32
 $objLinuxMainRequiresHelperBadOffset = Join-Path $tmpDir "main-requires-helper-bad-offset.finobj"
 $objLinuxMainRequiresHelperBadSite = Join-Path $tmpDir "main-requires-helper-bad-site.finobj"
 $objLinuxMainRequiresMissing = Join-Path $tmpDir "main-requires-missing.finobj"
+$objLinuxMainRequiresLowerFoo = Join-Path $tmpDir "main-requires-lower-foo.finobj"
 $objLinuxUnitRelocNonEntry = Join-Path $tmpDir "unit-reloc-nonentry.finobj"
 $objLinuxUnitHelper = Join-Path $tmpDir "unit-helper.finobj"
+$objLinuxUnitUpperFoo = Join-Path $tmpDir "unit-upper-foo.finobj"
 $objLinuxUnitHelper2 = Join-Path $tmpDir "unit-helper-dup.finobj"
 $objLinuxUnitHelperValue = Join-Path $tmpDir "unit-helper-value.finobj"
 $objWindowsMain = Join-Path $tmpDir "main-windows.finobj"
@@ -47,6 +49,7 @@ $outBadDuplicateMain = Join-Path $tmpDir "bad-duplicate-main"
 $outBadDuplicatePath = Join-Path $tmpDir "bad-duplicate-path"
 $outBadDuplicateIdentity = Join-Path $tmpDir "bad-duplicate-identity"
 $outBadUnresolvedSymbol = Join-Path $tmpDir "bad-unresolved-symbol"
+$outBadSymbolCase = Join-Path $tmpDir "bad-symbol-case"
 $outBadDuplicateSymbol = Join-Path $tmpDir "bad-duplicate-symbol"
 $outBadNonEntryRelocation = Join-Path $tmpDir "bad-non-entry-relocation"
 $outBadRelocationBounds = Join-Path $tmpDir "bad-relocation-bounds"
@@ -123,8 +126,10 @@ function Assert-VerifyRecord {
 & $writer -SourcePath $sourceMain -OutFile $objLinuxMainRequiresHelperBadOffset -Target x86_64-linux-elf -EntrySymbol main -Requires helper -Relocs helper@16
 & $writer -SourcePath $sourceMain -OutFile $objLinuxMainRequiresHelperBadSite -Target x86_64-linux-elf -EntrySymbol main -Requires helper -Relocs helper@0
 & $writer -SourcePath $sourceMain -OutFile $objLinuxMainRequiresMissing -Target x86_64-linux-elf -EntrySymbol main -Requires missing_sym -Relocs missing_sym@6
+& $writer -SourcePath $sourceMain -OutFile $objLinuxMainRequiresLowerFoo -Target x86_64-linux-elf -EntrySymbol main -Requires foo -Relocs foo@6
 & $writer -SourcePath $sourceUnit -OutFile $objLinuxUnitRelocNonEntry -Target x86_64-linux-elf -EntrySymbol unit -Requires main -Relocs main@6
 & $writer -SourcePath $sourceMain -OutFile $objLinuxUnitHelper -Target x86_64-linux-elf -EntrySymbol unit -Provides helper
+& $writer -SourcePath $sourceMain -OutFile $objLinuxUnitUpperFoo -Target x86_64-linux-elf -EntrySymbol unit -Provides Foo
 & $writer -SourcePath $sourceMain -OutFile $objLinuxUnitHelper2 -Target x86_64-linux-elf -EntrySymbol unit -Provides helper
 & $writer -SourcePath $sourceUnit -OutFile $objLinuxUnitHelperValue -Target x86_64-linux-elf -EntrySymbol unit -Provides helper -ProvideValues helper=42
 & $writer -SourcePath $sourceMain -OutFile $objWindowsMain -Target x86_64-windows-pe -EntrySymbol main
@@ -181,6 +186,10 @@ Assert-LinkFails -Action {
 Assert-LinkFails -Action {
     & $linker -ObjectPath @($objLinuxMainRequiresMissing, $objLinuxUnit) -OutFile $outBadUnresolvedSymbol -Target x86_64-linux-elf -Verify | Out-Null
 } -Label "unresolved symbol"
+
+Assert-LinkFails -Action {
+    & $linker -ObjectPath @($objLinuxMainRequiresLowerFoo, $objLinuxUnitUpperFoo) -OutFile $outBadSymbolCase -Target x86_64-linux-elf -Verify | Out-Null
+} -Label "case-distinct unresolved symbol"
 
 Assert-LinkFails -Action {
     & $linker -ObjectPath @($objLinuxMainRequiresHelper, $objLinuxUnitHelper, $objLinuxUnitHelper2) -OutFile $outBadDuplicateSymbol -Target x86_64-linux-elf -Verify | Out-Null

@@ -7,7 +7,7 @@
 - created: 2026-02-27
 - requires: ["FIP-0010"]
 - target_release: M5
-- discussion: TBD
+- discussion: fin://fip/FIP-0013
 - implementation:
   - compiler/finobj/stage0/write_finobj_exit.ps1
   - compiler/finobj/stage0/read_finobj_exit.ps1
@@ -44,12 +44,12 @@ Stage0 scope is still minimal; `entry_symbol=unit` enables linker multi-object c
 
 Reader validation requirements in stage0:
 
-1. Reject duplicate keys.
+1. Reject duplicate keys and wrong-case required keys.
 2. Require `target` to be one of: `x86_64-linux-elf`, `x86_64-windows-pe`.
 3. Require `entry_symbol` to be one of: `main`, `unit`.
 4. Require repository-relative `source_path` (no rooted path or `..` traversal).
 5. Require `source_sha256` to be a 64-hex digest.
-6. Require symbol identifiers in `provides`/`requires` to match `[A-Za-z_][A-Za-z0-9_]*`.
+6. Require symbol identifiers in `provides`/`requires` to match `[A-Za-z_][A-Za-z0-9_]*` and preserve case-sensitive identity.
 7. Reject duplicate symbols inside a symbol list and overlap between `provides` and `requires`.
 8. Parse `symbol_values` as `<symbol>=<u32>` entries and reject malformed/duplicate entries and out-of-range values.
 9. Require `symbol_values` entries to reference only `provides` symbols; when key is present require values for all provided symbols.
@@ -70,11 +70,14 @@ Implementation complexity and schedule risk are tracked in milestone updates and
 
 ## Compatibility
 
-Compatibility impact must be documented before Implemented status.
+This locks the finobj v0 text schema, canonical ordering rules, symbol-value
+metadata, and relocation metadata used by stage0 finld. Incompatible object
+format changes require either a versioned format change or an explicit FIP/test
+update.
 
 ## Test Plan
 
 Current checks:
 
-1. `tests/conformance/verify_finobj_roundtrip.ps1` validates deterministic writer output hash, reader decode for Linux+Windows targets and `main/unit` entry symbols, canonical symbol metadata order (`provides`/`requires`), symbol value metadata (`symbol_values`) validation/defaults, relocation metadata roundtrip (`relocs` with kind defaults and explicit kinds), and malformed-object rejection (duplicate key, bad target/entry symbol, invalid source metadata, invalid symbol/value/relocation lists).
+1. `tests/conformance/verify_finobj_roundtrip.ps1` validates deterministic writer output hash, reader decode for Linux+Windows targets and `main/unit` entry symbols, case-sensitive required-key handling, canonical symbol metadata order (`provides`/`requires`), symbol value metadata (`symbol_values`) validation/defaults, relocation metadata roundtrip (`relocs` with kind defaults and explicit kinds), and malformed-object rejection (duplicate key, wrong-case key, bad target/entry symbol, invalid source metadata, invalid symbol/value/relocation lists).
 2. `tests/run_stage0_suite.ps1` includes finobj conformance checks in `fin test`.

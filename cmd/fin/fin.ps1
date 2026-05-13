@@ -2,7 +2,7 @@ param(
     [Parameter(Position = 0)]
     [string]$Command = "",
 
-    [Parameter(ValueFromRemainingArguments = $true)]
+    [Parameter(Position = 1, ValueFromRemainingArguments = $true)]
     [string[]]$CommandArgs
 )
 
@@ -16,6 +16,7 @@ if ($null -eq $CommandArgs) {
 
 function Invoke-Doctor {
     Write-Host "fin doctor: checking repository policy and bootstrap metadata"
+    & (Join-Path $repoRoot "ci/verify_fip_metadata.ps1")
     & (Join-Path $repoRoot "ci/verify_manifest.ps1")
     & (Join-Path $repoRoot "ci/verify_seed_hash.ps1")
     & (Join-Path $repoRoot "ci/forbid_external_toolchain.ps1")
@@ -33,7 +34,8 @@ function Assert-SupportedTarget {
 function Resolve-ManifestPrimaryTarget {
     param(
         [string]$ManifestPath = "fin.toml",
-        [switch]$RequireExists
+        [switch]$RequireExists,
+        [switch]$ValidatePolicy
     )
 
     $manifestFull = if ([System.IO.Path]::IsPathRooted($ManifestPath)) {
@@ -48,6 +50,10 @@ function Resolve-ManifestPrimaryTarget {
             throw "Manifest file not found: $manifestFull"
         }
         return ""
+    }
+
+    if ($ValidatePolicy) {
+        & (Join-Path $repoRoot "ci/verify_manifest.ps1") -Manifest $manifestFull -Quiet
     }
 
     $raw = Get-Content -Path $manifestFull -Raw
@@ -227,11 +233,9 @@ function Invoke-Build {
         }
     }
 
-    if ($manifestProvided) {
-        $null = Resolve-ManifestPrimaryTarget -ManifestPath $manifest -RequireExists
-    }
+    $manifestTarget = Resolve-ManifestPrimaryTarget -ManifestPath $manifest -RequireExists:$manifestProvided -ValidatePolicy
     if ([string]::IsNullOrWhiteSpace($target)) {
-        $target = Resolve-ManifestPrimaryTarget -ManifestPath $manifest
+        $target = $manifestTarget
     }
     if ([string]::IsNullOrWhiteSpace($target)) {
         $target = "x86_64-linux-elf"
@@ -312,11 +316,9 @@ function Invoke-Run {
         }
     }
 
-    if ($manifestProvided) {
-        $null = Resolve-ManifestPrimaryTarget -ManifestPath $manifest -RequireExists
-    }
+    $manifestTarget = Resolve-ManifestPrimaryTarget -ManifestPath $manifest -RequireExists:$manifestProvided -ValidatePolicy
     if ([string]::IsNullOrWhiteSpace($target)) {
-        $target = Resolve-ManifestPrimaryTarget -ManifestPath $manifest
+        $target = $manifestTarget
     }
     if ([string]::IsNullOrWhiteSpace($target)) {
         $target = "x86_64-linux-elf"
@@ -528,30 +530,12 @@ function Invoke-Test {
     }
 
     $suite = Join-Path $repoRoot "tests/run_stage0_suite.ps1"
-    if ($quick -and $skipDoctor -and $skipRun) {
-        & $suite -Quick -SkipDoctor -SkipRun
-    }
-    elseif ($quick -and $skipDoctor) {
-        & $suite -Quick -SkipDoctor
-    }
-    elseif ($quick -and $skipRun) {
-        & $suite -Quick -SkipRun
-    }
-    elseif ($skipDoctor -and $skipRun) {
-        & $suite -SkipDoctor -SkipRun
-    }
-    elseif ($quick) {
-        & $suite -Quick
-    }
-    elseif ($skipDoctor) {
-        & $suite -SkipDoctor
-    }
-    elseif ($skipRun) {
-        & $suite -SkipRun
-    }
-    else {
-        & $suite
-    }
+    $suiteArgs = @{}
+    if ($quick) { $suiteArgs["Quick"] = $true }
+    if ($skipDoctor) { $suiteArgs["SkipDoctor"] = $true }
+    if ($skipRun) { $suiteArgs["SkipRun"] = $true }
+
+    & $suite @suiteArgs
 }
 
 function Show-Usage {
@@ -570,8 +554,13 @@ Usage:
   ./cmd/fin/fin.ps1 pkg publish [--manifest <path>] [--src <dir>] [--out-dir <path>] [--dry-run]
   ./cmd/fin/fin.ps1 test [--quick] [--no-doctor] [--no-run]
 
-Planned unified commands (tracked in FIP-0015):
+Unified commands (tracked in FIP-0015):
   fin init | build | run | test | fmt | doc | pkg add | pkg publish | doctor
+
+Test options:
+  --quick      keep shared gates and use the smoke fixture matrix
+  --no-doctor  skip the suite's standalone doctor preflight
+  --no-run     skip the final fixture runtime phase
 "@ | Write-Host
 }
 

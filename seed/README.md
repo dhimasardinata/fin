@@ -13,3 +13,6 @@
 
 - Seed hash changes require a dedicated FIP update and release notes.
 - Seed artifacts must be reproducible or accompanied by provenance attestations.
+- `manifest.toml` must keep `name = "fin-seed"`, canonical semantic versioning,
+  and canonical `true` values for `immutable_per_release` and `review_required`.
+- Seed hashes must be `UNSET` or lowercase SHA-256 hex.

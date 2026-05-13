@@ -8,6 +8,8 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+$repoRoot = Resolve-Path (Join-Path $PSScriptRoot "../../..")
+
 function Get-Sha256HexFromBytes {
     param([byte[]]$Bytes)
 
@@ -19,6 +21,14 @@ function Get-Sha256HexFromBytes {
     finally {
         $sha.Dispose()
     }
+}
+
+function Get-OrdinalSortedKeys {
+    param([hashtable]$Map)
+
+    [string[]]$keys = @($Map.Keys | ForEach-Object { [string]$_ })
+    [System.Array]::Sort($keys, [System.StringComparer]::Ordinal)
+    return $keys
 }
 
 function Get-WorkspaceMetadata {
@@ -33,21 +43,21 @@ function Get-WorkspaceMetadata {
         if ([string]::IsNullOrWhiteSpace($trimmed)) { continue }
         if ($trimmed.StartsWith("#")) { continue }
 
-        if ($trimmed -match '^\[([^\]]+)\]\s*$') {
+        if ($trimmed -cmatch '^\[([^\]]+)\]\s*$') {
             $section = $Matches[1].Trim()
             continue
         }
 
-        if ($section -ne "workspace") {
+        if ($section -cne "workspace") {
             continue
         }
 
-        if ($trimmed -match '^name\s*=\s*"([^"]+)"\s*$') {
+        if ($trimmed -cmatch '^name\s*=\s*"([^"]+)"\s*$') {
             $name = $Matches[1].Trim()
             continue
         }
 
-        if ($trimmed -match '^version\s*=\s*"([^"]+)"\s*$') {
+        if ($trimmed -cmatch '^version\s*=\s*"([^"]+)"\s*$') {
             $version = $Matches[1].Trim()
             continue
         }
@@ -59,10 +69,10 @@ function Get-WorkspaceMetadata {
     if ([string]::IsNullOrWhiteSpace($version)) {
         throw "Manifest is missing [workspace].version."
     }
-    if ($name -notmatch '^[A-Za-z][A-Za-z0-9_-]*$') {
+    if ($name -cnotmatch '^[A-Za-z][A-Za-z0-9_-]*$') {
         throw "Invalid workspace name '$name'. Use pattern: ^[A-Za-z][A-Za-z0-9_-]*$"
     }
-    if ($version -match '"') {
+    if ($version -cmatch '"') {
         throw "Invalid workspace version '$version'."
     }
 
@@ -104,6 +114,8 @@ if (-not (Test-Path $ManifestPath)) {
 }
 
 $manifestFull = [System.IO.Path]::GetFullPath($ManifestPath)
+& (Join-Path $repoRoot "ci/verify_manifest.ps1") -Manifest $manifestFull -Quiet
+
 $projectRoot = Split-Path -Path $manifestFull -Parent
 
 $sourceFull = if ([System.IO.Path]::IsPathRooted($SourceDir)) {
@@ -127,7 +139,7 @@ if (-not (Test-Path $sourceFull)) {
 $manifestRaw = Get-Content -Path $manifestFull -Raw
 $workspace = Get-WorkspaceMetadata -ManifestRaw $manifestRaw
 
-$files = @{}
+$files = [hashtable]::new([System.StringComparer]::Ordinal)
 $files[(Get-RelativePathNormalized -BasePath $projectRoot -FullPath $manifestFull)] = $manifestFull
 
 $lockPath = Join-Path $projectRoot "fin.lock"
@@ -142,7 +154,7 @@ Get-ChildItem -Path $sourceFull -Recurse -File -Filter "*.fn" | ForEach-Object {
     $files[$rel] = $full
 }
 
-$orderedFiles = $files.Keys | Sort-Object
+$orderedFiles = Get-OrdinalSortedKeys -Map $files
 
 $lines = [System.Collections.Generic.List[string]]::new()
 $lines.Add("FINPKG-1")

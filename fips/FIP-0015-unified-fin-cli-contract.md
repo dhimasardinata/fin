@@ -7,7 +7,7 @@
 - created: 2026-02-27
 - requires: ["FIP-0002"]
 - target_release: M3
-- discussion: TBD
+- discussion: fin://fip/FIP-0015
 - implementation:
   - cmd/fin/fin.ps1
   - fin.ps1
@@ -22,6 +22,7 @@
   - tests/integration/verify_init.ps1
   - tests/integration/verify_fmt.ps1
   - tests/integration/verify_doc.ps1
+  - tests/integration/verify_cli_contract.ps1
   - tests/integration/verify_pkg.ps1
   - tests/integration/verify_pkg_publish.ps1
   - tests/integration/verify_build_target_windows.ps1
@@ -46,15 +47,19 @@ Current commands:
 1. `init`: scaffolds `fin.toml`, `fin.lock`, and `src/main.fn`.
 2. `doctor`: executes policy and seed checks.
 3. `emit-elf-exit0`: runs the FIP-0010 stage0 emitter and verifier.
-4. `build`: parses stage0 `.fn` subset and emits verified native artifact for selected target.
-5. `run`: builds (optional) and executes target-specific artifact with expected exit-code assertion.
+4. `build`: validates the selected manifest when present, parses stage0 `.fn` subset, and emits verified native artifact for selected target.
+5. `run`: validates the selected manifest when present, builds (optional), and executes target-specific artifact with expected exit-code assertion.
 6. `fmt`: formats stage0 `.fn` subset into canonical style.
 7. `doc`: generates stage0 documentation from `.fn` subset.
-8. `pkg add`: inserts/updates dependency entries in `fin.toml` and rewrites `fin.lock`.
-9. `pkg publish`: emits deterministic stage0 package artifact (`.fnpkg`).
-10. `test`: executes aggregated stage0 test suite.
+8. `pkg add`: validates manifest policy, inserts/updates dependency entries in `fin.toml`, and rewrites `fin.lock`.
+9. `pkg publish`: validates manifest policy and emits deterministic stage0 package artifact (`.fnpkg`).
+10. `test`: executes aggregated stage0 test suite. `--quick` preserves shared
+    gates but uses a smoke fixture matrix instead of the exhaustive fixture
+    build/run matrix. `--no-doctor` skips the suite's standalone doctor
+    preflight. `--no-run` skips the final fixture runtime phase after fixture
+    builds.
 
-This preserves forward compatibility with the planned unified CLI contract while enabling immediate policy enforcement.
+This keeps the bootstrap shim aligned with the unified CLI contract while enabling immediate policy enforcement.
 
 ## Alternatives
 
@@ -66,7 +71,9 @@ Implementation complexity and schedule risk are tracked in milestone updates and
 
 ## Compatibility
 
-Compatibility impact must be documented before Implemented status.
+This stabilizes the bootstrap `fin` command names and mandatory option
+semantics. Incompatible command or flag changes require an explicit FIP/test
+update.
 
 ## Test Plan
 
@@ -78,11 +85,15 @@ Current checks:
 4. `./fin.ps1 build --src tests/conformance/fixtures/main_exit7.fn --out artifacts/fin-build-exit7` succeeds.
 5. `./fin.ps1 build --target x86_64-windows-pe --out artifacts/main.exe` succeeds.
 6. `./fin.ps1 run --no-build --out artifacts/fin-build-exit7 --expect-exit 7` executes fixture artifact.
-7. `./fin.ps1 build --manifest fin.toml` resolves target from `[targets].primary` when target is omitted.
+7. `./fin.ps1 build --manifest fin.toml` validates manifest policy and resolves target from `[targets].primary` when target is omitted.
 8. `./fin.ps1 fmt --src <file>` rewrites stage0 source to canonical form.
 9. `./fin.ps1 fmt --src <file> --check` fails on unformatted source and passes on formatted source.
 10. `./fin.ps1 doc --src <file> --out <file>` generates doc output with expected summary and exit code.
 11. `./fin.ps1 doc --src <file> --stdout` prints generated document.
 12. `./fin.ps1 pkg add <name[@version]>` updates manifest dependencies and rewrites `fin.lock` deterministically.
 13. `./fin.ps1 pkg publish --manifest fin.toml --src src --out-dir artifacts/publish` emits deterministic stage0 package artifact.
-14. `./fin.ps1 test` executes stage0 suite end-to-end.
+14. `tests/integration/verify_cli_contract.ps1` verifies root/cmd shim argument binding, `test` option forwarding, and docs/FIP option coverage.
+15. `./fin.ps1 test` executes stage0 suite end-to-end.
+16. `./fin.ps1 test --quick --no-run` executes shared gates and the smoke
+    fixture build matrix without the final fixture runtime phase or exhaustive
+    fixture matrix.

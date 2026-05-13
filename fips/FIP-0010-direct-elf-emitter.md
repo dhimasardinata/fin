@@ -7,7 +7,7 @@
 - created: 2026-02-27
 - requires: ["FIP-0005"]
 - target_release: M1
-- discussion: TBD
+- discussion: fin://fip/FIP-0010
 - implementation:
   - compiler/finc/stage0/emit_elf_exit0.ps1
   - compiler/finc/stage0/emit_elf_write_exit.ps1
@@ -55,7 +55,9 @@ Implementation complexity and schedule risk are tracked in milestone updates and
 
 ## Compatibility
 
-Compatibility impact must be documented before Implemented status.
+This locks the minimal direct ELF emitter contract for the stage0 bootstrap
+path. Changes to emitted layout, verification rules, or deterministic output
+hashes require an explicit FIP/test update.
 
 ## Test Plan
 

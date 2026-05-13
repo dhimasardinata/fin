@@ -2,7 +2,7 @@
 
 `finobj` defines Fin relocatable object representation.
 
-## Stage0 Starter
+## Stage0 Object Format
 
 Stage0 provides a deterministic object container for minimal multi-object checkpoint programs:
 
@@ -23,4 +23,4 @@ Entry symbols currently supported:
 - `main`: link entry object.
 - `unit`: non-entry object for stage0 linker multi-object checkpoint.
 
-This starter is intentionally minimal and serves as a stepping stone toward full relocatable multi-unit format.
+This Stage0 format is intentionally minimal and serves as a stepping stone toward full relocatable multi-unit format.

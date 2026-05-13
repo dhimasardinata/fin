@@ -15,7 +15,12 @@ Current bootstrap shim:
 - `./fin.ps1 pkg publish [--manifest <path>] [--src <dir>] [--out-dir <path>] [--dry-run]`
 - `./fin.ps1 test [--quick] [--no-doctor] [--no-run]`
 
-Planned unified commands:
+`test --quick` keeps shared gates and uses a smoke fixture matrix. `test
+--no-doctor` skips the standalone doctor preflight. `test --no-run` skips the
+final fixture runtime phase after fixture builds. Plain `test` runs the
+exhaustive fixture build/run matrix.
+
+Unified commands tracked in `FIP-0015`:
 
 - `fin init`
 - `fin build`
@@ -26,3 +31,6 @@ Planned unified commands:
 - `fin pkg add`
 - `fin pkg publish`
 - `fin doctor`
+
+`fin build`, `fin run`, `fin pkg add`, and `fin pkg publish` validate the
+selected manifest before using it.

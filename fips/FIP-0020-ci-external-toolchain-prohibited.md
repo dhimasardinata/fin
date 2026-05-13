@@ -7,7 +7,7 @@
 - created: 2026-02-27
 - requires: ["FIP-0002", "FIP-0018"]
 - target_release: M0
-- discussion: TBD
+- discussion: fin://fip/FIP-0020
 - implementation:
   - ci/forbid_external_toolchain.ps1
   - tests/reproducibility/verify_toolchain_policy_gate.ps1
@@ -28,9 +28,10 @@ This proposal is part of the Fin independent-toolchain baseline and is required 
 
 Current CI policy gate:
 
-1. Workflow files are scanned for disallowed external toolchain command patterns.
-2. Matches fail the check unless explicitly allow-tagged (`fin-ci-allow-external`).
-3. Gate runs in CI and in local `fin doctor`/policy scripts.
+1. The policy root must exist before scanning starts.
+2. Workflow files are scanned for disallowed external toolchain command patterns.
+3. Matches fail the check unless explicitly allow-tagged (`fin-ci-allow-external`).
+4. Gate runs in CI and in local `fin doctor`/policy scripts.
 
 Disallowed classes include compiler, linker, and assembler commands (`gcc/clang/ld/as/nasm/...`).
 
@@ -44,12 +45,14 @@ Implementation complexity and schedule risk are tracked in milestone updates and
 
 ## Compatibility
 
-Compatibility impact must be documented before Implemented status.
+This intentionally rejects normal-build paths that depend on external
+compiler, assembler, or linker tools. New bootstrap exceptions must be explicit
+and ratified by a FIP.
 
 ## Test Plan
 
 Current checks:
 
 1. CI step runs `./ci/forbid_external_toolchain.ps1`.
-2. `tests/reproducibility/verify_toolchain_policy_gate.ps1` validates fail/pass behavior on synthetic workflow content.
+2. `tests/reproducibility/verify_toolchain_policy_gate.ps1` validates root handling plus fail/pass behavior on synthetic workflow content.
 3. `tests/run_stage0_suite.ps1` includes gate self-check.

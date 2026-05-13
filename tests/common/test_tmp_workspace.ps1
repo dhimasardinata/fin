@@ -68,13 +68,20 @@ function Get-TestTmpWorkspaceOwnerMetadataStatus {
     $raw = Get-Content -Path $MetadataPath -Raw -ErrorAction Stop
     $pidRaw = ""
     $startRaw = ""
+    $document = $null
     try {
-        $parsed = $raw | ConvertFrom-Json -ErrorAction Stop
-        $pidRaw = [string]$parsed.pid
-        $startRaw = [string]$parsed.start_utc
+        $document = [System.Text.Json.JsonDocument]::Parse($raw)
+        $root = $document.RootElement
+        $pidRaw = [string]$root.GetProperty("pid").ToString()
+        $startRaw = [string]$root.GetProperty("start_utc").GetString()
     }
     catch {
         return $status
+    }
+    finally {
+        if ($null -ne $document) {
+            $document.Dispose()
+        }
     }
 
     [int]$metadataPid = 0
@@ -87,7 +94,7 @@ function Get-TestTmpWorkspaceOwnerMetadataStatus {
     }
 
     try {
-        $metadataStartUtc = [datetime]::Parse($startRaw, [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::RoundtripKind).ToUniversalTime()
+        $metadataStartUtc = [datetimeoffset]::Parse($startRaw, [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::RoundtripKind).UtcDateTime
     }
     catch {
         return $status
