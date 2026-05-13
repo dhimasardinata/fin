@@ -2,7 +2,7 @@
 
 - id: FIP-0008
 - address: fin://fip/FIP-0008
-- status: InProgress
+- status: Implemented
 - authors: @fin-maintainers
 - created: 2026-02-27
 - requires: ["FIP-0006"]
@@ -101,6 +101,7 @@
   - tests/conformance/fixtures/invalid_var_unwrap_binding_move_use_after_move_source.fn
   - tests/conformance/fixtures/invalid_var_unwrap_binding_duplicate.fn
   - tests/conformance/fixtures/invalid_helper_call_type_mismatch.fn
+  - tests/reproducibility/verify_result_try_contract.ps1
   - tests/run_stage0_suite.ps1
 - acceptance:
   - Error-flow conformance suite passes without hidden control flow.
@@ -133,7 +134,7 @@ Current stage0 implementation delta:
 14. Stage0 unwrap-binding sugar `let <ident> ?= <expr>` is supported as deterministic syntax sugar for `let <ident> = try <expr>`, inheriting prefix-unwrap constraints (`Result<u8,u8>` operand, hidden-control-flow rejection on `err`, and deterministic non-result/missing-expression diagnostics).
 15. Stage0 mutable-declaration unwrap-binding sugar `var <ident> ?= <expr>` is supported as deterministic syntax sugar for `var <ident> = try <expr>`, inheriting prefix-unwrap constraints plus existing declaration rules (including duplicate-binding rejection and type-annotation validation).
 16. Stage0 mutable unwrap-assignment sugar `<ident> ?= <expr>` is supported as deterministic syntax sugar for `<ident> = try <expr>`, inheriting prefix-unwrap constraints plus existing mutable-assignment target rules (including immutable-target rejection and lifecycle checks).
-17. Full `Result<T,E>` construction/propagation semantics remain pending; this slice establishes parser/test scaffolding and explicit bootstrap constraints.
+17. Full generic `Result<T,E>` construction/propagation semantics remain outside this stage0 contract; future generalization requires a follow-up FIP or explicit revision to this FIP, while the implemented bootstrap surface stays restricted to `Result<u8,u8>`.
 18. Helper functions may return `Result<u8,u8>` in stage0, helper parameters may accept `Result<u8,u8>` values, and helper call expressions participate in `try`, `try <expr>`, and postfix `?` using the same deterministic bootstrap constraints as local result bindings.
 
 ## Alternatives
@@ -146,7 +147,7 @@ Implementation complexity and schedule risk are tracked in milestone updates and
 
 ## Compatibility
 
-Compatibility impact must be documented before Implemented status.
+FIP-0008 establishes the checked stage0 `Result<u8,u8>` and unwrap-sugar contract. Future changes to `try`, postfix `?`, unwrap-binding syntax, helper result handling, or hidden-control-flow diagnostics must update this FIP and the result/try contract verifier in the same change.
 
 ## Test Plan
 
@@ -154,5 +155,6 @@ Current checks:
 
 1. `tests/conformance/verify_stage0_grammar.ps1` validates valid bootstrap `ok/err/try` cases (including explicit `Result<u8,u8>` local annotations, `try(move(<result-ident>))` on `ok` state, nested `ok(move(<u8-ident>))` then `try(move(<result-ident>))`, mutable re-init then second moved unwrap on result bindings, mutable re-init/drop/re-init chains before subsequent moved unwraps, assignment from `ok(try(move(<other-result-ident>)))` into a different mutable result binding, wrapper composition `ok(try(move(<result-ident>)))` and `err(try(move(<result-ident>)))` on moved `ok` result paths, nested `ok(try(move(<result-ident>)))` and `err(try(move(<result-ident>)))` source re-init after consumption including `reinit -> drop -> reinit` transitions, `ok(move(<u8-ident>))` unwrapped by `try`, `err(move(<u8-ident>))` ownership propagation, prefix unwrap form `try <expr>`, postfix unwrap form `<expr>?`, unwrap-binding sugars `let <ident> ?= <expr>` and `var <ident> ?= <expr>`, unwrap-assignment sugar `<ident> ?= <expr>`, helper-return unwrap via `main_exit_helper_result_try.fn`, and helper-result-parameter unwrap via `main_exit_helper_params_result_try.fn`) and rejects empty `try()/ok()/err()`, missing `try` keyword operand, non-`u8` `ok/err` inner expressions (including moved `Result<u8,u8>` identifier wrappers), `try(err(...))` (including non-move and moved err-state identifier paths and nested wrapper forms), `try` on non-result inputs (literal, identifier, moved non-result identifier, helper call result mismatches, and nested wrapper forms with both non-move and moved non-result identifiers), invalid prefix/postfix unwraps (missing operand, non-result operand, and err-state operand), invalid unwrap-binding/unwrap-assignment forms (missing RHS expression, non-result RHS, and err-state RHS), duplicate `var` unwrap-binding declarations, immutable-target unwrap-assignment attempts, helper-result-parameter call mismatches (`invalid_helper_call_type_mismatch.fn`), post-unwrap use-after-move on consumed result bindings (including `try(move(...))`, `try move(<ident>)`, `move(<ident>)?`, `let <ident> ?= move(<source>)`, `var <ident> ?= move(<source>)`, and `<ident> ?= move(<source>)` paths), immutable re-init after moved unwrap consumption (including nested wrapper source paths), drop-after-move after moved unwrap consumption (including nested `ok(try(move(...)))` and `err(try(move(...)))` source paths), and self-target assignment hazards through `try(move(<same-ident>))`, with deterministic message checks for hidden-control-flow and type constraints.
 2. `tests/run_stage0_suite.ps1` compiles and executes `ok/err/try` fixtures (including move-wrapped result `try`, nested move chains, re-init plus second moved unwrap, re-init/drop/re-init moved-result chains, cross-binding assignment through moved `try` unwrap, wrapper composition through `ok(try(move(<result-ident>)))` and `err(try(move(<result-ident>)))`, nested source re-init after `ok(try(move(...)))` and `err(try(move(...)))` including `reinit -> drop -> reinit` chain, `ok(move(<u8-ident>))`, `err(move(<u8-ident>))`, prefix keyword unwrap `try <expr>`, postfix unwrap `<expr>?`, unwrap-binding sugars `let <ident> ?= <expr>` and `var <ident> ?= <expr>`, unwrap-assignment sugar `<ident> ?= <expr>`, and helper-return/helper-result-parameter unwrap in `main_exit_helper_result_try.fn` and `main_exit_helper_params_result_try.fn`) in aggregated stage0 flow.
+3. `tests/reproducibility/verify_result_try_contract.ps1` statically checks the FIP status/index, parser contract hooks, conformance diagnostics, aggregated runtime fixture coverage, and implementation-list references for the FIP-0008 stage0 contract.
 
-Acceptance criteria listed above remain normative for Implemented status.
+Acceptance criteria listed above are now enforced by the implemented status gate.
