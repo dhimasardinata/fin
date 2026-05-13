@@ -24,6 +24,8 @@ The title is not separate metadata. It is the canonical header:
 `created` uses the canonical `YYYY-MM-DD` date format, and `authors` must not
 be empty.
 
+`target_release` uses the canonical `M<number>` milestone format.
+
 `acceptance` must contain at least one criteria item.
 
 Implemented and released FIPs must replace placeholder discussion metadata.

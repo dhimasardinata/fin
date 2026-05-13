@@ -58,6 +58,7 @@ function Write-MinimalFipRepo {
 "@,
         [string]$AuthorsLine = "- authors: @fin-maintainers",
         [string]$CreatedLine = "- created: 2026-02-27",
+        [string]$TargetRelease = "M0",
         [string]$Discussion = "TBD",
         [string]$CompatibilityBody = "Minimal.",
         [switch]$CreateReadme
@@ -107,7 +108,7 @@ function Write-MinimalFipRepo {
 $AuthorsLine
 $CreatedLine
 - requires: $Requires
-- target_release: M0
+- target_release: $TargetRelease
 - discussion: $Discussion
 $ImplementationBlock
 $AcceptanceBlock
@@ -157,6 +158,9 @@ try {
 
     Write-MinimalFipRepo -AcceptanceBlock "- acceptance:" -CreateReadme
     Assert-Fails -Label "empty acceptance metadata block" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -TargetRelease "milestone-0" -CreateReadme
+    Assert-Fails -Label "invalid target_release metadata" -Action { & $policy -Root $tmpRoot }
 
     Write-MinimalFipRepo -ImplementationBlock @"
 - implementation:
