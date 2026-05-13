@@ -189,11 +189,14 @@ try {
     $env:FIN_KEEP_CLOSURE_RUNS = "1"
     & $closureCheck -OutDir $closureRoot | Out-Null
     Assert-True -Condition (Test-Path $keepBypassStaleDir) -Message "Expected stale closure dir to be retained when FIN_KEEP_CLOSURE_RUNS=1."
+    $firstKeepRunCount = @(Get-ChildItem -LiteralPath $closureRoot -Directory -Filter "run-*").Count
 
     # Keep-mode bypass must remain stable across repeated invocations.
     Set-WorkspaceStale -Path $keepBypassStaleDir
     & $closureCheck -OutDir $closureRoot | Out-Null
     Assert-True -Condition (Test-Path $keepBypassStaleDir) -Message "Expected stale closure dir to remain retained across consecutive runs when FIN_KEEP_CLOSURE_RUNS=1."
+    $secondKeepRunCount = @(Get-ChildItem -LiteralPath $closureRoot -Directory -Filter "run-*").Count
+    Assert-True -Condition ($secondKeepRunCount -gt $firstKeepRunCount) -Message "Expected repeated closure runs to use distinct run workspaces."
 
     Remove-Item Env:FIN_KEEP_CLOSURE_RUNS -ErrorAction SilentlyContinue
     Remove-Item -Recurse -Force $keepBypassStaleDir -ErrorAction SilentlyContinue

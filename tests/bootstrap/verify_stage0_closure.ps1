@@ -402,7 +402,7 @@ if (-not (Test-Path $outDirFull)) {
 }
 Invoke-ClosureWorkspacePrune -ClosureRoot $outDirFull
 
-$runToken = "{0}-{1}" -f $PID, [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+$runToken = "{0}-{1}-{2}" -f $PID, [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds(), [Guid]::NewGuid().ToString("N")
 $runWorkspace = Join-Path $outDirFull ("run-" + $runToken)
 New-Item -ItemType Directory -Path $runWorkspace -Force | Out-Null
 Set-ClosureWorkspaceOwnerMetadata -WorkspaceDir $runWorkspace -OwnerPid $PID -OwnerStartUtc (Get-ClosureWorkspaceProcessStartUtc -OwnerPid $PID)
