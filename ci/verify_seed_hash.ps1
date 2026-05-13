@@ -37,6 +37,21 @@ function Get-ManifestStringField {
     return $match.Groups[1].Value.Trim()
 }
 
+function Get-ManifestBoolField {
+    param(
+        [string]$Text,
+        [string]$Key,
+        [string]$Label
+    )
+
+    $match = [regex]::Match($Text, ("(?m)^\s*{0}\s*=\s*(\S+)\s*$" -f [regex]::Escape($Key)))
+    if (-not $match.Success) {
+        Fail-SeedHash ("manifest.toml missing {0} field" -f $Label)
+    }
+
+    return $match.Groups[1].Value.Trim()
+}
+
 function Assert-SeedRelativePath {
     param(
         [string]$Value,
@@ -58,11 +73,11 @@ function Assert-SeedHashValue {
         [string]$Label
     )
 
-    if ($Value -eq "UNSET") {
+    if ($Value -ceq "UNSET") {
         return
     }
 
-    if ($Value -notmatch '^[0-9a-f]{64}$') {
+    if ($Value -cnotmatch '^[0-9a-f]{64}$') {
         Fail-SeedHash ("{0} must be UNSET or a lowercase SHA-256 hex digest, found: {1}" -f $Label, $Value)
     }
 }
@@ -75,15 +90,35 @@ $repoRoot = Split-Path -Parent $seedDir
 $manifestContent = Get-Content -LiteralPath $manifestFull -Raw
 $sumsContent = Get-Content -LiteralPath $sumsFull -Raw
 
+$seedName = Get-ManifestStringField -Text $manifestContent -Key "name" -Label "seed name"
+$seedVersion = Get-ManifestStringField -Text $manifestContent -Key "version" -Label "seed version"
 $artifactPath = Get-ManifestStringField -Text $manifestContent -Key "path" -Label "artifact path"
 $manifestHash = Get-ManifestStringField -Text $manifestContent -Key "sha256" -Label "sha256"
 $artifactFormat = Get-ManifestStringField -Text $manifestContent -Key "format" -Label "format"
+$immutablePerRelease = Get-ManifestBoolField -Text $manifestContent -Key "immutable_per_release" -Label "immutable_per_release"
+$reviewRequired = Get-ManifestBoolField -Text $manifestContent -Key "review_required" -Label "review_required"
+
+if ($seedName -cne "fin-seed") {
+    Fail-SeedHash ("manifest.toml seed name must be fin-seed, found: {0}" -f $seedName)
+}
+
+if ($seedVersion -cnotmatch '^[0-9]+\.[0-9]+\.[0-9]+$') {
+    Fail-SeedHash ("manifest.toml seed version must be <major>.<minor>.<patch>, found: {0}" -f $seedVersion)
+}
 
 Assert-SeedRelativePath -Value $artifactPath -Label "manifest artifact"
 Assert-SeedHashValue -Value $manifestHash -Label "manifest sha256"
 
-if ($artifactFormat -ne "native-binary") {
+if ($artifactFormat -cne "native-binary") {
     Fail-SeedHash ("manifest.toml unsupported artifact format: {0}" -f $artifactFormat)
+}
+
+if ($immutablePerRelease -cne "true") {
+    Fail-SeedHash ("manifest.toml immutable_per_release must be canonical true, found: {0}" -f $immutablePerRelease)
+}
+
+if ($reviewRequired -cne "true") {
+    Fail-SeedHash ("manifest.toml review_required must be canonical true, found: {0}" -f $reviewRequired)
 }
 
 $sumRows = [System.Collections.Generic.List[object]]::new()
@@ -122,22 +157,22 @@ if ($matchingRows.Count -gt 1) {
     Fail-SeedHash ("SHA256SUMS contains duplicate manifest artifact path: {0}" -f $artifactPath)
 }
 
-if ($matchingRows[0].Hash -ne $manifestHash) {
+if ($matchingRows[0].Hash -cne $manifestHash) {
     Fail-SeedHash ("manifest sha256 does not match SHA256SUMS for {0}" -f $artifactPath)
 }
 
 if ($RequireSet) {
-    if ($manifestHash -eq "UNSET") {
+    if ($manifestHash -ceq "UNSET") {
         Fail-SeedHash "Seed hash is UNSET but RequireSet was specified"
     }
 
-    if (@($sumRows | Where-Object { $_.Hash -eq "UNSET" }).Count -gt 0) {
+    if (@($sumRows | Where-Object { $_.Hash -ceq "UNSET" }).Count -gt 0) {
         Fail-SeedHash "SHA256SUMS contains UNSET but RequireSet was specified"
     }
 }
 
 $artifactFull = Join-Path $repoRoot $artifactPath
-if ($manifestHash -eq "UNSET") {
+if ($manifestHash -ceq "UNSET") {
     if (Test-Path -LiteralPath $artifactFull) {
         Fail-SeedHash ("Seed artifact exists but manifest sha256 is UNSET: {0}" -f $artifactPath)
     }

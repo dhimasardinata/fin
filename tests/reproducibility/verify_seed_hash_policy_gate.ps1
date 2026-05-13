@@ -34,11 +34,15 @@ function Assert-Fails {
 
 function Write-SeedRepo {
     param(
+        [string]$SeedName = "fin-seed",
+        [string]$SeedVersion = "0.0.1",
         [string]$ArtifactPath = "seed/fin-seed.bin",
         [string]$Hash = "UNSET",
         [string]$SumsHash = "",
         [string]$SumsPath = "",
         [string]$Format = "native-binary",
+        [string]$ImmutablePerRelease = "true",
+        [string]$ReviewRequired = "true",
         [switch]$CreateArtifact,
         [string]$ArtifactText = "seed"
     )
@@ -71,8 +75,8 @@ function Write-SeedRepo {
 
     Set-Content -LiteralPath $manifest -Value @"
 [id]
-name = "fin-seed"
-version = "0.0.1"
+name = "$SeedName"
+version = "$SeedVersion"
 
 [artifact]
 path = "$ArtifactPath"
@@ -80,8 +84,8 @@ sha256 = "$Hash"
 format = "$Format"
 
 [policy]
-immutable_per_release = true
-review_required = true
+immutable_per_release = $ImmutablePerRelease
+review_required = $ReviewRequired
 "@
 
     Set-Content -LiteralPath $sums -Value @"
@@ -102,8 +106,14 @@ try {
     Write-SeedRepo -Hash "not-a-sha"
     Assert-Fails -Label "invalid manifest hash" -Action { & $policy -Manifest $manifest -Sums $sums }
 
+    Write-SeedRepo -Hash ("A" * 64)
+    Assert-Fails -Label "uppercase manifest hash" -Action { & $policy -Manifest $manifest -Sums $sums }
+
     Write-SeedRepo -SumsHash "not-a-sha"
     Assert-Fails -Label "invalid SHA256SUMS hash" -Action { & $policy -Manifest $manifest -Sums $sums }
+
+    Write-SeedRepo -SumsHash ("A" * 64)
+    Assert-Fails -Label "uppercase SHA256SUMS hash" -Action { & $policy -Manifest $manifest -Sums $sums }
 
     Write-SeedRepo -ArtifactPath "../fin-seed.bin"
     Assert-Fails -Label "unsafe manifest artifact path" -Action { & $policy -Manifest $manifest -Sums $sums }
@@ -113,6 +123,21 @@ try {
 
     Write-SeedRepo -Format "unknown-format"
     Assert-Fails -Label "unsupported artifact format" -Action { & $policy -Manifest $manifest -Sums $sums }
+
+    Write-SeedRepo -SeedName "other-seed"
+    Assert-Fails -Label "invalid seed name" -Action { & $policy -Manifest $manifest -Sums $sums }
+
+    Write-SeedRepo -SeedVersion "0.0"
+    Assert-Fails -Label "invalid seed version" -Action { & $policy -Manifest $manifest -Sums $sums }
+
+    Write-SeedRepo -ImmutablePerRelease "false"
+    Assert-Fails -Label "immutable policy disabled" -Action { & $policy -Manifest $manifest -Sums $sums }
+
+    Write-SeedRepo -ReviewRequired "false"
+    Assert-Fails -Label "review policy disabled" -Action { & $policy -Manifest $manifest -Sums $sums }
+
+    Write-SeedRepo -ImmutablePerRelease "TRUE"
+    Assert-Fails -Label "immutable policy uppercase true" -Action { & $policy -Manifest $manifest -Sums $sums }
 
     Write-SeedRepo -CreateArtifact -Hash "__ARTIFACT__" -SumsHash "__ARTIFACT__"
     & $policy -Manifest $manifest -Sums $sums -RequireSet
