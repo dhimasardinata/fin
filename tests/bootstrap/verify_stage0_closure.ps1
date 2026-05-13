@@ -1,5 +1,5 @@
 param(
-    [string]$Source = "tests/conformance/fixtures/main_exit_var_assign.fn",
+    [string]$Source = "tests/conformance/fixtures/main_exit_helper_while_return.fn",
     [string]$OutDir = "artifacts/closure",
     [string]$Witness = "",
     [switch]$RequireSeedSet,
