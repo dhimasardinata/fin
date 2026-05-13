@@ -22,6 +22,7 @@
   - tests/integration/verify_init.ps1
   - tests/integration/verify_fmt.ps1
   - tests/integration/verify_doc.ps1
+  - tests/integration/verify_cli_contract.ps1
   - tests/integration/verify_pkg.ps1
   - tests/integration/verify_pkg_publish.ps1
   - tests/integration/verify_build_target_windows.ps1
@@ -91,7 +92,8 @@ Current checks:
 11. `./fin.ps1 doc --src <file> --stdout` prints generated document.
 12. `./fin.ps1 pkg add <name[@version]>` updates manifest dependencies and rewrites `fin.lock` deterministically.
 13. `./fin.ps1 pkg publish --manifest fin.toml --src src --out-dir artifacts/publish` emits deterministic stage0 package artifact.
-14. `./fin.ps1 test` executes stage0 suite end-to-end.
-15. `./fin.ps1 test --quick --no-run` executes shared gates and the smoke
+14. `tests/integration/verify_cli_contract.ps1` verifies root/cmd shim argument binding, `test` option forwarding, and docs/FIP option coverage.
+15. `./fin.ps1 test` executes stage0 suite end-to-end.
+16. `./fin.ps1 test --quick --no-run` executes shared gates and the smoke
     fixture build matrix without the final fixture runtime phase or exhaustive
     fixture matrix.

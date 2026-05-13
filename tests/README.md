@@ -27,6 +27,7 @@ Entry points:
 - `tests/integration/verify_init.ps1`: `fin init` scaffolding integration gate with PID-scoped temp workspace hygiene.
 - `tests/integration/verify_fmt.ps1`: `fin fmt` integration gate with PID-scoped temp workspace hygiene.
 - `tests/integration/verify_doc.ps1`: `fin doc` integration gate with PID-scoped temp workspace hygiene.
+- `tests/integration/verify_cli_contract.ps1`: static CLI contract gate for root/cmd shim catch-all argument binding, `fin test` option forwarding, and docs/FIP option coverage.
 - `tests/integration/verify_pkg.ps1`: `fin pkg add` integration gate with PID-scoped temp workspace hygiene.
 - `tests/integration/verify_pkg_publish.ps1`: `fin pkg publish` integration gate with PID-scoped temp workspace hygiene.
 - `tests/integration/verify_examples.ps1`: runnable examples integration gate for checked `examples/` sources and both Stage0 pipelines.

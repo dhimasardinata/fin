@@ -20,6 +20,7 @@ $verifyFinobjRoundtrip = Join-Path $repoRoot "tests/conformance/verify_finobj_ro
 $verifyInit = Join-Path $repoRoot "tests/integration/verify_init.ps1"
 $verifyFmt = Join-Path $repoRoot "tests/integration/verify_fmt.ps1"
 $verifyDoc = Join-Path $repoRoot "tests/integration/verify_doc.ps1"
+$verifyCliContract = Join-Path $repoRoot "tests/integration/verify_cli_contract.ps1"
 $verifyPkg = Join-Path $repoRoot "tests/integration/verify_pkg.ps1"
 $verifyPkgPublish = Join-Path $repoRoot "tests/integration/verify_pkg_publish.ps1"
 $verifyExamples = Join-Path $repoRoot "tests/integration/verify_examples.ps1"
@@ -56,6 +57,7 @@ if (-not $SkipDoctor) {
 & $verifyInit
 & $verifyFmt
 & $verifyDoc
+& $verifyCliContract
 & $verifyPkg
 & $verifyPkgPublish
 & $verifyExamples
