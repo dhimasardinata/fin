@@ -17,13 +17,29 @@ the primary artifact that keeps the charter visible in day-to-day design work.
 5. Deterministic and reproducible builds.
 6. Full-independent build pipeline.
 
-## Syntax Surface (v0 Targets)
+## Language Direction (v0 Targets)
 
 - File extension: `.fn`.
 - Function form: `fn name(args) -> Type { ... }`.
 - Binding forms: `let` (immutable), `var` (mutable).
-- Control flow: `if`, `match`, `for`, `while`.
-- Error flow: `Result<T, E>` and `try`.
+- Control flow target: `if`, then `match`, `for`, and `while`.
+- Error flow target: `Result<T, E>` and `try`.
+
+## Implemented Stage0 Surface
+
+Stage0 is intentionally smaller than the full v0 target surface:
+
+- Top-level `fn main()` and typed helper functions with `u8` or `Result<u8,u8>` value parameters.
+- Entry point returns `u8`; helpers may return `u8` or `Result<u8,u8>`.
+- `let`, `var`, assignment, compound `+=`, unwrap binding/assignment sugar (`?=`), nested block statements, lexical shadowing, and statement-form `if`.
+- `u8`, `Result<u8,u8>`, `&u8`, and `&Result<u8,u8>` annotations.
+- Decimal, hexadecimal, binary, and boolean literals (`true` => `1`, `false` => `0`).
+- Arithmetic, comparison, bitwise, shift, logical, unary, grouped, and conditional expressions over stage0 `u8` values.
+- `ok(...)`, `err(...)`, `try(...)`, prefix `try <expr>`, and postfix `<expr>?` bootstrap result forms.
+- Stage0 ownership/borrowing forms: `move(...)`, `drop(...)`, `&<ident>`, and `*<expr>`.
+- Terminal `exit(...)` and `return <expr>` statements.
+
+`match`, `for`, `while`, full generic `Result<T,E>` propagation, and the full module model remain proposal-tracked targets outside the current stage0 subset.
 
 ## Type and Safety Model
 
@@ -44,12 +60,13 @@ the primary artifact that keeps the charter visible in day-to-day design work.
 
 ## Artifact Strategy
 
-- Early: direct executable emission.
-- Later: `finobj` + `finld` for multi-unit linking.
+- Stage0 direct executable emission for Linux ELF and Windows PE.
+- Stage0 `finobj` + `finld` pipeline for deterministic minimal multi-object linking.
+- Later milestones extend the object/link model toward full multi-unit compilation.
 
 ## Tooling Contract
 
-Unified `fin` CLI planned commands:
+The bootstrap shim implements the unified `fin` CLI contract:
 
 - `fin init`
 - `fin build`
