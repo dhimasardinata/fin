@@ -8,7 +8,9 @@
 - Relocation processing.
 - Minimal static linking first.
 
-This component is deferred until direct executable emitters are stable.
+The direct executable emitters are stable enough for stage0. `finld` now
+provides the FIP-0014 object-to-native path used by `fin build --pipeline
+finobj`.
 
 ## Stage0 Starter
 
@@ -32,4 +34,5 @@ Stage0 includes minimal multi-object linking flow:
   - canonicalizes object metadata order for deterministic order-independent linking
 - `fin build --pipeline finobj`: routes stage0 compile flow through `finobj` writer + `finld` link path.
 
-This is a minimal linker checkpoint before full symbol/relocation implementation.
+This is the implemented stage0 linker checkpoint before broader archive,
+library, and multi-source-unit build work.
