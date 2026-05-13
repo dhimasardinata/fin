@@ -7,6 +7,9 @@
 
 ## Design Principles
 
+The language charter is tracked by `FIP-0001` and this living specification is
+the primary artifact that keeps the charter visible in day-to-day design work.
+
 1. Zero-cost abstraction.
 2. Explicit performance model.
 3. Minimal syntax and low typing overhead.

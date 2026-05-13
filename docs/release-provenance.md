@@ -7,4 +7,4 @@ Each release must publish:
 - Reproducibility statement.
 - Compatibility notes.
 
-Release workflow is tracked by FIP-0020 and enforced through CI gates.
+Compatibility policy is tracked by `FIP-0019`; release policy/toolchain gates are tracked by `FIP-0020` and enforced through CI gates.

@@ -85,6 +85,6 @@ The unified `fin` CLI contract is tracked in `FIP-0015` (`Implemented`):
 
 - Proposal address format: `fin://fip/FIP-####`.
 - Proposal lifecycle: `Draft`, `Review`, `Accepted`, `Scheduled`, `InProgress`, `Implemented`, `Released`, `Deferred`, `Rejected`.
-- Feature PRs must link an `Accepted` or `Scheduled` FIP.
+- Feature PRs must link an eligible FIP (`Accepted`, `Scheduled`, `InProgress`, `Implemented`, or `Released`).
 
 See [GOVERNANCE.md](GOVERNANCE.md), [SPEC.md](SPEC.md), and [fips/README.md](fips/README.md).

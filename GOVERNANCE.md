@@ -2,7 +2,7 @@
 
 ## Scope
 
-This document governs language, compiler, runtime, package, and release decisions for Fin.
+This document governs language, compiler, runtime, package, and release decisions for Fin. Decision-making follows the language charter in `FIP-0001`.
 
 ## Proposal System
 
