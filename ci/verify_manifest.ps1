@@ -20,7 +20,7 @@ function Parse-ManifestMap {
     param([string]$Path)
 
     $raw = Get-Content -Path $Path -Raw
-    $map = @{}
+    $map = [System.Collections.Generic.Dictionary[string, string]]::new([System.StringComparer]::Ordinal)
     $section = ""
 
     foreach ($line in ([regex]::Split($raw, "`r?`n"))) {
@@ -28,12 +28,12 @@ function Parse-ManifestMap {
         if ([string]::IsNullOrWhiteSpace($trimmed)) { continue }
         if ($trimmed.StartsWith("#")) { continue }
 
-        if ($trimmed -match '^\[([A-Za-z0-9_.-]+)\]\s*$') {
+        if ($trimmed -cmatch '^\[([A-Za-z0-9_.-]+)\]\s*$') {
             $section = $Matches[1]
             continue
         }
 
-        if ($trimmed -notmatch '^([A-Za-z0-9_.-]+)\s*=\s*(.+)$') {
+        if ($trimmed -cnotmatch '^([A-Za-z0-9_.-]+)\s*=\s*(.+)$') {
             throw "Invalid manifest line: $trimmed"
         }
 
@@ -47,15 +47,15 @@ function Parse-ManifestMap {
         if ($map.ContainsKey($key)) {
             throw "Duplicate manifest key: $key"
         }
-        $map[$key] = $Matches[2].Trim()
+        $map.Add($key, $Matches[2].Trim())
     }
 
-    return $map
+    return ,$map
 }
 
 function Get-RequiredValue {
     param(
-        [hashtable]$Map,
+        [System.Collections.Generic.IDictionary[string, string]]$Map,
         [string]$Key
     )
 
@@ -68,7 +68,7 @@ function Get-RequiredValue {
 function Decode-StringValue {
     param([string]$Value)
 
-    if ($Value -match '^"([^"]*)"$') {
+    if ($Value -cmatch '^"([^"]*)"$') {
         return $Matches[1]
     }
     return ""
@@ -76,7 +76,7 @@ function Decode-StringValue {
 
 function Assert-RequiredCanonicalString {
     param(
-        [hashtable]$Map,
+        [System.Collections.Generic.IDictionary[string, string]]$Map,
         [string]$Key
     )
 
@@ -91,7 +91,7 @@ function Assert-RequiredCanonicalString {
 
 function Assert-RequiredTrueBoolean {
     param(
-        [hashtable]$Map,
+        [System.Collections.Generic.IDictionary[string, string]]$Map,
         [string]$Key
     )
 
@@ -102,15 +102,15 @@ function Assert-RequiredTrueBoolean {
 }
 
 function Assert-DependencyEntries {
-    param([hashtable]$Map)
+    param([System.Collections.Generic.IDictionary[string, string]]$Map)
 
     foreach ($key in @($Map.Keys | Sort-Object)) {
-        if (-not $key.StartsWith("dependencies.")) {
+        if (-not $key.StartsWith("dependencies.", [System.StringComparison]::Ordinal)) {
             continue
         }
 
         $dependencyName = $key.Substring("dependencies.".Length)
-        if ($dependencyName -notmatch '^[A-Za-z][A-Za-z0-9_-]*$') {
+        if ($dependencyName -cnotmatch '^[A-Za-z][A-Za-z0-9_-]*$') {
             throw ("dependency name '{0}' must match ^[A-Za-z][A-Za-z0-9_-]*$" -f $dependencyName)
         }
 
@@ -131,12 +131,12 @@ catch {
 
 try {
     $workspaceName = Assert-RequiredCanonicalString -Map $map -Key "workspace.name"
-    if ($workspaceName -notmatch '^[A-Za-z][A-Za-z0-9_-]*$') {
+    if ($workspaceName -cnotmatch '^[A-Za-z][A-Za-z0-9_-]*$') {
         throw "workspace.name must match ^[A-Za-z][A-Za-z0-9_-]*$"
     }
 
     $workspaceVersion = Assert-RequiredCanonicalString -Map $map -Key "workspace.version"
-    if ($workspaceVersion -match '"') {
+    if ($workspaceVersion -cmatch '"') {
         throw "workspace.version may not contain quote characters"
     }
 
