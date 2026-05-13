@@ -68,6 +68,7 @@ function Write-MinimalFipRepo {
         [string[]]$OmitLabels = @(),
         [string]$CiText = "run: ./ci/verify_fip_metadata.ps1",
         [string]$DoctorText = "ci/verify_fip_metadata.ps1",
+        [switch]$UppercaseImplementedLabel,
         [switch]$CreateReadme
     )
 
@@ -98,7 +99,11 @@ function Write-MinimalFipRepo {
     ) | Where-Object {
         $OmitLabels -notcontains $_
     } | ForEach-Object {
-        '  {{ "name": "status/{0}", "color": "000000", "description": "{1}" }}' -f $_.ToLowerInvariant(), $_
+        $labelName = "status/{0}" -f $_.ToLowerInvariant()
+        if ($UppercaseImplementedLabel -and $_ -eq "Implemented") {
+            $labelName = "STATUS/implemented"
+        }
+        '  {{ "name": "{0}", "color": "000000", "description": "{1}" }}' -f $labelName, $_
     }
     Set-Content -Path (Join-Path $tmpRoot ".github/labels.json") -Value ("[`n{0}`n]" -f ($labelRows -join ",`n"))
     Set-Content -Path (Join-Path $tmpRoot ".github/workflows/ci.yml") -Value $CiText
@@ -172,11 +177,23 @@ try {
     Write-MinimalFipRepo -AcceptanceBlock "- acceptance:" -CreateReadme
     Assert-Fails -Label "empty acceptance metadata block" -Action { & $policy -Root $tmpRoot }
 
+    Write-MinimalFipRepo -Status "accepted" -CreateReadme
+    Assert-Fails -Label "lowercase status metadata" -Action { & $policy -Root $tmpRoot }
+
     Write-MinimalFipRepo -TargetRelease "milestone-0" -CreateReadme
     Assert-Fails -Label "invalid target_release metadata" -Action { & $policy -Root $tmpRoot }
 
+    Write-MinimalFipRepo -TargetRelease "m0" -CreateReadme
+    Assert-Fails -Label "lowercase target_release metadata" -Action { & $policy -Root $tmpRoot }
+
     Write-MinimalFipRepo -Discussion "not-a-discussion-uri" -CreateReadme
     Assert-Fails -Label "invalid discussion metadata" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -Discussion "fin://fip/fip-0001" -CreateReadme
+    Assert-Fails -Label "lowercase discussion FIP URI" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -ImplementationBlock "- Implementation: []"
+    Assert-Fails -Label "uppercase implementation key" -Action { & $policy -Root $tmpRoot }
 
     Write-MinimalFipRepo -IndexId "FIP-0002" -CreateReadme
     Assert-Fails -Label "index FIP id mismatch" -Action { & $policy -Root $tmpRoot }
@@ -193,8 +210,14 @@ try {
     Write-MinimalFipRepo -OmitLabels @("Implemented") -CreateReadme
     Assert-Fails -Label "missing status label" -Action { & $policy -Root $tmpRoot }
 
+    Write-MinimalFipRepo -UppercaseImplementedLabel -CreateReadme
+    Assert-Fails -Label "uppercase status label prefix" -Action { & $policy -Root $tmpRoot }
+
     Write-MinimalFipRepo -CiText "run: ./ci/check_fip_link.ps1" -CreateReadme
     Assert-Fails -Label "CI workflow missing metadata verifier" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -CiText "run: ./CI/verify_fip_metadata.ps1" -CreateReadme
+    Assert-Fails -Label "CI workflow metadata verifier wrong case" -Action { & $policy -Root $tmpRoot }
 
     Write-MinimalFipRepo -DoctorText "ci/check_fip_link.ps1" -CreateReadme
     Assert-Fails -Label "doctor missing metadata verifier" -Action { & $policy -Root $tmpRoot }

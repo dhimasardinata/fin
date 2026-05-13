@@ -21,6 +21,9 @@
 The title is not separate metadata. It is the canonical header:
 `# FIP-####: <Title>`.
 
+Metadata keys, FIP IDs, lifecycle statuses, milestone IDs, and status labels are
+case-sensitive.
+
 `created` uses the canonical `YYYY-MM-DD` date format, and `authors` must not
 be empty.
 

@@ -28,6 +28,8 @@ $allowedStatuses = @(
     "Deferred",
     "Rejected"
 )
+$implementedStatuses = @("Implemented", "Released")
+$implementationRequiredStatuses = @("Accepted", "Scheduled", "InProgress", "Implemented", "Released")
 
 function Fail-FipMetadata {
     param([string]$Message)
@@ -58,7 +60,7 @@ function Assert-FipSection {
         [string]$Path
     )
 
-    if ($Text -notmatch ("(?m)^##\s+{0}\s*$" -f [regex]::Escape($Section))) {
+    if ($Text -cnotmatch ("(?m)^##\s+{0}\s*$" -f [regex]::Escape($Section))) {
         Fail-FipMetadata ("{0} missing section: {1}" -f $Path, $Section)
     }
 }
@@ -78,7 +80,7 @@ function Get-FipListMetadata {
         }
 
         $inline = $lineMatch.Groups[1].Value.Trim()
-        if ($inline -eq "[]") {
+        if ($inline -ceq "[]") {
             return @()
         }
 
@@ -98,7 +100,7 @@ function Get-FipListMetadata {
 
         $items = [System.Collections.Generic.List[string]]::new()
         for ($j = $i + 1; $j -lt $lines.Count; $j++) {
-            if ($lines[$j] -match '^-\s+') {
+            if ($lines[$j] -cmatch '^-\s+') {
                 break
             }
 
@@ -123,13 +125,13 @@ function Get-FipBlockListMetadata {
 
     $lines = [regex]::Split($Text, "`r?`n")
     for ($i = 0; $i -lt $lines.Count; $i++) {
-        if ($lines[$i] -notmatch ("^-\s+{0}:\s*$" -f [regex]::Escape($Key))) {
+        if ($lines[$i] -cnotmatch ("^-\s+{0}:\s*$" -f [regex]::Escape($Key))) {
             continue
         }
 
         $items = [System.Collections.Generic.List[string]]::new()
         for ($j = $i + 1; $j -lt $lines.Count; $j++) {
-            if ([string]::IsNullOrWhiteSpace($lines[$j]) -or $lines[$j] -match '^#' -or $lines[$j] -match '^-\s+') {
+            if ([string]::IsNullOrWhiteSpace($lines[$j]) -or $lines[$j] -cmatch '^#' -or $lines[$j] -cmatch '^-\s+') {
                 break
             }
 
@@ -197,7 +199,7 @@ Get-ChildItem -LiteralPath $fipDir -File -Filter "FIP-*.md" |
         $implementationPaths = @(Get-FipListMetadata -Text $text -Key "implementation" -Path $relativePath)
         $acceptanceCriteria = @(Get-FipBlockListMetadata -Text $text -Key "acceptance" -Path $relativePath)
 
-        if ($id -ne $fileId -or $headerId -ne $fileId) {
+        if ($id -cne $fileId -or $headerId -cne $fileId) {
             Fail-FipMetadata ("{0} id mismatch: filename={1} header={2} metadata={3}" -f $relativePath, $fileId, $headerId, $id)
         }
 
@@ -207,11 +209,11 @@ Get-ChildItem -LiteralPath $fipDir -File -Filter "FIP-*.md" |
         $seenIds[$id] = $true
 
         $expectedAddress = "fin://fip/{0}" -f $id
-        if ($address -ne $expectedAddress) {
+        if ($address -cne $expectedAddress) {
             Fail-FipMetadata ("{0} address mismatch: expected={1} actual={2}" -f $relativePath, $expectedAddress, $address)
         }
 
-        if ($allowedStatuses -notcontains $status) {
+        if ($allowedStatuses -cnotcontains $status) {
             Fail-FipMetadata ("{0} invalid status: {1}" -f $relativePath, $status)
         }
 
@@ -219,7 +221,7 @@ Get-ChildItem -LiteralPath $fipDir -File -Filter "FIP-*.md" |
             Fail-FipMetadata ("{0} authors metadata must not be empty" -f $relativePath)
         }
 
-        if ($created -notmatch '^[0-9]{4}-[0-9]{2}-[0-9]{2}$') {
+        if ($created -cnotmatch '^[0-9]{4}-[0-9]{2}-[0-9]{2}$') {
             Fail-FipMetadata ("{0} created metadata must be YYYY-MM-DD, found: {1}" -f $relativePath, $created)
         }
 
@@ -230,20 +232,20 @@ Get-ChildItem -LiteralPath $fipDir -File -Filter "FIP-*.md" |
             Fail-FipMetadata ("{0} created metadata is not a valid date: {1}" -f $relativePath, $created)
         }
 
-        if ($targetRelease -notmatch '^M[0-9]+$') {
+        if ($targetRelease -cnotmatch '^M[0-9]+$') {
             Fail-FipMetadata ("{0} target_release must be M<number>, found: {1}" -f $relativePath, $targetRelease)
         }
 
-        if (($discussion -ne "TBD") -and ($discussion -notmatch '^(fin://fip/FIP-[0-9]{4}|https?://\S+)$')) {
+        if (($discussion -cne "TBD") -and ($discussion -cnotmatch '^(fin://fip/FIP-[0-9]{4}|https?://\S+)$')) {
             Fail-FipMetadata ("{0} discussion must be TBD, a fin://fip/FIP-#### URI, or an http(s) URL, found: {1}" -f $relativePath, $discussion)
         }
 
         $seenRequires = @{}
         foreach ($requiredFip in $requires) {
-            if ($requiredFip -notmatch '^FIP-[0-9]{4}$') {
+            if ($requiredFip -cnotmatch '^FIP-[0-9]{4}$') {
                 Fail-FipMetadata ("{0} has invalid requires entry: {1}" -f $relativePath, $requiredFip)
             }
-            if ($requiredFip -eq $id) {
+            if ($requiredFip -ceq $id) {
                 Fail-FipMetadata ("{0} must not require itself: {1}" -f $relativePath, $requiredFip)
             }
             if ($seenRequires.ContainsKey($requiredFip)) {
@@ -257,15 +259,15 @@ Get-ChildItem -LiteralPath $fipDir -File -Filter "FIP-*.md" |
         }
 
         $compatibilityPlaceholder = "Compatibility impact must be documented before Implemented status."
-        if (($status -in @("Implemented", "Released")) -and ($text -match [regex]::Escape($compatibilityPlaceholder))) {
+        if (($implementedStatuses -ccontains $status) -and ($text -cmatch [regex]::Escape($compatibilityPlaceholder))) {
             Fail-FipMetadata ("{0} status {1} must replace compatibility placeholder text" -f $relativePath, $status)
         }
 
-        if (($status -in @("Implemented", "Released")) -and ($discussion -eq "TBD")) {
+        if (($implementedStatuses -ccontains $status) -and ($discussion -ceq "TBD")) {
             Fail-FipMetadata ("{0} status {1} must replace discussion placeholder text" -f $relativePath, $status)
         }
 
-        if ($text -notmatch '(?m)^-\s+implementation:\s*(\[\])?\s*$') {
+        if ($text -cnotmatch '(?m)^-\s+implementation:\s*(\[\])?\s*$') {
             Fail-FipMetadata ("{0} missing implementation metadata" -f $relativePath)
         }
 
@@ -273,7 +275,7 @@ Get-ChildItem -LiteralPath $fipDir -File -Filter "FIP-*.md" |
             Fail-FipMetadata ("{0} acceptance metadata requires at least one item" -f $relativePath)
         }
 
-        if (($status -in @("Accepted", "Scheduled", "InProgress", "Implemented", "Released")) -and $implementationPaths.Count -eq 0) {
+        if (($implementationRequiredStatuses -ccontains $status) -and $implementationPaths.Count -eq 0) {
             Fail-FipMetadata ("{0} status {1} requires at least one implementation path" -f $relativePath, $status)
         }
 
@@ -316,7 +318,7 @@ foreach ($line in [regex]::Split($indexText, "`r?`n")) {
 
 $expectedIds = @($fips | Sort-Object Id | ForEach-Object { $_.Id })
 $actualIds = @($indexRows | ForEach-Object { $_.Id })
-if (($expectedIds -join ",") -ne ($actualIds -join ",")) {
+if (($expectedIds -join ",") -cne ($actualIds -join ",")) {
     Fail-FipMetadata ("fips/INDEX.md id order mismatch: expected={0} actual={1}" -f ($expectedIds -join ","), ($actualIds -join ","))
 }
 
@@ -335,37 +337,37 @@ foreach ($fip in $fips) {
 
 foreach ($row in $indexRows) {
     $fip = $fipById[$row.Id]
-    if ($row.Title -ne $fip.Title) {
+    if ($row.Title -cne $fip.Title) {
         Fail-FipMetadata ("fips/INDEX.md title mismatch for {0}: expected={1} actual={2}" -f $row.Id, $fip.Title, $row.Title)
     }
-    if ($row.Status -ne $fip.Status) {
+    if ($row.Status -cne $fip.Status) {
         Fail-FipMetadata ("fips/INDEX.md status mismatch for {0}: expected={1} actual={2}" -f $row.Id, $fip.Status, $row.Status)
     }
-    if ($row.Address -ne $fip.Address) {
+    if ($row.Address -cne $fip.Address) {
         Fail-FipMetadata ("fips/INDEX.md address mismatch for {0}: expected={1} actual={2}" -f $row.Id, $fip.Address, $row.Address)
     }
 }
 
 $labels = Get-Content -LiteralPath $labelsPath -Raw | ConvertFrom-Json
-$labelNames = @{}
+$labelNames = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
 foreach ($label in $labels) {
-    $labelNames[[string]$label.name] = $true
+    $labelNames.Add([string]$label.name) | Out-Null
 }
 
 foreach ($status in $allowedStatuses) {
     $labelName = "status/{0}" -f $status.ToLowerInvariant()
-    if (-not $labelNames.ContainsKey($labelName)) {
+    if (-not $labelNames.Contains($labelName)) {
         Fail-FipMetadata ("missing GitHub status label: {0}" -f $labelName)
     }
 }
 
 $ciText = Get-Content -LiteralPath $ciPath -Raw
-if ($ciText -notmatch [regex]::Escape("./ci/verify_fip_metadata.ps1")) {
+if ($ciText -cnotmatch [regex]::Escape("./ci/verify_fip_metadata.ps1")) {
     Fail-FipMetadata "CI workflow must run ci/verify_fip_metadata.ps1"
 }
 
 $doctorText = Get-Content -LiteralPath $doctorPath -Raw
-if ($doctorText -notmatch [regex]::Escape("ci/verify_fip_metadata.ps1")) {
+if ($doctorText -cnotmatch [regex]::Escape("ci/verify_fip_metadata.ps1")) {
     Fail-FipMetadata "fin doctor must run ci/verify_fip_metadata.ps1"
 }
 
