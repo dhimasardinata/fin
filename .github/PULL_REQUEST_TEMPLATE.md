@@ -8,7 +8,7 @@
 
 ## Checklist
 
-- [ ] I linked an `Accepted` or `Scheduled` FIP when required.
+- [ ] I linked an `Accepted` or `Scheduled` FIP when required, or changed the linked FIP for an implementation/status transition.
 - [ ] I added or updated tests.
 - [ ] I documented compatibility impact.
 - [ ] I documented reproducibility impact.
