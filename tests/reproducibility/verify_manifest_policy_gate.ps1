@@ -74,6 +74,12 @@ Assert-Fails -Action { & $policy -Manifest $manifest | Out-Null } -Label "empty 
 Write-Manifest -SeedHash "NOT-A-HASH"
 Assert-Fails -Action { & $policy -Manifest $manifest | Out-Null } -Label "invalid seed hash"
 
+Write-Manifest -SeedHash "unset"
+Assert-Fails -Action { & $policy -Manifest $manifest | Out-Null } -Label "lowercase unset seed hash"
+
+Write-Manifest -SeedHash ("A" * 64)
+Assert-Fails -Action { & $policy -Manifest $manifest | Out-Null } -Label "uppercase seed hash"
+
 # Should fail: invalid dependency name.
 Write-Manifest
 Add-Content -Path $manifest -Value @"
@@ -95,6 +101,12 @@ Assert-Fails -Action { & $policy -Manifest $manifest | Out-Null } -Label "empty 
 # Should fail: invalid primary target.
 Write-Manifest -Primary "x86_64-linux-unknown"
 Assert-Fails -Action { & $policy -Manifest $manifest | Out-Null } -Label "invalid primary target"
+
+Write-Manifest -Primary "X86_64-linux-elf"
+Assert-Fails -Action { & $policy -Manifest $manifest | Out-Null } -Label "uppercase primary target"
+
+Write-Manifest -Secondary "X86_64-windows-pe"
+Assert-Fails -Action { & $policy -Manifest $manifest | Out-Null } -Label "uppercase secondary target"
 
 # Should fail: duplicated primary/secondary.
 Write-Manifest -Primary "x86_64-linux-elf" -Secondary "x86_64-linux-elf"

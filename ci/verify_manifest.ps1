@@ -143,7 +143,7 @@ try {
     Assert-RequiredTrueBoolean -Map $map -Key "workspace.independent"
 
     $seedHash = Assert-RequiredCanonicalString -Map $map -Key "workspace.seed_hash"
-    if ($seedHash -ne "UNSET" -and $seedHash -notmatch '^[0-9a-f]{64}$') {
+    if ($seedHash -cne "UNSET" -and $seedHash -cnotmatch '^[0-9a-f]{64}$') {
         throw "workspace.seed_hash must be UNSET or a lowercase SHA-256 hex digest"
     }
 
@@ -161,13 +161,13 @@ try {
     if ([string]::IsNullOrWhiteSpace($secondary)) {
         throw "targets.secondary must be a quoted string"
     }
-    if ($allowedTargets -notcontains $primary) {
+    if ($allowedTargets -cnotcontains $primary) {
         throw ("targets.primary must be one of: {0}" -f ($allowedTargets -join ", "))
     }
-    if ($allowedTargets -notcontains $secondary) {
+    if ($allowedTargets -cnotcontains $secondary) {
         throw ("targets.secondary must be one of: {0}" -f ($allowedTargets -join ", "))
     }
-    if ($primary -eq $secondary) {
+    if ($primary -ceq $secondary) {
         throw "targets.primary and targets.secondary must differ"
     }
 
