@@ -4,6 +4,8 @@ Fin is a full-independent native programming language project with the `.fn` ext
 
 ## Project Goals
 
+The canonical charter is tracked by `FIP-0001` and `docs/charter.md`.
+
 - Zero-cost abstractions.
 - Simple, low-typing syntax.
 - Low cognitive load and ergonomic defaults.

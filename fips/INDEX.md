@@ -2,7 +2,7 @@
 
 | ID | Title | Status | Address |
 |---|---|---|---|
-| FIP-0001 | Language Charter and Philosophy | Accepted | `fin://fip/FIP-0001` |
+| FIP-0001 | Language Charter and Philosophy | Implemented | `fin://fip/FIP-0001` |
 | FIP-0002 | Governance and FIP Process | Accepted | `fin://fip/FIP-0002` |
 | FIP-0003 | Bootstrap Trust Model (Seed Binary) | Accepted | `fin://fip/FIP-0003` |
 | FIP-0004 | Source and Module Model for .fn | Accepted | `fin://fip/FIP-0004` |

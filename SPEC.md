@@ -7,6 +7,8 @@
 
 ## Design Principles
 
+The language design charter is `FIP-0001` and `docs/charter.md`.
+
 1. Zero-cost abstraction.
 2. Explicit performance model.
 3. Minimal syntax and low typing overhead.

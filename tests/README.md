@@ -25,6 +25,7 @@ Entry points:
 - `tests/integration/verify_doc.ps1`: `fin doc` integration gate with PID-scoped temp workspace hygiene.
 - `tests/integration/verify_pkg.ps1`: `fin pkg add` integration gate with PID-scoped temp workspace hygiene.
 - `tests/integration/verify_pkg_publish.ps1`: `fin pkg publish` integration gate with PID-scoped temp workspace hygiene.
+- `tests/reproducibility/verify_charter_policy_gate.ps1`: FIP-0001 charter policy gate covering canonical charter sections, README/SPEC/GOVERNANCE references, and implemented-status linkage.
 - `tests/reproducibility/verify_manifest_policy_gate.ps1`: manifest policy gate self-check coverage with PID-scoped temp workspace hygiene.
 - `tests/reproducibility/verify_toolchain_policy_gate.ps1`: toolchain policy gate self-check coverage with PID-scoped temp workspace hygiene.
 
