@@ -28,3 +28,6 @@ Side statuses: `Deferred`, `Rejected`.
 ## Merge Rule
 
 Feature pull requests must link an `Accepted` or `Scheduled` FIP.
+Implementation/status-transition pull requests may link the same FIP when the
+FIP file is changed in the pull request and the new status is `InProgress`,
+`Implemented`, or `Released`.

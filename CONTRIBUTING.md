@@ -4,6 +4,8 @@
 
 - Every non-trivial change must reference a FIP.
 - Feature changes require linked `Accepted` or `Scheduled` proposal.
+- Status-transition changes may link the same changed FIP when it moves to
+  `InProgress`, `Implemented`, or `Released`.
 - External toolchain/compiler/assembler/linker use is prohibited in normal build paths.
 
 ## Pull Request Checklist
