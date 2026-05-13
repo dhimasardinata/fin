@@ -7,7 +7,7 @@
 | FIP-0003 | Bootstrap Trust Model (Seed Binary) | Accepted | `fin://fip/FIP-0003` |
 | FIP-0004 | Source and Module Model for .fn | Accepted | `fin://fip/FIP-0004` |
 | FIP-0005 | Core Grammar v0 | Implemented | `fin://fip/FIP-0005` |
-| FIP-0006 | Type Inference Model | InProgress | `fin://fip/FIP-0006` |
+| FIP-0006 | Type Inference Model | Implemented | `fin://fip/FIP-0006` |
 | FIP-0007 | Ownership and Borrowing (Inference-First) | InProgress | `fin://fip/FIP-0007` |
 | FIP-0008 | Error Model (Result + try) | InProgress | `fin://fip/FIP-0008` |
 | FIP-0009 | Linux ABI and Syscall Contract | Implemented | `fin://fip/FIP-0009` |

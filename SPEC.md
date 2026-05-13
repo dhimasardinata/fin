@@ -29,6 +29,17 @@
 - Ownership and borrowing with inference-first defaults.
 - No GC in v0.
 
+Stage0 inference currently covers the bootstrap value set used by executable
+fixtures: `u8`, `Result<u8,u8>`, `&u8`, and `&Result<u8,u8>`.
+Local `let` and `var` bindings may omit annotations when the initializer
+infers one of those supported types. Explicit local annotations are accepted
+for the same set and reject mismatched initializers deterministically.
+
+The stage0 entrypoint boundary is `fn main() -> u8`; omitting the return type
+keeps the same `u8` boundary. Helper parameters require explicit boundary
+types. Helper returns default to `u8` when omitted, and explicit helper returns
+currently accept `u8` or `Result<u8,u8>`.
+
 ## Runtime Baseline
 
 - No libc dependency in normal runtime path.
