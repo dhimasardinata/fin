@@ -88,6 +88,7 @@ if ($Quick) {
     & $fin build --src tests/conformance/fixtures/main_exit7.fn --out artifacts/test-exit7
     & $fin build --src tests/conformance/fixtures/main_exit_var_assign.fn --out artifacts/test-exit8
     & $fin build --src tests/conformance/fixtures/main_exit_helper_params_add.fn --out artifacts/test-exit163
+    & $fin build --src tests/conformance/fixtures/main_exit_while_countdown.fn --out artifacts/test-exit172
 }
 else {
 & $fin build --src tests/conformance/fixtures/main_exit7.fn --out artifacts/test-exit7
@@ -203,6 +204,8 @@ else {
 & $fin build --src tests/conformance/fixtures/main_exit_if_statement_then.fn --out artifacts/test-exit169
 & $fin build --src tests/conformance/fixtures/main_exit_if_statement_else.fn --out artifacts/test-exit170
 & $fin build --src tests/conformance/fixtures/main_exit_helper_if_statement_return.fn --out artifacts/test-exit171
+& $fin build --src tests/conformance/fixtures/main_exit_while_countdown.fn --out artifacts/test-exit172
+& $fin build --src tests/conformance/fixtures/main_exit_helper_while_return.fn --out artifacts/test-exit173
 & $fin build --src tests/conformance/fixtures/main_drop_unused.fn --out artifacts/test-exit15
 & $fin build --src tests/conformance/fixtures/main_move_binding.fn --out artifacts/test-exit16
 & $fin build --src tests/conformance/fixtures/main_move_reinit_var.fn --out artifacts/test-exit17
@@ -225,6 +228,7 @@ if (-not $SkipRun) {
         & $fin run --no-build --out artifacts/test-exit7 --expect-exit 7
         & $fin run --no-build --out artifacts/test-exit8 --expect-exit 8
         & $fin run --no-build --out artifacts/test-exit163 --expect-exit 163
+        & $fin run --no-build --out artifacts/test-exit172 --expect-exit 172
     }
     else {
         & $fin run --no-build --out artifacts/test-exit7 --expect-exit 7
@@ -336,6 +340,12 @@ if (-not $SkipRun) {
         & $fin run --no-build --out artifacts/test-exit165 --expect-exit 165
         & $fin run --no-build --out artifacts/test-exit166 --expect-exit 166
         & $fin run --no-build --out artifacts/test-exit167 --expect-exit 167
+        & $fin run --no-build --out artifacts/test-exit168 --expect-exit 168
+        & $fin run --no-build --out artifacts/test-exit169 --expect-exit 169
+        & $fin run --no-build --out artifacts/test-exit170 --expect-exit 170
+        & $fin run --no-build --out artifacts/test-exit171 --expect-exit 171
+        & $fin run --no-build --out artifacts/test-exit172 --expect-exit 172
+        & $fin run --no-build --out artifacts/test-exit173 --expect-exit 173
         & $fin run --no-build --out artifacts/test-exit15 --expect-exit 15
         & $fin run --no-build --out artifacts/test-exit16 --expect-exit 16
         & $fin run --no-build --out artifacts/test-exit17 --expect-exit 17

@@ -1,0 +1,9 @@
+fn main() {
+  var total = 160
+  var remaining = 4
+  while (remaining > 0) {
+    total += 3
+    remaining = remaining - 1
+  }
+  exit(total)
+}

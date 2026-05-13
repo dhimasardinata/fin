@@ -108,6 +108,8 @@ Stage0 conformance checks:
 - `fixtures/main_exit_if_statement_then.fn`: valid source proving statement-form `if (<expr>) { ... }` can mutate outer state on the selected true branch.
 - `fixtures/main_exit_if_statement_else.fn`: valid source proving statement-form `if (<expr>) { ... } else { ... }` can select and apply the else branch.
 - `fixtures/main_exit_helper_if_statement_return.fn`: valid source proving terminal `return` inside a statement-form helper `if` branch terminates the helper function.
+- `fixtures/main_exit_while_countdown.fn`: valid source proving statement-form `while (<expr>) { ... }` can repeatedly mutate outer state until a `u8` condition becomes zero.
+- `fixtures/main_exit_helper_while_return.fn`: valid source proving `while` statements work inside helper functions before a terminal `return`.
 - `fixtures/main_exit_borrow_deref.fn`: valid source with stage0 borrow expression `&<ident>` and dereference expression `*<expr>` returning the borrowed `u8` value.
 - `fixtures/main_exit_borrow_typed_u8.fn`: valid source with explicit reference annotation `&u8` on a borrowed local binding.
 - `fixtures/main_exit_borrow_result_try.fn`: valid source with explicit reference annotation `&Result<u8,u8>` and unwrap via `try(*<ref-ident>)`.
@@ -173,6 +175,8 @@ Stage0 conformance checks:
 - `fixtures/invalid_if_statement_missing_then_block.fn`: invalid source, parser must reject statement-form `if` without a `{ ... }` then-block.
 - `fixtures/invalid_if_statement_else_without_block.fn`: invalid source, parser must reject statement-form `else` branches that are not blocks.
 - `fixtures/invalid_if_statement_non_u8_condition.fn`: invalid source, parser must reject non-`u8` statement-form `if` condition expressions.
+- `fixtures/invalid_while_missing_body.fn`: invalid source, parser must reject statement-form `while` without a `{ ... }` body block.
+- `fixtures/invalid_while_non_u8_condition.fn`: invalid source, parser must reject non-`u8` statement-form `while` condition expressions.
 - `fixtures/invalid_logic_non_u8_operand_and.fn`: invalid source, parser must reject logical-and operands that are not `u8`.
 - `fixtures/invalid_logic_non_u8_operand_or_short_circuit.fn`: invalid source, parser must still reject logical-or RHS type mismatch even when left operand short-circuits.
 - `fixtures/invalid_logic_missing_rhs.fn`: invalid source, parser must reject logical operators missing right-hand operands.
@@ -186,6 +190,7 @@ Stage0 conformance checks:
 - `fixtures/invalid_uppercase_bool_literal.fn`: invalid source, parser must reject uppercase boolean literals as ordinary undefined identifiers.
 - `fixtures/invalid_uppercase_statement_keyword.fn`: invalid source, parser must reject uppercase statement keywords.
 - `fixtures/invalid_uppercase_else_keyword.fn`: invalid source, parser must reject uppercase `else` in statement-form conditionals.
+- `fixtures/invalid_uppercase_while_keyword.fn`: invalid source, parser must reject uppercase `while` as an unsupported statement keyword.
 - `fixtures/invalid_uppercase_result_constructor.fn`: invalid source, parser must reject uppercase result constructor names as ordinary undefined calls.
 - `fixtures/invalid_uppercase_type_annotation.fn`: invalid source, parser must reject uppercase type names.
 - Core grammar invalid fixtures above are also assertion-checked for deterministic diagnostic message text in `verify_stage0_grammar.ps1`.
