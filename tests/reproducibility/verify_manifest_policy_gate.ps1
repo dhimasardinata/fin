@@ -74,6 +74,24 @@ Assert-Fails -Action { & $policy -Manifest $manifest | Out-Null } -Label "empty 
 Write-Manifest -SeedHash "NOT-A-HASH"
 Assert-Fails -Action { & $policy -Manifest $manifest | Out-Null } -Label "invalid seed hash"
 
+# Should fail: invalid dependency name.
+Write-Manifest
+Add-Content -Path $manifest -Value @"
+
+[dependencies]
+bad.name = "1.0.0"
+"@
+Assert-Fails -Action { & $policy -Manifest $manifest | Out-Null } -Label "invalid dependency name"
+
+# Should fail: empty dependency version.
+Write-Manifest
+Add-Content -Path $manifest -Value @"
+
+[dependencies]
+serde = ""
+"@
+Assert-Fails -Action { & $policy -Manifest $manifest | Out-Null } -Label "empty dependency version"
+
 # Should fail: invalid primary target.
 Write-Manifest -Primary "x86_64-linux-unknown"
 Assert-Fails -Action { & $policy -Manifest $manifest | Out-Null } -Label "invalid primary target"

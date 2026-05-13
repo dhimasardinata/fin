@@ -101,6 +101,26 @@ function Assert-RequiredTrueBoolean {
     }
 }
 
+function Assert-DependencyEntries {
+    param([hashtable]$Map)
+
+    foreach ($key in @($Map.Keys | Sort-Object)) {
+        if (-not $key.StartsWith("dependencies.")) {
+            continue
+        }
+
+        $dependencyName = $key.Substring("dependencies.".Length)
+        if ($dependencyName -notmatch '^[A-Za-z][A-Za-z0-9_-]*$') {
+            throw ("dependency name '{0}' must match ^[A-Za-z][A-Za-z0-9_-]*$" -f $dependencyName)
+        }
+
+        $dependencyVersion = Decode-StringValue -Value ([string]$Map[$key])
+        if ([string]::IsNullOrWhiteSpace($dependencyVersion)) {
+            throw ("dependencies.{0} must be a non-empty quoted string" -f $dependencyName)
+        }
+    }
+}
+
 try {
     $map = Parse-ManifestMap -Path $Manifest
 }
@@ -150,6 +170,8 @@ try {
     if ($primary -eq $secondary) {
         throw "targets.primary and targets.secondary must differ"
     }
+
+    Assert-DependencyEntries -Map $map
 }
 catch {
     Write-Error $_
