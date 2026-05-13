@@ -10,7 +10,7 @@ $ErrorActionPreference = "Stop"
 
 $requirePattern = "(^|[^A-Z0-9])(FIP-[0-9]{4})([^0-9]|$)"
 $eligibleStatuses = @("Accepted", "Scheduled", "InProgress", "Implemented", "Released")
-$repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
+$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 if ([string]::IsNullOrWhiteSpace($FipDir)) {
     $FipDir = Join-Path $repoRoot "fips"
 }
@@ -39,7 +39,7 @@ if ($ChangedFiles) {
 
 $featureTouched = $false
 foreach ($f in $files) {
-    if ($f -match "^(compiler/|runtime/|std/|cmd/|ci/|\.github/workflows/|SPEC\.md|fin\.toml)") {
+    if ($f -cmatch "^(compiler/|runtime/|std/|cmd/|ci/|\.github/workflows/|SPEC\.md|fin\.toml)") {
         $featureTouched = $true
         break
     }
@@ -72,7 +72,7 @@ foreach ($match in $matches) {
         continue
     }
 
-    if ($eligibleStatuses -contains $status) {
+    if ($eligibleStatuses -ccontains $status) {
         Write-Host ("FIP link check passed: {0} status={1}" -f $fipId, $status)
         exit 0
     }
