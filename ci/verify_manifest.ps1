@@ -89,6 +89,18 @@ function Assert-RequiredCanonicalString {
     return $decoded
 }
 
+function Assert-RequiredTrueBoolean {
+    param(
+        [hashtable]$Map,
+        [string]$Key
+    )
+
+    $raw = Get-RequiredValue -Map $Map -Key $Key
+    if ($raw -cne "true") {
+        throw ("{0} must be canonical true" -f $Key)
+    }
+}
+
 try {
     $map = Parse-ManifestMap -Path $Manifest
 }
@@ -108,25 +120,15 @@ try {
         throw "workspace.version may not contain quote characters"
     }
 
-    $independent = (Get-RequiredValue -Map $map -Key "workspace.independent").ToLowerInvariant()
-    if ($independent -ne "true") {
-        throw "workspace.independent must be true"
-    }
+    Assert-RequiredTrueBoolean -Map $map -Key "workspace.independent"
 
     $seedHash = Assert-RequiredCanonicalString -Map $map -Key "workspace.seed_hash"
     if ($seedHash -ne "UNSET" -and $seedHash -notmatch '^[0-9a-f]{64}$') {
         throw "workspace.seed_hash must be UNSET or a lowercase SHA-256 hex digest"
     }
 
-    $extPolicy = (Get-RequiredValue -Map $map -Key "policy.external_toolchain_forbidden").ToLowerInvariant()
-    if ($extPolicy -ne "true") {
-        throw "policy.external_toolchain_forbidden must be true"
-    }
-
-    $reproPolicy = (Get-RequiredValue -Map $map -Key "policy.reproducible_build_required").ToLowerInvariant()
-    if ($reproPolicy -ne "true") {
-        throw "policy.reproducible_build_required must be true"
-    }
+    Assert-RequiredTrueBoolean -Map $map -Key "policy.external_toolchain_forbidden"
+    Assert-RequiredTrueBoolean -Map $map -Key "policy.reproducible_build_required"
 
     $primaryRaw = Get-RequiredValue -Map $map -Key "targets.primary"
     $secondaryRaw = Get-RequiredValue -Map $map -Key "targets.secondary"

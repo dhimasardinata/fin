@@ -42,7 +42,7 @@ Current stage0 package behavior:
 8. Lockfile entries are sorted by dependency name for stable diffs.
 9. `fin pkg publish` emits deterministic `.fnpkg` artifact from `fin.toml`, `fin.lock` (if present), and `src/**/*.fn`.
 10. `fin pkg publish --dry-run` reports metadata/hash without writing artifact.
-11. `verify_manifest` enforces workspace identity, version, seed-hash syntax, policy fields, and target schema (`[targets].primary/secondary`).
+11. `verify_manifest` enforces workspace identity, version, seed-hash syntax, canonical boolean policy fields, and target schema (`[targets].primary/secondary`).
 12. `fin build` and `fin run` validate the selected manifest before using it for target resolution.
 
 ## Alternatives
@@ -65,6 +65,6 @@ Current checks:
 
 1. `tests/integration/verify_pkg.ps1` validates manifest + lockfile create/add/update/failure paths.
 2. `tests/integration/verify_pkg_publish.ps1` validates publish output, determinism, and dry-run behavior.
-3. `tests/reproducibility/verify_manifest_policy_gate.ps1` validates manifest policy gate pass/fail behavior, including workspace identity, version, seed-hash syntax, target schema, and policy switches.
+3. `tests/reproducibility/verify_manifest_policy_gate.ps1` validates manifest policy gate pass/fail behavior, including workspace identity, version, seed-hash syntax, target schema, canonical booleans, and policy switches.
 4. `tests/integration/verify_manifest_target_resolution.ps1` validates command-path manifest policy enforcement before build/run target resolution.
 5. `tests/run_stage0_suite.ps1` executes package and manifest-policy checks as part of `fin test`.

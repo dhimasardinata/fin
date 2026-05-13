@@ -82,6 +82,16 @@ Assert-Fails -Action { & $policy -Manifest $manifest | Out-Null } -Label "invali
 Write-Manifest -Primary "x86_64-linux-elf" -Secondary "x86_64-linux-elf"
 Assert-Fails -Action { & $policy -Manifest $manifest | Out-Null } -Label "same primary and secondary"
 
+# Should fail: uppercase booleans are not canonical TOML policy values.
+Write-Manifest -Independent "TRUE"
+Assert-Fails -Action { & $policy -Manifest $manifest | Out-Null } -Label "uppercase workspace independent"
+
+Write-Manifest -ExtPolicy "TRUE"
+Assert-Fails -Action { & $policy -Manifest $manifest | Out-Null } -Label "uppercase external toolchain policy"
+
+Write-Manifest -ReproPolicy "TRUE"
+Assert-Fails -Action { & $policy -Manifest $manifest | Out-Null } -Label "uppercase reproducible build policy"
+
 # Should fail: policy switch disabled.
 Write-Manifest -ExtPolicy "false"
 Assert-Fails -Action { & $policy -Manifest $manifest | Out-Null } -Label "external toolchain policy false"
