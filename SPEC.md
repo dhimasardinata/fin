@@ -31,7 +31,7 @@ Stage0 is intentionally smaller than the full v0 target surface:
 
 - Top-level `fn main()` and typed helper functions with `u8` or `Result<u8,u8>` value parameters.
 - Entry point returns `u8`; helpers may return `u8` or `Result<u8,u8>`.
-- `let`, `var`, assignment, compound `+=`, unwrap binding/assignment sugar (`?=`), nested block statements, lexical shadowing, and statement-form `if`.
+- `let`, `var`, assignment, compound `+=`, unwrap binding/assignment sugar (`?=`), nested block statements, lexical shadowing, statement-form `if`, and statement-form `while`.
 - `u8`, `Result<u8,u8>`, `&u8`, and `&Result<u8,u8>` annotations.
 - Decimal, hexadecimal, binary, and boolean literals (`true` => `1`, `false` => `0`).
 - Arithmetic, comparison, bitwise, shift, logical, unary, grouped, and conditional expressions over stage0 `u8` values.
@@ -39,7 +39,7 @@ Stage0 is intentionally smaller than the full v0 target surface:
 - Stage0 ownership/borrowing forms: `move(...)`, `drop(...)`, `&<ident>`, and `*<expr>`.
 - Terminal `exit(...)` and `return <expr>` statements.
 
-`match`, `for`, `while`, full generic `Result<T,E>` propagation, and the full module model remain proposal-tracked targets outside the current stage0 subset.
+`match`, `for`, full generic `Result<T,E>` propagation, and the full module model remain proposal-tracked targets outside the current stage0 subset.
 
 The current source/module layout is documented in `docs/source-module-model.md`.
 

@@ -182,6 +182,8 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_block_shado
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_if_statement_then.fn" -ExpectedExit 169
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_if_statement_else.fn" -ExpectedExit 170
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_helper_if_statement_return.fn" -ExpectedExit 171
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_while_countdown.fn" -ExpectedExit 172
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_helper_while_return.fn" -ExpectedExit 173
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_case_sensitive_locals.fn" -ExpectedExit 42
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_case_sensitive_functions.fn" -ExpectedExit 42
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_drop_unused.fn" -ExpectedExit 15
@@ -254,6 +256,8 @@ Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_if_br
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_if_statement_missing_then_block.fn" -ExpectedMessagePart "if statement requires then-block"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_if_statement_else_without_block.fn" -ExpectedMessagePart "if statement else branch must be block"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_if_statement_non_u8_condition.fn" -ExpectedMessagePart "if statement condition expects u8 in stage0, found Result<u8,u8>"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_while_missing_body.fn" -ExpectedMessagePart "while statement requires body block"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_while_non_u8_condition.fn" -ExpectedMessagePart "while statement condition expects u8 in stage0, found Result<u8,u8>"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_logic_non_u8_operand_and.fn" -ExpectedMessagePart "operator '&&' expects u8 operands in stage0, found u8 and Result<u8,u8>"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_logic_non_u8_operand_or_short_circuit.fn" -ExpectedMessagePart "operator '||' expects u8 operands in stage0, found u8 and Result<u8,u8>"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_logic_missing_rhs.fn" -ExpectedMessagePart "binary operator '&&' requires both operands"
@@ -267,6 +271,7 @@ Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_bool_
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_uppercase_bool_literal.fn" -ExpectedMessagePart "undefined identifier 'TRUE'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_uppercase_statement_keyword.fn" -ExpectedMessagePart "unsupported statement 'LET code = 7'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_uppercase_else_keyword.fn" -ExpectedMessagePart "unsupported trailing tokens after if statement 'ELSE"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_uppercase_while_keyword.fn" -ExpectedMessagePart "unsupported statement 'WHILE (code < 1)"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_uppercase_result_constructor.fn" -ExpectedMessagePart "undefined function 'OK'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_uppercase_type_annotation.fn" -ExpectedMessagePart "unsupported type annotation 'U8'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_unsupported_type_annotation.fn" -ExpectedMessagePart "unsupported type annotation 'i32'"

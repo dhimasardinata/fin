@@ -1,0 +1,13 @@
+fn main() {
+  exit(count_to(3))
+}
+
+fn count_to(limit: u8) -> u8 {
+  var value = 170
+  var index = 0
+  while (index < limit) {
+    value += 1
+    index += 1
+  }
+  return value
+}

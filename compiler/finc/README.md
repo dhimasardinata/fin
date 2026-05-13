@@ -15,7 +15,7 @@
 
 Implemented stage0 path:
 
-- `stage0/parse_main_exit.ps1` parses the current `.fn` bootstrap subset: typed helper functions, bindings, mutation, blocks, statement/expression `if`, `u8` operators, `Result<u8,u8>` bootstrap forms, ownership/borrow forms, and terminal `exit`/`return`.
+- `stage0/parse_main_exit.ps1` parses the current `.fn` bootstrap subset: typed helper functions, bindings, mutation, blocks, statement `while`, statement/expression `if`, `u8` operators, `Result<u8,u8>` bootstrap forms, ownership/borrow forms, and terminal `exit`/`return`.
 - `stage0/build_stage0.ps1` compiles source subset into Linux ELF or Windows PE output through the direct pipeline or the `finobj` pipeline.
 - `stage0/emit_elf_exit0.ps1` writes a deterministic Linux x86_64 ELF executable directly.
 - `stage0/emit_elf_write_exit.ps1` writes a deterministic Linux x86_64 ELF with `sys_write + sys_exit`.

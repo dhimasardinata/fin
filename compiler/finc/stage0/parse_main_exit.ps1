@@ -169,6 +169,7 @@ $script:FunctionCallStack = [System.Collections.Generic.List[string]]::new()
 $script:Stage0BindingCounter = 0
 $script:Stage0ScopeFrames = [System.Collections.Generic.List[hashtable]]::new()
 $script:Stage0BindingDisplayNames = New-Stage0Map
+$script:Stage0WhileIterationLimit = 4096
 
 function New-Stage0BindingKey {
     param([string]$Name)
@@ -517,6 +518,48 @@ function Try-ParseStage0IfStatement {
         ThenStatements = $thenStatements
         HasElse = $hasElse
         ElseStatements = $elseStatements
+    }
+}
+
+function Try-ParseStage0WhileStatement {
+    param(
+        [string]$FunctionName,
+        [string]$Statement
+    )
+
+    $trimmed = $Statement.Trim()
+    if ($trimmed -cnotmatch '^while(?:\s|\()') {
+        return $null
+    }
+
+    $position = Skip-Stage0Whitespace -Text $trimmed -StartIndex 5
+    if (($position -ge $trimmed.Length) -or ($trimmed[$position] -ne '(')) {
+        Fail-Parse "while statement requires parenthesized condition"
+    }
+
+    $conditionClose = Get-MatchingDelimiterIndex -Text $trimmed -StartIndex $position -OpenChar '(' -CloseChar ')' -ContextDescription ("while statement condition in function '{0}'" -f $FunctionName)
+    $conditionExpr = $trimmed.Substring($position + 1, $conditionClose - $position - 1).Trim()
+    if ([string]::IsNullOrWhiteSpace($conditionExpr)) {
+        Fail-Parse "while statement requires condition expression"
+    }
+
+    $position = Skip-Stage0Whitespace -Text $trimmed -StartIndex ($conditionClose + 1)
+    if (($position -ge $trimmed.Length) -or ($trimmed[$position] -ne '{')) {
+        Fail-Parse "while statement requires body block"
+    }
+
+    $bodyClose = Get-MatchingDelimiterIndex -Text $trimmed -StartIndex $position -OpenChar '{' -CloseChar '}' -ContextDescription ("while statement body in function '{0}'" -f $FunctionName)
+    $bodyText = $trimmed.Substring($position + 1, $bodyClose - $position - 1)
+    [string[]]$bodyStatements = @(Get-Stage0Statements -FunctionName $FunctionName -BodyText $bodyText -AllowEmpty)
+
+    $position = Skip-Stage0Whitespace -Text $trimmed -StartIndex ($bodyClose + 1)
+    if ($position -lt $trimmed.Length) {
+        Fail-Parse ("unsupported trailing tokens after while statement '{0}'" -f $trimmed.Substring($position).Trim())
+    }
+
+    return [pscustomobject]@{
+        ConditionExpr = $conditionExpr
+        BodyStatements = $bodyStatements
     }
 }
 
@@ -1708,6 +1751,35 @@ function Invoke-Stage0Statements {
                 continue
             }
 
+            $whileStatement = Try-ParseStage0WhileStatement -FunctionName $FunctionName -Statement $stmt
+            if ($null -ne $whileStatement) {
+                $iterationCount = 0
+                while ($true) {
+                    $conditionValue = Parse-Expr -Expr $whileStatement.ConditionExpr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates -ReferenceTargets $ReferenceTargets
+                    if ([string]$conditionValue.Type -ne 'u8') {
+                        Fail-Parse ("while statement condition expects u8 in stage0, found {0}" -f $conditionValue.Type)
+                    }
+
+                    if ([int]$conditionValue.Value -eq 0) {
+                        break
+                    }
+
+                    if ($iterationCount -ge $script:Stage0WhileIterationLimit) {
+                        Fail-Parse ("while statement exceeded stage0 iteration limit {0}" -f $script:Stage0WhileIterationLimit)
+                    }
+
+                    $iterationCount += 1
+                    Invoke-Stage0StatementProbe -FunctionName $FunctionName -ExpectedReturnType $ExpectedReturnType -Statements $whileStatement.BodyStatements -Values $Values -Mutable $Mutable -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates -ReferenceTargets $ReferenceTargets | Out-Null
+                    $loopResult = Invoke-Stage0Statements -FunctionName $FunctionName -ExpectedReturnType $ExpectedReturnType -Statements $whileStatement.BodyStatements -Values $Values -Mutable $Mutable -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates -ReferenceTargets $ReferenceTargets -IsBlockScope
+                    if ($loopResult.HaveTerminal) {
+                        $functionResult = $loopResult.Result
+                        $haveTerminal = $true
+                        break
+                    }
+                }
+                continue
+            }
+
             if ($stmt -cmatch '^let\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*([^?=]+?))?\s*\?=\s*$') {
                 Fail-Parse 'unwrap binding requires expression'
             }
@@ -2154,6 +2226,7 @@ function Invoke-Stage0Function {
 #     <ident> = <expr>;
 #     { <stmt>* };
 #     if (<expr>) { <stmt>* } [else { <stmt>* }];
+#     while (<expr>) { <stmt>* };
 #     drop(<ident>);
 #     exit(<expr>);
 #     return <expr>;

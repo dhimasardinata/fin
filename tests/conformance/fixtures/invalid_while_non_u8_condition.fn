@@ -1,0 +1,7 @@
+fn main() {
+  var state = ok(1)
+  while (state) {
+    exit(1)
+  }
+  exit(0)
+}
