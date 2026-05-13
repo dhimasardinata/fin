@@ -12,6 +12,26 @@ $sourceDir = Join-Path $tmpDir "src"
 $outDir = Join-Path $tmpDir "publish"
 $artifact = Join-Path $outDir "pkgpub_smoke-0.1.0-dev.fnpkg"
 
+function Assert-Fails {
+    param(
+        [scriptblock]$Action,
+        [string]$Label
+    )
+
+    $failed = $false
+    try {
+        & $Action
+    }
+    catch {
+        $failed = $true
+    }
+
+    if (-not $failed) {
+        Write-Error ("Expected failure: {0}" -f $Label)
+        exit 1
+    }
+}
+
 & $fin init --dir $tmpDir --name pkgpub_smoke
 
 & $fin pkg publish --manifest $manifest --src $sourceDir --out-dir $outDir
@@ -62,17 +82,17 @@ if (Test-Path $dryArtifact) {
     exit 1
 }
 
-$failed = $false
-try {
+Assert-Fails -Action {
     & $fin pkg publish --manifest $manifest --src (Join-Path $tmpDir "missing-src") --out-dir $outDir | Out-Null
-}
-catch {
-    $failed = $true
-}
-if (-not $failed) {
-    Write-Error "Expected pkg publish to fail when source directory is missing."
-    exit 1
-}
+} -Label "missing source directory"
+
+$validManifestContent = Get-Content -Path $manifest -Raw
+$invalidManifestContent = $validManifestContent -replace 'external_toolchain_forbidden = true', 'external_toolchain_forbidden = false'
+Set-Content -Path $manifest -Value $invalidManifestContent -NoNewline
+
+Assert-Fails -Action {
+    & $fin pkg publish --manifest $manifest --src $sourceDir --out-dir (Join-Path $tmpDir "publish-invalid") | Out-Null
+} -Label "invalid manifest policy"
 
 Finalize-TestTmpWorkspace -State $tmpState
 

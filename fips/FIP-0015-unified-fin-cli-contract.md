@@ -51,8 +51,8 @@ Current commands:
 5. `run`: validates the selected manifest when present, builds (optional), and executes target-specific artifact with expected exit-code assertion.
 6. `fmt`: formats stage0 `.fn` subset into canonical style.
 7. `doc`: generates stage0 documentation from `.fn` subset.
-8. `pkg add`: inserts/updates dependency entries in `fin.toml` and rewrites `fin.lock`.
-9. `pkg publish`: emits deterministic stage0 package artifact (`.fnpkg`).
+8. `pkg add`: validates manifest policy, inserts/updates dependency entries in `fin.toml`, and rewrites `fin.lock`.
+9. `pkg publish`: validates manifest policy and emits deterministic stage0 package artifact (`.fnpkg`).
 10. `test`: executes aggregated stage0 test suite. `--quick` preserves shared
     gates but uses a smoke fixture matrix instead of the exhaustive fixture
     build/run matrix. `--no-doctor` skips the suite's standalone doctor

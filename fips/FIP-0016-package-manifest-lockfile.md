@@ -32,7 +32,7 @@ This proposal is part of the Fin independent-toolchain baseline and is required 
 
 Current stage0 package behavior:
 
-1. `fin pkg add <name[@version]>` mutates manifest dependencies.
+1. `fin pkg add <name[@version]>` validates manifest policy before mutating dependencies.
 2. `--version` overrides inline `@version`.
 3. `--manifest` selects non-default manifest path.
 4. `[dependencies]` section is created when missing.
@@ -40,10 +40,10 @@ Current stage0 package behavior:
 6. Re-adding an existing package updates its version.
 7. `fin pkg add` rewrites `fin.lock` as a machine-managed deterministic snapshot.
 8. Lockfile entries are sorted by dependency name for stable diffs.
-9. `fin pkg publish` emits deterministic `.fnpkg` artifact from `fin.toml`, `fin.lock` (if present), and `src/**/*.fn`.
+9. `fin pkg publish` validates manifest policy, then emits deterministic `.fnpkg` artifact from `fin.toml`, `fin.lock` (if present), and `src/**/*.fn`.
 10. `fin pkg publish --dry-run` reports metadata/hash without writing artifact.
 11. `verify_manifest` enforces workspace identity, version, seed-hash syntax, canonical boolean policy fields, and target schema (`[targets].primary/secondary`).
-12. `fin build` and `fin run` validate the selected manifest before using it for target resolution.
+12. `fin build`, `fin run`, `fin pkg add`, and `fin pkg publish` validate the selected manifest before using it.
 
 ## Alternatives
 
@@ -63,8 +63,8 @@ explicit FIP/test update or a documented migration path.
 
 Current checks:
 
-1. `tests/integration/verify_pkg.ps1` validates manifest + lockfile create/add/update/failure paths.
-2. `tests/integration/verify_pkg_publish.ps1` validates publish output, determinism, and dry-run behavior.
+1. `tests/integration/verify_pkg.ps1` validates manifest + lockfile create/add/update/failure paths, including manifest-policy rejection before mutation.
+2. `tests/integration/verify_pkg_publish.ps1` validates publish output, determinism, dry-run behavior, and manifest-policy rejection.
 3. `tests/reproducibility/verify_manifest_policy_gate.ps1` validates manifest policy gate pass/fail behavior, including workspace identity, version, seed-hash syntax, target schema, canonical booleans, and policy switches.
 4. `tests/integration/verify_manifest_target_resolution.ps1` validates command-path manifest policy enforcement before build/run target resolution.
 5. `tests/run_stage0_suite.ps1` executes package and manifest-policy checks as part of `fin test`.

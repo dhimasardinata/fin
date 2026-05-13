@@ -8,6 +8,8 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+$repoRoot = Resolve-Path (Join-Path $PSScriptRoot "../../..")
+
 function Get-Sha256HexFromBytes {
     param([byte[]]$Bytes)
 
@@ -104,6 +106,8 @@ if (-not (Test-Path $ManifestPath)) {
 }
 
 $manifestFull = [System.IO.Path]::GetFullPath($ManifestPath)
+& (Join-Path $repoRoot "ci/verify_manifest.ps1") -Manifest $manifestFull -Quiet
+
 $projectRoot = Split-Path -Path $manifestFull -Parent
 
 $sourceFull = if ([System.IO.Path]::IsPathRooted($SourceDir)) {

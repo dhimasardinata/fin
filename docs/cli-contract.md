@@ -29,8 +29,8 @@ Until native `fin` is available, a compatibility shim is provided:
   skips the final fixture runtime phase after fixture builds.
 - `fin fmt`: format `.fn` files.
 - `fin doc`: generate API and language docs.
-- `fin pkg add <name>`: add dependency and update `fin.lock`.
-- `fin pkg publish`: publish package.
+- `fin pkg add <name>`: validate the selected manifest, add dependency, and update `fin.lock`.
+- `fin pkg publish`: validate the selected manifest, then publish package.
 - `fin doctor`: validate environment and policy constraints.
 
 This contract is normative under `FIP-0015` (`Implemented`).

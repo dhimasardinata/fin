@@ -8,6 +8,8 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+$repoRoot = Resolve-Path (Join-Path $PSScriptRoot "../../..")
+
 if (-not (Test-Path $ManifestPath)) {
     throw "Manifest not found: $ManifestPath"
 }
@@ -106,6 +108,8 @@ Validate-DependencyName -DependencyName $depName
 Validate-Version -DependencyVersion $depVersion
 
 $manifestFull = [System.IO.Path]::GetFullPath($ManifestPath)
+& (Join-Path $repoRoot "ci/verify_manifest.ps1") -Manifest $manifestFull -Quiet
+
 $raw = Get-Content -Path $manifestFull -Raw
 $newline = if ($raw -match "`r`n") { "`r`n" } else { "`n" }
 

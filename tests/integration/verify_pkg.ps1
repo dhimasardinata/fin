@@ -10,6 +10,26 @@ $tmpDir = $tmpState.TmpDir
 $manifest = Join-Path $tmpDir "fin.toml"
 $lock = Join-Path $tmpDir "fin.lock"
 
+function Assert-Fails {
+    param(
+        [scriptblock]$Action,
+        [string]$Label
+    )
+
+    $failed = $false
+    try {
+        & $Action
+    }
+    catch {
+        $failed = $true
+    }
+
+    if (-not $failed) {
+        Write-Error ("Expected failure: {0}" -f $Label)
+        exit 1
+    }
+}
+
 & $fin init --dir $tmpDir --name pkg_smoke
 
 & $fin pkg add serde --version 1.2.3 --manifest $manifest
@@ -73,15 +93,17 @@ if ($hashBefore -ne $hashAfter) {
 }
 
 # Invalid package name should fail.
-$failed = $false
-try {
-    & $fin pkg add "bad.name" --manifest $manifest | Out-Null
-}
-catch {
-    $failed = $true
-}
-if (-not $failed) {
-    Write-Error "Expected pkg add to fail for invalid package name."
+Assert-Fails -Action { & $fin pkg add "bad.name" --manifest $manifest | Out-Null } -Label "invalid package name"
+
+# Invalid manifest policy should fail before mutation.
+$validManifestContent = Get-Content -Path $manifest -Raw
+$invalidManifestContent = $validManifestContent -replace 'external_toolchain_forbidden = true', 'external_toolchain_forbidden = false'
+Set-Content -Path $manifest -Value $invalidManifestContent -NoNewline
+$hashBeforeInvalidAdd = (Get-FileHash -Path $manifest -Algorithm SHA256).Hash
+Assert-Fails -Action { & $fin pkg add blocked --version 1.0.0 --manifest $manifest | Out-Null } -Label "invalid manifest policy"
+$hashAfterInvalidAdd = (Get-FileHash -Path $manifest -Algorithm SHA256).Hash
+if ($hashBeforeInvalidAdd -ne $hashAfterInvalidAdd) {
+    Write-Error "pkg add mutated manifest after policy failure."
     exit 1
 }
 
