@@ -2,7 +2,7 @@
 
 - id: FIP-0014
 - address: fin://fip/FIP-0014
-- status: InProgress
+- status: Implemented
 - authors: @fin-maintainers
 - created: 2026-02-27
 - requires: ["FIP-0013"]
@@ -15,6 +15,8 @@
   - tests/common/test_tmp_workspace.ps1
   - tests/integration/verify_finobj_link.ps1
   - tests/integration/verify_build_pipeline_finobj.ps1
+  - tests/reproducibility/verify_stage0_reproducibility.ps1
+  - tests/reproducibility/verify_test_tmp_workspace_policy.ps1
   - tests/run_stage0_suite.ps1
 - acceptance:
   - Linker suite passes symbol and relocation correctness checks.
@@ -48,7 +50,8 @@ Current stage0 linker path:
 15. Expose `fin build/run --pipeline finobj` to route stage0 compilation through finobj+finld.
 16. Optional structure verification after link; for relocation-patched outputs run verifier in patched-code mode (structure checks retained, strict immediate pattern check disabled), and report verification mode deterministically in diagnostics (`disabled|strict|structure_only_relocation_patched`).
 
-This is a minimal multi-object checkpoint before full symbol-resolution and relocation support.
+This is the implemented stage0 linker checkpoint. Broader archive, library, and
+multi-source-unit linking remain later milestones.
 
 ## Alternatives
 
@@ -60,7 +63,12 @@ Implementation complexity and schedule risk are tracked in milestone updates and
 
 ## Compatibility
 
-Compatibility impact must be documented before Implemented status.
+Current stage0 compatibility notes:
+
+1. `fin build` and `fin run` continue to default to the direct emitter pipeline; the finld path is selected explicitly with `--pipeline finobj`.
+2. The finobj+finld pipeline preserves the existing native image contracts for `x86_64-linux-elf` and `x86_64-windows-pe`.
+3. Unsupported linker shapes are rejected deterministically in stage0 instead of being accepted with partial behavior: missing/duplicate entry objects, duplicate identities, unresolved or duplicate symbols, non-entry relocations, out-of-bounds relocations, invalid patch sites, and target-unsupported relocation kinds.
+4. Structured `-AsRecord` diagnostics and witness hashes are stage0 audit surfaces for deterministic tests; they should evolve through FIP-linked compatibility notes if later linker milestones change their schema.
 
 ## Test Plan
 
