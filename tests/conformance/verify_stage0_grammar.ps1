@@ -170,6 +170,11 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_assign_afte
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_unwrap_assignment_after_rhs_releases_borrow.fn" -ExpectedExit 157
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_plus_equals_literal.fn" -ExpectedExit 158
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_plus_equals_after_rhs_releases_borrow.fn" -ExpectedExit 159
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_minus_equals_literal.fn" -ExpectedExit 172
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_times_equals_literal.fn" -ExpectedExit 172
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_div_equals_literal.fn" -ExpectedExit 125
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_mod_equals_literal.fn" -ExpectedExit 31
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_minus_equals_after_rhs_releases_borrow.fn" -ExpectedExit 72
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_helper_default_u8.fn" -ExpectedExit 160
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_helper_chain.fn" -ExpectedExit 161
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_helper_result_try.fn" -ExpectedExit 162
@@ -321,6 +326,13 @@ Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_plus_
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_plus_equals_non_u8_target.fn" -ExpectedMessagePart "compound assignment '+=' expects u8 target in stage0, found Result<u8,u8>"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_plus_equals_non_u8_expression.fn" -ExpectedMessagePart "compound assignment '+=' expects u8 expression in stage0, found Result<u8,u8>"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_plus_equals_overflow.fn" -ExpectedMessagePart "u8 overflow in '+=' expression"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_div_equals_missing_expression.fn" -ExpectedMessagePart "compound assignment '/=' requires expression"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_minus_equals_non_u8_expression.fn" -ExpectedMessagePart "compound assignment '-=' expects u8 expression in stage0, found Result<u8,u8>"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_times_equals_non_u8_target.fn" -ExpectedMessagePart "compound assignment '*=' expects u8 target in stage0, found Result<u8,u8>"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_minus_equals_underflow.fn" -ExpectedMessagePart "u8 underflow in '-=' expression"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_times_equals_overflow.fn" -ExpectedMessagePart "u8 overflow in '*=' expression"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_div_equals_by_zero.fn" -ExpectedMessagePart "division by zero in '/=' expression"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_mod_equals_by_zero.fn" -ExpectedMessagePart "modulo by zero in '%=' expression"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_var_unwrap_binding_missing_expression.fn" -ExpectedMessagePart "unwrap var binding requires expression"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_var_unwrap_binding_non_result_identifier.fn" -ExpectedMessagePart "try keyword expects Result<u8,u8> in stage0 bootstrap, found u8"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_var_unwrap_binding_err_identifier.fn" -ExpectedMessagePart "try keyword on err(...) is not supported in stage0 bootstrap (would require hidden control flow)"
@@ -337,6 +349,7 @@ Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_assig
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_assign_after_rhs_still_borrowed.fn" -ExpectedMessagePart "cannot assign identifier 'value' while borrowed by 'ref_b'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_unwrap_assignment_after_rhs_still_borrowed.fn" -ExpectedMessagePart "cannot assign identifier 'value' while borrowed by 'ref_b'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_plus_equals_after_rhs_still_borrowed.fn" -ExpectedMessagePart "cannot assign identifier 'value' while borrowed by 'ref_b'"
+Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_minus_equals_after_rhs_still_borrowed.fn" -ExpectedMessagePart "cannot assign identifier 'value' while borrowed by 'ref_b'"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_dereference_missing_operand.fn" -ExpectedMessagePart "dereference '*' requires an operand"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_dereference_non_reference.fn" -ExpectedMessagePart "dereference expects reference operand in stage0, found u8"
 Assert-ParseFailContains -RelativePath "tests/conformance/fixtures/invalid_use_after_drop.fn" -ExpectedMessagePart "use after drop for identifier 'value'"

@@ -1,0 +1,5 @@
+fn main() {
+  var value = ok(2)
+  value *= 2
+  exit(0)
+}

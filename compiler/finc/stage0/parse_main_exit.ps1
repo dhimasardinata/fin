@@ -1631,6 +1631,102 @@ function Invoke-Stage0StatementProbe {
     }
 }
 
+function Invoke-Stage0CompoundAssignment {
+    param(
+        [string]$Name,
+        [string]$OperatorText,
+        [string]$Expr,
+        [hashtable]$Values,
+        [hashtable]$Mutable,
+        [hashtable]$Types,
+        [hashtable]$ResultStates,
+        [hashtable]$LifecycleStates,
+        [hashtable]$ReferenceTargets
+    )
+
+    Assert-NonKeywordIdentifier -Name $Name
+    $compoundOp = "{0}=" -f $OperatorText
+    $bindingKey = Resolve-Stage0BindingKeyOrFail -Name $Name -UndefinedMessage "assignment to undefined identifier '$Name'"
+
+    $targetState = [string]$LifecycleStates[$bindingKey]
+    if ($targetState -eq 'moved') {
+        Fail-Parse ("compound assignment '{0}' requires alive binding '{1}', found moved" -f $compoundOp, $Name)
+    }
+    if ($targetState -eq 'dropped') {
+        Fail-Parse ("compound assignment '{0}' requires alive binding '{1}', found dropped" -f $compoundOp, $Name)
+    }
+    if ($targetState -ne 'alive') {
+        Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $targetState, $Name)
+    }
+
+    if (-not [bool]$Mutable[$bindingKey]) {
+        Fail-Parse "cannot assign to immutable binding '$Name'"
+    }
+
+    $exprValue = Parse-Expr -Expr $Expr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates -ReferenceTargets $ReferenceTargets
+    $postExprTargetState = [string]$LifecycleStates[$bindingKey]
+    if (($postExprTargetState -eq 'dropped') -or ($postExprTargetState -eq 'moved')) {
+        Fail-Parse ("assignment target '{0}' moved or dropped during expression evaluation" -f $Name)
+    }
+    if ($postExprTargetState -ne 'alive') {
+        Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $postExprTargetState, $Name)
+    }
+
+    $targetType = [string]$Types[$bindingKey]
+    if ($targetType -ne 'u8') {
+        Fail-Parse ("compound assignment '{0}' expects u8 target in stage0, found {1}" -f $compoundOp, $targetType)
+    }
+    if ([string]$exprValue.Type -ne 'u8') {
+        Fail-Parse ("compound assignment '{0}' expects u8 expression in stage0, found {1}" -f $compoundOp, $exprValue.Type)
+    }
+
+    $activeBorrowers = @(Get-LiveReferenceAliasesForTarget -Target $bindingKey -Types $Types -LifecycleStates $LifecycleStates -ReferenceTargets $ReferenceTargets)
+    if ($activeBorrowers.Count -gt 0) {
+        Fail-Parse ("cannot assign identifier '{0}' while borrowed by '{1}'" -f $Name, (Get-Stage0BindingDisplayName -BindingKey $activeBorrowers[0]))
+    }
+
+    $targetValue = [int]$Values[$bindingKey]
+    $rhsValue = [int]$exprValue.Value
+    $result = 0
+    if ($OperatorText -eq '+') {
+        $result = $targetValue + $rhsValue
+        if ($result -gt 255) {
+            Fail-Parse "u8 overflow in '+=' expression"
+        }
+    }
+    elseif ($OperatorText -eq '-') {
+        $result = $targetValue - $rhsValue
+        if ($result -lt 0) {
+            Fail-Parse "u8 underflow in '-=' expression"
+        }
+    }
+    elseif ($OperatorText -eq '*') {
+        $result = $targetValue * $rhsValue
+        if ($result -gt 255) {
+            Fail-Parse "u8 overflow in '*=' expression"
+        }
+    }
+    elseif ($OperatorText -eq '/') {
+        if ($rhsValue -eq 0) {
+            Fail-Parse "division by zero in '/=' expression"
+        }
+        $result = [int]($targetValue / $rhsValue)
+    }
+    elseif ($OperatorText -eq '%') {
+        if ($rhsValue -eq 0) {
+            Fail-Parse "modulo by zero in '%=' expression"
+        }
+        $result = [int]($targetValue % $rhsValue)
+    }
+    else {
+        Fail-Parse ("unsupported compound assignment operator '{0}'" -f $compoundOp)
+    }
+
+    $Values[$bindingKey] = $result
+    $ResultStates[$bindingKey] = 'none'
+    $LifecycleStates[$bindingKey] = 'alive'
+}
+
 function Invoke-Stage0Statements {
     param(
         [string]$FunctionName,
@@ -1812,61 +1908,12 @@ function Invoke-Stage0Statements {
                 Fail-Parse 'unwrap assignment requires expression'
             }
 
-            if ($stmt -match '^([A-Za-z_][A-Za-z0-9_]*)\s*\+=\s*$') {
-                Fail-Parse "compound assignment '+=' requires expression"
+            if ($stmt -match '^([A-Za-z_][A-Za-z0-9_]*)\s*([+\-*/%])=\s*$') {
+                Fail-Parse ("compound assignment '{0}=' requires expression" -f $Matches[2])
             }
 
-            if ($stmt -match '^([A-Za-z_][A-Za-z0-9_]*)\s*\+=\s*(.+)$') {
-                $name = $Matches[1]
-                Assert-NonKeywordIdentifier -Name $name
-                $expr = $Matches[2]
-                $bindingKey = Resolve-Stage0BindingKeyOrFail -Name $name -UndefinedMessage "assignment to undefined identifier '$name'"
-
-                $targetState = [string]$LifecycleStates[$bindingKey]
-                if ($targetState -eq 'moved') {
-                    Fail-Parse ("compound assignment '+=' requires alive binding '{0}', found moved" -f $name)
-                }
-                if ($targetState -eq 'dropped') {
-                    Fail-Parse ("compound assignment '+=' requires alive binding '{0}', found dropped" -f $name)
-                }
-                if ($targetState -ne 'alive') {
-                    Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $targetState, $name)
-                }
-
-                if (-not [bool]$Mutable[$bindingKey]) {
-                    Fail-Parse "cannot assign to immutable binding '$name'"
-                }
-
-                $exprValue = Parse-Expr -Expr $expr -Values $Values -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates -ReferenceTargets $ReferenceTargets
-                $postExprTargetState = [string]$LifecycleStates[$bindingKey]
-                if (($postExprTargetState -eq 'dropped') -or ($postExprTargetState -eq 'moved')) {
-                    Fail-Parse ("assignment target '{0}' moved or dropped during expression evaluation" -f $name)
-                }
-                if ($postExprTargetState -ne 'alive') {
-                    Fail-Parse ("invalid binding lifecycle state '{0}' for identifier '{1}'" -f $postExprTargetState, $name)
-                }
-
-                $targetType = [string]$Types[$bindingKey]
-                if ($targetType -ne 'u8') {
-                    Fail-Parse ("compound assignment '+=' expects u8 target in stage0, found {0}" -f $targetType)
-                }
-                if ([string]$exprValue.Type -ne 'u8') {
-                    Fail-Parse ("compound assignment '+=' expects u8 expression in stage0, found {0}" -f $exprValue.Type)
-                }
-
-                $activeBorrowers = @(Get-LiveReferenceAliasesForTarget -Target $bindingKey -Types $Types -LifecycleStates $LifecycleStates -ReferenceTargets $ReferenceTargets)
-                if ($activeBorrowers.Count -gt 0) {
-                    Fail-Parse ("cannot assign identifier '{0}' while borrowed by '{1}'" -f $name, (Get-Stage0BindingDisplayName -BindingKey $activeBorrowers[0]))
-                }
-
-                $result = [int]$Values[$bindingKey] + [int]$exprValue.Value
-                if ($result -gt 255) {
-                    Fail-Parse "u8 overflow in '+=' expression"
-                }
-
-                $Values[$bindingKey] = $result
-                $ResultStates[$bindingKey] = 'none'
-                $LifecycleStates[$bindingKey] = 'alive'
+            if ($stmt -match '^([A-Za-z_][A-Za-z0-9_]*)\s*([+\-*/%])=\s*(.+)$') {
+                Invoke-Stage0CompoundAssignment -Name $Matches[1] -OperatorText $Matches[2] -Expr $Matches[3] -Values $Values -Mutable $Mutable -Types $Types -ResultStates $ResultStates -LifecycleStates $LifecycleStates -ReferenceTargets $ReferenceTargets
                 continue
             }
 
@@ -2146,7 +2193,7 @@ function Invoke-Stage0Function {
 #     let <ident> [: <type>] ?= <expr>;
 #     var <ident> [: <type>] ?= <expr>;
 #     <ident> ?= <expr>;
-#     <ident> += <expr>;
+#     <ident> (+=|-=|*=|/=|%=) <expr>;
 #     <ident> = <expr>;
 #     { <stmt>* };
 #     if (<expr>) { <stmt>* } [else { <stmt>* }];
@@ -2155,7 +2202,7 @@ function Invoke-Stage0Function {
 #     return <expr>;
 #   }
 # <param> := <ident> : (u8 | Result<u8,u8>)
-# <expr> := <u8-literal> | true | false | <ident> | <name>([<expr> [, <expr>]*]) | &<ident> | *<expr> | move(<ident>) | ok(<expr>) | err(<expr>) | try(<expr>) | try <expr> | <expr>? | if(<expr>, <expr>, <expr>) | !<expr> | (<expr>) | <expr> + <expr> | <expr> - <expr> | <expr> * <expr> | <expr> / <expr> | <expr> % <expr> | <expr> == <expr> | <expr> != <expr> | <expr> < <expr> | <expr> <= <expr> | <expr> > <expr> | <expr> >= <expr> | <expr> && <expr> | <expr> || <expr>
+# <expr> also supports u8 arithmetic, comparison, shift, bitwise, logical, grouping, and unwrap operators listed in FIP-0005.
 # <type> := u8 | Result<u8,u8> | &u8 | &Result<u8,u8>
 # with optional semicolons and line comments (# or //).
 $script:FunctionDefinitions = Get-Stage0FunctionDefinitions -ProgramText $raw
