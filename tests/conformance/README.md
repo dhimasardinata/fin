@@ -102,6 +102,7 @@ Stage0 conformance checks:
 - `fixtures/main_exit_block_local.fn`: valid source proving nested block statements can declare block-local bindings while mutating outer locals.
 - `fixtures/main_exit_block_borrow_release.fn`: valid source proving block exit releases block-local borrows so later outer mutation is allowed.
 - `fixtures/main_exit_helper_block_return.fn`: valid source proving terminal `return` inside a nested helper block terminates the helper function.
+- `fixtures/main_exit_helper_after_main.fn`: valid source proving helpers declared after `main` are discovered before entrypoint execution.
 - `fixtures/main_exit_block_shadow_local.fn`: valid source proving nested blocks may shadow an outer visible binding name without mutating or retargeting the outer binding.
 - `fixtures/main_exit_if_statement_then.fn`: valid source proving statement-form `if (<expr>) { ... }` can mutate outer state on the selected true branch.
 - `fixtures/main_exit_if_statement_else.fn`: valid source proving statement-form `if (<expr>) { ... } else { ... }` can select and apply the else branch.

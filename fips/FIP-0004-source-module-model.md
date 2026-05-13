@@ -2,7 +2,7 @@
 
 - id: FIP-0004
 - address: fin://fip/FIP-0004
-- status: InProgress
+- status: Implemented
 - authors: @fin-maintainers
 - created: 2026-02-27
 - requires: ["FIP-0001"]
@@ -13,6 +13,7 @@
   - compiler/finc/stage0/format_main_exit.ps1
   - compiler/finc/stage0/doc_main_exit.ps1
   - compiler/finc/stage0/README.md
+  - SPEC.md
   - tests/conformance/verify_stage0_grammar.ps1
   - tests/run_stage0_suite.ps1
   - tests/integration/verify_fmt.ps1
@@ -21,6 +22,7 @@
   - tests/conformance/fixtures/main_exit_helper_result_try.fn
   - tests/conformance/fixtures/main_exit_helper_params_add.fn
   - tests/conformance/fixtures/main_exit_helper_params_result_try.fn
+  - tests/conformance/fixtures/main_exit_helper_after_main.fn
   - tests/conformance/fixtures/invalid_function_call_with_args.fn
   - tests/conformance/fixtures/invalid_undefined_function_call.fn
   - tests/conformance/fixtures/invalid_duplicate_function.fn
@@ -58,6 +60,8 @@ Current stage0 implementation delta:
 9. Reference parameters are intentionally deferred until later ownership/model slices so stage0 helper calls stay value-only.
 10. Recursive helper calls, including mutual recursion, are rejected deterministically in stage0 bootstrap to keep execution and diagnostics explicit.
 11. Formatter safety is non-lossy for multi-function stage0 sources until structured helper formatting lands.
+12. The living specification now publishes the stage0 source unit rules and concrete examples for single-entry files, helper-before-main layout, and helper-after-main layout.
+13. Conformance now includes an explicit helper-after-`main` fixture to prove whole-file helper discovery rather than relying only on helper-before-entry examples.
 
 ## Alternatives
 
@@ -75,11 +79,13 @@ Current stage0 compatibility notes:
 2. Multi-function sources are an additive extension to the file model.
 3. Helper signatures can now declare typed value parameters while `main` remains zero-argument in stage0.
 4. `fin fmt` retains canonical collapse for single-function stage0 inputs but preserves multi-function sources to avoid helper erasure until a structured formatter exists.
+5. The FIP-0004 completion slice is documentation/status-only; it does not change accepted source behavior.
 
 ## Test Plan
 
 Current checks:
 
-1. `tests/conformance/verify_stage0_grammar.ps1` validates multi-function success cases, helper call resolution, typed helper parameters, helper result-return + `?` usage, and deterministic rejection for undefined helper calls, bad argument counts, helper argument type mismatches, invalid parameter declarations, duplicate functions, recursive calls, helper-only `exit(...)`, and implicit-`u8` helper return mismatches.
-2. `tests/run_stage0_suite.ps1` compiles helper-call/parameter stage0 fixtures in the aggregated build flow.
+1. `tests/conformance/verify_stage0_grammar.ps1` validates multi-function success cases, helper call resolution before and after `main`, typed helper parameters, helper result-return + `?` usage, and deterministic rejection for undefined helper calls, bad argument counts, helper argument type mismatches, invalid parameter declarations, duplicate functions, recursive calls, helper-only `exit(...)`, and implicit-`u8` helper return mismatches.
+2. `tests/run_stage0_suite.ps1` compiles helper-call/parameter stage0 fixtures in the aggregated build flow, including helper-after-`main` layout.
 3. `tests/integration/verify_fmt.ps1` confirms `fin fmt` does not erase multi-function stage0 sources.
+4. `SPEC.md` publishes source/module layout examples for the implemented stage0 single-file model.
