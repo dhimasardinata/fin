@@ -10,6 +10,7 @@ Test families:
 Entry points:
 
 - `tests/run_stage0_suite.ps1`: aggregated stage0 `fin test` suite.
+- `ci/verify_fip_metadata.ps1`: FIP lifecycle metadata and index consistency gate, also checking status labels plus CI/doctor wiring.
 - `tests/reproducibility/verify_stage0_reproducibility.ps1`: stage0 reproducibility hash gate (emit/build/publish/finobj/finld), including `finld` object-set, symbol-resolution, relocation-resolution witness-hash determinism, applied-relocation count stability checks, and verify-diagnostics mode checks (`LinkedVerifyEnabled`/`LinkedVerifyMode`).
 - `tests/reproducibility/verify_closure_baseline_contract.ps1`: committed closure baseline contract gate covering key order, hash formats, parity booleans, source existence, and derived closure hash consistency.
 - `tests/reproducibility/verify_test_tmp_workspace_policy.ps1`: shared test temp-workspace policy gate (PID-scoped init/finalize, keep-mode retention, age-gated stale pruning with active-PID and owner-metadata validation, invalid-metadata PID fallback, legacy PID-only compatibility, env validation, static guard against hardcoded `artifacts/tmp/<prefix>` roots in test scripts, and centralized finobj output helper enforcement including capture/parsing and SHA256 parity assertions).
@@ -27,6 +28,7 @@ Entry points:
 - `tests/integration/verify_pkg.ps1`: `fin pkg add` integration gate with PID-scoped temp workspace hygiene.
 - `tests/integration/verify_pkg_publish.ps1`: `fin pkg publish` integration gate with PID-scoped temp workspace hygiene.
 - `tests/reproducibility/verify_manifest_policy_gate.ps1`: manifest policy gate self-check coverage with PID-scoped temp workspace hygiene.
+- `tests/reproducibility/verify_fip_policy_gate.ps1`: FIP PR-link policy self-check coverage for missing, draft, unknown, and eligible FIP statuses.
 - `tests/reproducibility/verify_toolchain_policy_gate.ps1`: toolchain policy gate self-check coverage with PID-scoped temp workspace hygiene.
 
 Temporary workspace policy:

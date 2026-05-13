@@ -16,6 +16,7 @@ if ($null -eq $CommandArgs) {
 
 function Invoke-Doctor {
     Write-Host "fin doctor: checking repository policy and bootstrap metadata"
+    & (Join-Path $repoRoot "ci/verify_fip_metadata.ps1")
     & (Join-Path $repoRoot "ci/verify_manifest.ps1")
     & (Join-Path $repoRoot "ci/verify_seed_hash.ps1")
     & (Join-Path $repoRoot "ci/forbid_external_toolchain.ps1")

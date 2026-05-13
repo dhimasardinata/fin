@@ -8,7 +8,17 @@
 - requires: ["FIP-0001"]
 - target_release: M0
 - discussion: TBD
-- implementation: []
+- implementation:
+  - GOVERNANCE.md
+  - fips/INDEX.md
+  - .github/PULL_REQUEST_TEMPLATE.md
+  - .github/labels.json
+  - .github/workflows/ci.yml
+  - ci/check_fip_link.ps1
+  - ci/verify_fip_metadata.ps1
+  - cmd/fin/fin.ps1
+  - tests/reproducibility/verify_fip_policy_gate.ps1
+  - tests/run_stage0_suite.ps1
 - acceptance:
   - Lifecycle and merge checks are documented and enforced in CI.
 
@@ -22,7 +32,15 @@ This proposal is part of the Fin independent-toolchain baseline and is required 
 
 ## Design
 
-Initial design details are tracked in the corresponding spec and architecture documents. Concrete implementation deltas must be appended to this section before status changes to InProgress.
+Current governance implementation:
+
+1. `GOVERNANCE.md` defines canonical FIP IDs, addresses, lifecycle statuses, branch policy, release policy, and the feature-change merge gate.
+2. `fips/INDEX.md` publishes the current FIP title/status/address table.
+3. `.github/labels.json` defines status labels for every governance lifecycle state.
+4. `.github/PULL_REQUEST_TEMPLATE.md` requires contributors to declare the related FIP.
+5. `ci/check_fip_link.ps1` blocks feature-critical pull requests when the title/body does not link an existing FIP in an eligible status (`Accepted`, `Scheduled`, `InProgress`, `Implemented`, or `Released`).
+6. `ci/verify_fip_metadata.ps1` verifies FIP filename/header/metadata consistency, allowed lifecycle statuses, required sections, index synchronization, status-label coverage, and CI/doctor wiring.
+7. `cmd/fin/fin.ps1 doctor` and GitHub Actions both execute the metadata verifier.
 
 ## Alternatives
 
@@ -38,4 +56,10 @@ Compatibility impact must be documented before Implemented status.
 
 ## Test Plan
 
-Acceptance criteria listed above are normative; CI coverage for this proposal must be linked in implementation once available.
+Current checks:
+
+1. `ci/verify_fip_metadata.ps1` validates lifecycle metadata, index consistency, status-label coverage, and CI/doctor wiring.
+2. `tests/reproducibility/verify_fip_policy_gate.ps1` validates feature-critical pull request checks for missing links, unknown FIPs, draft FIPs, and eligible accepted/in-progress/implemented FIPs.
+3. `ci/check_fip_link.ps1` validates feature-critical pull requests have an explicit eligible FIP link.
+4. GitHub Actions runs both CI checks in the policy job, and `tests/run_stage0_suite.ps1` runs the policy self-check.
+5. `cmd/fin/fin.ps1 doctor` runs the metadata verifier locally.
