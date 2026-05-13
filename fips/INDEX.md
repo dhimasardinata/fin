@@ -18,7 +18,7 @@
 | FIP-0014 | Fin Linker (finld) | InProgress | `fin://fip/FIP-0014` |
 | FIP-0015 | Unified fin CLI Contract | Implemented | `fin://fip/FIP-0015` |
 | FIP-0016 | Package Manifest and Lockfile | Implemented | `fin://fip/FIP-0016` |
-| FIP-0017 | Lean Stdlib v0 (No-libc) | Draft | `fin://fip/FIP-0017` |
+| FIP-0017 | Lean Stdlib v0 (No-libc) | InProgress | `fin://fip/FIP-0017` |
 | FIP-0018 | Deterministic and Reproducible Builds | Implemented | `fin://fip/FIP-0018` |
 | FIP-0019 | Compatibility and Editions Policy | Accepted | `fin://fip/FIP-0019` |
 | FIP-0020 | CI Gate: External Toolchain Prohibited | Implemented | `fin://fip/FIP-0020` |
