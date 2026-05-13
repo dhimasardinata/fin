@@ -51,7 +51,7 @@ Assert-Fails -Label "feature change with missing FIP" -Action {
     & $policy -Title "feat: change compiler FIP-9999" -Body "" -ChangedFiles "compiler/finc/stage0/parse_main_exit.ps1"
 }
 
-Assert-Fails -Label "feature change with draft FIP" -Action {
+Assert-Fails -Label "feature change with ineligible review FIP" -Action {
     & $policy -Title "feat: add stdlib path" -Body "Refs FIP-0017" -ChangedFiles "runtime/README.md"
 }
 
