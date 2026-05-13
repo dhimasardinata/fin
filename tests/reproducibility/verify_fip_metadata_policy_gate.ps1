@@ -175,6 +175,9 @@ try {
     Write-MinimalFipRepo -TargetRelease "milestone-0" -CreateReadme
     Assert-Fails -Label "invalid target_release metadata" -Action { & $policy -Root $tmpRoot }
 
+    Write-MinimalFipRepo -Discussion "not-a-discussion-uri" -CreateReadme
+    Assert-Fails -Label "invalid discussion metadata" -Action { & $policy -Root $tmpRoot }
+
     Write-MinimalFipRepo -IndexId "FIP-0002" -CreateReadme
     Assert-Fails -Label "index FIP id mismatch" -Action { & $policy -Root $tmpRoot }
 
@@ -207,6 +210,12 @@ try {
 
     Write-MinimalFipRepo -Requires '["not-a-fip"]' -CreateReadme
     Assert-Fails -Label "invalid requires FIP format" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -Requires '["FIP-0001"]' -CreateReadme
+    Assert-Fails -Label "self requires FIP" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -Requires '["FIP-9999", "FIP-9999"]' -CreateReadme
+    Assert-Fails -Label "duplicate requires FIP" -Action { & $policy -Root $tmpRoot }
 
     Write-MinimalFipRepo -ImplementationBlock "- implementation: []"
     Assert-Fails -Label "accepted FIP with empty implementation list" -Action { & $policy -Root $tmpRoot }

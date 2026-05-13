@@ -26,6 +26,12 @@ be empty.
 
 `target_release` uses the canonical `M<number>` milestone format.
 
+`requires` entries must be canonical FIP IDs, unique, and must not reference the
+same FIP.
+
+`discussion` must be `TBD`, a canonical `fin://fip/FIP-####` URI, or an
+`http(s)` URL.
+
 `acceptance` must contain at least one criteria item.
 
 Implemented and released FIPs must replace placeholder discussion metadata.

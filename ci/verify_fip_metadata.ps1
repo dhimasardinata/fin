@@ -234,10 +234,22 @@ Get-ChildItem -LiteralPath $fipDir -File -Filter "FIP-*.md" |
             Fail-FipMetadata ("{0} target_release must be M<number>, found: {1}" -f $relativePath, $targetRelease)
         }
 
+        if (($discussion -ne "TBD") -and ($discussion -notmatch '^(fin://fip/FIP-[0-9]{4}|https?://\S+)$')) {
+            Fail-FipMetadata ("{0} discussion must be TBD, a fin://fip/FIP-#### URI, or an http(s) URL, found: {1}" -f $relativePath, $discussion)
+        }
+
+        $seenRequires = @{}
         foreach ($requiredFip in $requires) {
             if ($requiredFip -notmatch '^FIP-[0-9]{4}$') {
                 Fail-FipMetadata ("{0} has invalid requires entry: {1}" -f $relativePath, $requiredFip)
             }
+            if ($requiredFip -eq $id) {
+                Fail-FipMetadata ("{0} must not require itself: {1}" -f $relativePath, $requiredFip)
+            }
+            if ($seenRequires.ContainsKey($requiredFip)) {
+                Fail-FipMetadata ("{0} has duplicate requires entry: {1}" -f $relativePath, $requiredFip)
+            }
+            $seenRequires[$requiredFip] = $true
         }
 
         foreach ($section in @("Summary", "Motivation", "Design", "Alternatives", "Risks", "Compatibility", "Test Plan")) {
