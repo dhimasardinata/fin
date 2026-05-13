@@ -61,6 +61,13 @@ function Write-MinimalFipRepo {
         [string]$TargetRelease = "M0",
         [string]$Discussion = "TBD",
         [string]$CompatibilityBody = "Minimal.",
+        [string]$IndexTitle = "Minimal Policy",
+        [string]$IndexStatus = "",
+        [string]$IndexAddress = "fin://fip/FIP-0001",
+        [string]$IndexId = "FIP-0001",
+        [string[]]$OmitLabels = @(),
+        [string]$CiText = "run: ./ci/verify_fip_metadata.ps1",
+        [string]$DoctorText = "ci/verify_fip_metadata.ps1",
         [switch]$CreateReadme
     )
 
@@ -74,6 +81,10 @@ function Write-MinimalFipRepo {
         Set-Content -Path (Join-Path $tmpRoot "README.md") -Value "# Minimal"
     }
 
+    if ([string]::IsNullOrWhiteSpace($IndexStatus)) {
+        $IndexStatus = $Status
+    }
+
     $labelRows = @(
         "Draft",
         "Review",
@@ -84,19 +95,21 @@ function Write-MinimalFipRepo {
         "Released",
         "Deferred",
         "Rejected"
-    ) | ForEach-Object {
+    ) | Where-Object {
+        $OmitLabels -notcontains $_
+    } | ForEach-Object {
         '  {{ "name": "status/{0}", "color": "000000", "description": "{1}" }}' -f $_.ToLowerInvariant(), $_
     }
     Set-Content -Path (Join-Path $tmpRoot ".github/labels.json") -Value ("[`n{0}`n]" -f ($labelRows -join ",`n"))
-    Set-Content -Path (Join-Path $tmpRoot ".github/workflows/ci.yml") -Value "run: ./ci/verify_fip_metadata.ps1"
-    Set-Content -Path (Join-Path $tmpRoot "cmd/fin/fin.ps1") -Value "ci/verify_fip_metadata.ps1"
+    Set-Content -Path (Join-Path $tmpRoot ".github/workflows/ci.yml") -Value $CiText
+    Set-Content -Path (Join-Path $tmpRoot "cmd/fin/fin.ps1") -Value $DoctorText
 
     Set-Content -Path (Join-Path $tmpRoot "fips/INDEX.md") -Value @"
 # FIP Index
 
 | ID | Title | Status | Address |
 |---|---|---|---|
-| FIP-0001 | Minimal Policy | $Status | ``fin://fip/FIP-0001`` |
+| $IndexId | $IndexTitle | $IndexStatus | ``$IndexAddress`` |
 "@
 
     Set-Content -Path (Join-Path $tmpRoot "fips/FIP-0001-minimal-policy.md") -Value @"
@@ -161,6 +174,27 @@ try {
 
     Write-MinimalFipRepo -TargetRelease "milestone-0" -CreateReadme
     Assert-Fails -Label "invalid target_release metadata" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -IndexId "FIP-0002" -CreateReadme
+    Assert-Fails -Label "index FIP id mismatch" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -IndexTitle "Wrong Policy" -CreateReadme
+    Assert-Fails -Label "index title mismatch" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -IndexStatus "Implemented" -CreateReadme
+    Assert-Fails -Label "index status mismatch" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -IndexAddress "fin://fip/FIP-9999" -CreateReadme
+    Assert-Fails -Label "index address mismatch" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -OmitLabels @("Implemented") -CreateReadme
+    Assert-Fails -Label "missing status label" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -CiText "run: ./ci/check_fip_link.ps1" -CreateReadme
+    Assert-Fails -Label "CI workflow missing metadata verifier" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -DoctorText "ci/check_fip_link.ps1" -CreateReadme
+    Assert-Fails -Label "doctor missing metadata verifier" -Action { & $policy -Root $tmpRoot }
 
     Write-MinimalFipRepo -ImplementationBlock @"
 - implementation:
