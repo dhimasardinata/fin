@@ -15,6 +15,7 @@ Current script gates:
 - `ci/verify_seed_hash.ps1`
 - `ci/forbid_external_toolchain.ps1`
 - `tests/reproducibility/verify_manifest_policy_gate.ps1`
+- `tests/reproducibility/verify_seed_hash_policy_gate.ps1`
 - `tests/reproducibility/verify_fip_metadata_policy_gate.ps1`
 - `tests/reproducibility/verify_fip_policy_gate.ps1`
 - `tests/reproducibility/verify_stage0_reproducibility.ps1`

@@ -4,34 +4,152 @@ param(
     [switch]$RequireSet
 )
 
-if (-not (Test-Path $Manifest)) {
-    Write-Error "Missing manifest: $Manifest"
+Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
+
+function Fail-SeedHash {
+    param([string]$Message)
+
+    Write-Error $Message
     exit 1
+}
+
+if (-not (Test-Path $Manifest)) {
+    Fail-SeedHash "Missing manifest: $Manifest"
 }
 
 if (-not (Test-Path $Sums)) {
-    Write-Error "Missing hash file: $Sums"
-    exit 1
+    Fail-SeedHash "Missing hash file: $Sums"
 }
 
-$manifestContent = Get-Content $Manifest -Raw
-$sumsContent = Get-Content $Sums -Raw
+function Get-ManifestStringField {
+    param(
+        [string]$Text,
+        [string]$Key,
+        [string]$Label
+    )
 
-if ($manifestContent -notmatch 'sha256\s*=\s*"([^"]+)"') {
-    Write-Error "manifest.toml missing sha256 field"
-    exit 1
+    $match = [regex]::Match($Text, ("(?m)^\s*{0}\s*=\s*`"([^`"]+)`"\s*$" -f [regex]::Escape($Key)))
+    if (-not $match.Success) {
+        Fail-SeedHash ("manifest.toml missing {0} field" -f $Label)
+    }
+
+    return $match.Groups[1].Value.Trim()
 }
 
-$manifestHash = $Matches[1]
+function Assert-SeedRelativePath {
+    param(
+        [string]$Value,
+        [string]$Label
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        Fail-SeedHash ("{0} path is empty" -f $Label)
+    }
+
+    if ([System.IO.Path]::IsPathRooted($Value) -or $Value -match '\\' -or $Value -match '(^|/)\.\.(/|$)' -or $Value -match '(^|/)\.(/|$)' -or $Value -match '//') {
+        Fail-SeedHash ("{0} path must be a safe repository-relative '/' path: {1}" -f $Label, $Value)
+    }
+}
+
+function Assert-SeedHashValue {
+    param(
+        [string]$Value,
+        [string]$Label
+    )
+
+    if ($Value -eq "UNSET") {
+        return
+    }
+
+    if ($Value -notmatch '^[0-9a-f]{64}$') {
+        Fail-SeedHash ("{0} must be UNSET or a lowercase SHA-256 hex digest, found: {1}" -f $Label, $Value)
+    }
+}
+
+$manifestFull = (Resolve-Path -LiteralPath $Manifest).Path
+$sumsFull = (Resolve-Path -LiteralPath $Sums).Path
+$seedDir = Split-Path -Parent $manifestFull
+$repoRoot = Split-Path -Parent $seedDir
+
+$manifestContent = Get-Content -LiteralPath $manifestFull -Raw
+$sumsContent = Get-Content -LiteralPath $sumsFull -Raw
+
+$artifactPath = Get-ManifestStringField -Text $manifestContent -Key "path" -Label "artifact path"
+$manifestHash = Get-ManifestStringField -Text $manifestContent -Key "sha256" -Label "sha256"
+$artifactFormat = Get-ManifestStringField -Text $manifestContent -Key "format" -Label "format"
+
+Assert-SeedRelativePath -Value $artifactPath -Label "manifest artifact"
+Assert-SeedHashValue -Value $manifestHash -Label "manifest sha256"
+
+if ($artifactFormat -ne "native-binary") {
+    Fail-SeedHash ("manifest.toml unsupported artifact format: {0}" -f $artifactFormat)
+}
+
+$sumRows = [System.Collections.Generic.List[object]]::new()
+foreach ($line in [regex]::Split($sumsContent, "`r?`n")) {
+    $trimmed = $line.Trim()
+    if ([string]::IsNullOrWhiteSpace($trimmed) -or $trimmed.StartsWith("#")) {
+        continue
+    }
+
+    $match = [regex]::Match($trimmed, '^(\S+)\s+(.+?)\s*$')
+    if (-not $match.Success) {
+        Fail-SeedHash ("Invalid SHA256SUMS line: {0}" -f $line)
+    }
+
+    $rowHash = $match.Groups[1].Value.Trim()
+    $rowPath = $match.Groups[2].Value.Trim()
+    Assert-SeedHashValue -Value $rowHash -Label "SHA256SUMS hash"
+    Assert-SeedRelativePath -Value $rowPath -Label "SHA256SUMS artifact"
+
+    $sumRows.Add([pscustomobject]@{
+        Hash = $rowHash
+        Path = $rowPath
+    }) | Out-Null
+}
+
+if ($sumRows.Count -eq 0) {
+    Fail-SeedHash "SHA256SUMS contains no hash rows"
+}
+
+$matchingRows = @($sumRows | Where-Object { $_.Path -eq $artifactPath })
+if ($matchingRows.Count -eq 0) {
+    Fail-SeedHash ("SHA256SUMS missing manifest artifact path: {0}" -f $artifactPath)
+}
+
+if ($matchingRows.Count -gt 1) {
+    Fail-SeedHash ("SHA256SUMS contains duplicate manifest artifact path: {0}" -f $artifactPath)
+}
+
+if ($matchingRows[0].Hash -ne $manifestHash) {
+    Fail-SeedHash ("manifest sha256 does not match SHA256SUMS for {0}" -f $artifactPath)
+}
 
 if ($RequireSet) {
     if ($manifestHash -eq "UNSET") {
-        Write-Error "Seed hash is UNSET but RequireSet was specified"
-        exit 1
+        Fail-SeedHash "Seed hash is UNSET but RequireSet was specified"
     }
-    if ($sumsContent -match "UNSET") {
-        Write-Error "SHA256SUMS contains UNSET but RequireSet was specified"
-        exit 1
+
+    if (@($sumRows | Where-Object { $_.Hash -eq "UNSET" }).Count -gt 0) {
+        Fail-SeedHash "SHA256SUMS contains UNSET but RequireSet was specified"
+    }
+}
+
+$artifactFull = Join-Path $repoRoot $artifactPath
+if ($manifestHash -eq "UNSET") {
+    if (Test-Path -LiteralPath $artifactFull) {
+        Fail-SeedHash ("Seed artifact exists but manifest sha256 is UNSET: {0}" -f $artifactPath)
+    }
+}
+else {
+    if (-not (Test-Path -LiteralPath $artifactFull)) {
+        Fail-SeedHash ("Seed artifact not found for configured hash: {0}" -f $artifactPath)
+    }
+
+    $actualHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $artifactFull).Hash.ToLowerInvariant()
+    if ($actualHash -ne $manifestHash) {
+        Fail-SeedHash ("Seed artifact hash mismatch for {0}: expected={1} actual={2}" -f $artifactPath, $manifestHash, $actualHash)
     }
 }
 

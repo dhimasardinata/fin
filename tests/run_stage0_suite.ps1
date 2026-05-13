@@ -34,6 +34,7 @@ $verifyRepro = Join-Path $repoRoot "tests/reproducibility/verify_stage0_reproduc
 $verifyTmpWorkspacePolicy = Join-Path $repoRoot "tests/reproducibility/verify_test_tmp_workspace_policy.ps1"
 $verifyClosureWorkspacePolicy = Join-Path $repoRoot "tests/reproducibility/verify_closure_workspace_policy.ps1"
 $verifyManifestPolicyGate = Join-Path $repoRoot "tests/reproducibility/verify_manifest_policy_gate.ps1"
+$verifySeedHashPolicyGate = Join-Path $repoRoot "tests/reproducibility/verify_seed_hash_policy_gate.ps1"
 $verifyFipMetadataPolicyGate = Join-Path $repoRoot "tests/reproducibility/verify_fip_metadata_policy_gate.ps1"
 $verifyFipPolicyGate = Join-Path $repoRoot "tests/reproducibility/verify_fip_policy_gate.ps1"
 $verifyStdlibContract = Join-Path $repoRoot "tests/reproducibility/verify_stdlib_contract.ps1"
@@ -71,6 +72,7 @@ if (-not $SkipDoctor) {
 & $verifyTmpWorkspacePolicy
 & $verifyClosureWorkspacePolicy
 & $verifyManifestPolicyGate
+& $verifySeedHashPolicyGate
 & $verifyFipMetadataPolicyGate
 & $verifyFipPolicyGate
 & $verifyStdlibContract
