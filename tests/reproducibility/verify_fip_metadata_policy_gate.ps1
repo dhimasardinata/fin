@@ -148,8 +148,24 @@ try {
     Write-MinimalFipRepo -Requires '["FIP-9999"]' -CreateReadme
     Assert-Fails -Label "unknown requires FIP" -Action { & $policy -Root $tmpRoot }
 
+    Write-MinimalFipRepo -Requires '["not-a-fip"]' -CreateReadme
+    Assert-Fails -Label "invalid requires FIP format" -Action { & $policy -Root $tmpRoot }
+
     Write-MinimalFipRepo -ImplementationBlock "- implementation: []"
     Assert-Fails -Label "accepted FIP with empty implementation list" -Action { & $policy -Root $tmpRoot }
+
+    Write-MinimalFipRepo -ImplementationBlock @"
+- implementation:
+  - ../README.md
+"@
+    Assert-Fails -Label "parent traversal implementation path" -Action { & $policy -Root $tmpRoot }
+
+    $absoluteImplementation = [System.IO.Path]::GetFullPath((Join-Path $tmpRoot "absolute.md"))
+    Write-MinimalFipRepo -ImplementationBlock @"
+- implementation:
+  - $absoluteImplementation
+"@
+    Assert-Fails -Label "absolute implementation path" -Action { & $policy -Root $tmpRoot }
 
     Write-MinimalFipRepo -Status "Draft" -ImplementationBlock "- implementation: []"
     Assert-Passes -Label "draft FIP with empty implementation list" -Action { & $policy -Root $tmpRoot }

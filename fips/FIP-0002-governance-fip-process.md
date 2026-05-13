@@ -60,7 +60,7 @@ Compatibility impact must be documented before Implemented status.
 Current checks:
 
 1. `ci/verify_fip_metadata.ps1` validates lifecycle metadata, index consistency, status-label coverage, `requires` references, implementation-path existence, and CI/doctor wiring.
-2. `tests/reproducibility/verify_fip_metadata_policy_gate.ps1` validates metadata-policy failures for missing implementation paths, unknown `requires` entries, and accepted FIPs with empty implementation lists while keeping draft-empty implementation allowed.
+2. `tests/reproducibility/verify_fip_metadata_policy_gate.ps1` validates metadata-policy failures for missing/unsafe implementation paths, invalid/unknown `requires` entries, and accepted FIPs with empty implementation lists while keeping draft-empty implementation allowed.
 3. `tests/reproducibility/verify_fip_policy_gate.ps1` validates feature-critical pull request checks for missing links, unknown FIPs, draft FIPs, and eligible accepted/in-progress/implemented FIPs.
 4. `ci/check_fip_link.ps1` validates feature-critical pull requests have an explicit eligible FIP link.
 5. GitHub Actions runs both CI checks in the policy job, and `tests/run_stage0_suite.ps1` runs the policy self-checks.

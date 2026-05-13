@@ -28,7 +28,7 @@ Entry points:
 - `tests/integration/verify_pkg.ps1`: `fin pkg add` integration gate with PID-scoped temp workspace hygiene.
 - `tests/integration/verify_pkg_publish.ps1`: `fin pkg publish` integration gate with PID-scoped temp workspace hygiene.
 - `tests/reproducibility/verify_manifest_policy_gate.ps1`: manifest policy gate self-check coverage with PID-scoped temp workspace hygiene.
-- `tests/reproducibility/verify_fip_metadata_policy_gate.ps1`: FIP metadata policy self-check coverage for missing implementation paths, unknown `requires` entries, and status-sensitive empty implementation lists.
+- `tests/reproducibility/verify_fip_metadata_policy_gate.ps1`: FIP metadata policy self-check coverage for missing/unsafe implementation paths, invalid/unknown `requires` entries, and status-sensitive empty implementation lists.
 - `tests/reproducibility/verify_fip_policy_gate.ps1`: FIP PR-link policy self-check coverage for missing, draft, unknown, and eligible FIP statuses.
 - `tests/reproducibility/verify_toolchain_policy_gate.ps1`: toolchain policy gate self-check coverage with PID-scoped temp workspace hygiene.
 
