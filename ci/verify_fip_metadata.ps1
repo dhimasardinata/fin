@@ -1,7 +1,16 @@
+param(
+    [string]$Root = ""
+)
+
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-$repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
+if ([string]::IsNullOrWhiteSpace($Root)) {
+    $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
+}
+else {
+    $repoRoot = Resolve-Path $Root
+}
 $fipDir = Join-Path $repoRoot "fips"
 $indexPath = Join-Path $fipDir "INDEX.md"
 $labelsPath = Join-Path $repoRoot ".github/labels.json"
@@ -54,6 +63,73 @@ function Assert-FipSection {
     }
 }
 
+function Get-FipListMetadata {
+    param(
+        [string]$Text,
+        [string]$Key,
+        [string]$Path
+    )
+
+    $lines = [regex]::Split($Text, "`r?`n")
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        $lineMatch = [regex]::Match($lines[$i], ("^-\s+{0}:\s*(.*?)\s*$" -f [regex]::Escape($Key)))
+        if (-not $lineMatch.Success) {
+            continue
+        }
+
+        $inline = $lineMatch.Groups[1].Value.Trim()
+        if ($inline -eq "[]") {
+            return @()
+        }
+
+        if (-not [string]::IsNullOrWhiteSpace($inline)) {
+            try {
+                $decoded = $inline | ConvertFrom-Json -ErrorAction Stop
+            }
+            catch {
+                Fail-FipMetadata ("{0} invalid {1} list metadata: {2}" -f $Path, $Key, $inline)
+            }
+
+            if ($null -eq $decoded) {
+                return @()
+            }
+            return @($decoded | ForEach-Object { [string]$_ })
+        }
+
+        $items = [System.Collections.Generic.List[string]]::new()
+        for ($j = $i + 1; $j -lt $lines.Count; $j++) {
+            if ($lines[$j] -match '^-\s+') {
+                break
+            }
+
+            $itemMatch = [regex]::Match($lines[$j], '^\s{2}-\s+(.+?)\s*$')
+            if ($itemMatch.Success) {
+                $items.Add($itemMatch.Groups[1].Value.Trim()) | Out-Null
+            }
+        }
+
+        return $items.ToArray()
+    }
+
+    Fail-FipMetadata ("{0} missing metadata key: {1}" -f $Path, $Key)
+}
+
+function Assert-RepoRelativePath {
+    param(
+        [string]$Value,
+        [string]$Label,
+        [string]$Path
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        Fail-FipMetadata ("{0} has empty {1}" -f $Path, $Label)
+    }
+
+    if ([System.IO.Path]::IsPathRooted($Value) -or $Value -match '(^|[\\/])\.\.([\\/]|$)') {
+        Fail-FipMetadata ("{0} {1} must be a relative repo path without parent traversal: {2}" -f $Path, $Label, $Value)
+    }
+}
+
 $fips = [System.Collections.Generic.List[object]]::new()
 $seenIds = @{}
 
@@ -81,7 +157,8 @@ Get-ChildItem -LiteralPath $fipDir -File -Filter "FIP-*.md" |
         $address = Get-FipMetadataValue -Text $text -Key "address" -Path $relativePath
         $status = Get-FipMetadataValue -Text $text -Key "status" -Path $relativePath
         $targetRelease = Get-FipMetadataValue -Text $text -Key "target_release" -Path $relativePath
-        $null = Get-FipMetadataValue -Text $text -Key "requires" -Path $relativePath
+        $requires = @(Get-FipListMetadata -Text $text -Key "requires" -Path $relativePath)
+        $implementationPaths = @(Get-FipListMetadata -Text $text -Key "implementation" -Path $relativePath)
 
         if ($id -ne $fileId -or $headerId -ne $fileId) {
             Fail-FipMetadata ("{0} id mismatch: filename={1} header={2} metadata={3}" -f $relativePath, $fileId, $headerId, $id)
@@ -105,6 +182,12 @@ Get-ChildItem -LiteralPath $fipDir -File -Filter "FIP-*.md" |
             Fail-FipMetadata ("{0} target_release must be M<number>, found: {1}" -f $relativePath, $targetRelease)
         }
 
+        foreach ($requiredFip in $requires) {
+            if ($requiredFip -notmatch '^FIP-[0-9]{4}$') {
+                Fail-FipMetadata ("{0} has invalid requires entry: {1}" -f $relativePath, $requiredFip)
+            }
+        }
+
         foreach ($section in @("Summary", "Motivation", "Design", "Alternatives", "Risks", "Compatibility", "Test Plan")) {
             Assert-FipSection -Text $text -Section $section -Path $relativePath
         }
@@ -117,11 +200,24 @@ Get-ChildItem -LiteralPath $fipDir -File -Filter "FIP-*.md" |
             Fail-FipMetadata ("{0} missing acceptance metadata block" -f $relativePath)
         }
 
+        if (($status -in @("Accepted", "Scheduled", "InProgress", "Implemented", "Released")) -and $implementationPaths.Count -eq 0) {
+            Fail-FipMetadata ("{0} status {1} requires at least one implementation path" -f $relativePath, $status)
+        }
+
+        foreach ($implementationPath in $implementationPaths) {
+            Assert-RepoRelativePath -Value $implementationPath -Label "implementation path" -Path $relativePath
+            $fullImplementationPath = Join-Path $repoRoot $implementationPath
+            if (-not (Test-Path -LiteralPath $fullImplementationPath)) {
+                Fail-FipMetadata ("{0} implementation path does not exist: {1}" -f $relativePath, $implementationPath)
+            }
+        }
+
         $fips.Add([pscustomobject]@{
             Id = $id
             Title = $title
             Status = $status
             Address = $address
+            Requires = $requires
         }) | Out-Null
     }
 
@@ -154,6 +250,14 @@ if (($expectedIds -join ",") -ne ($actualIds -join ",")) {
 $fipById = @{}
 foreach ($fip in $fips) {
     $fipById[$fip.Id] = $fip
+}
+
+foreach ($fip in $fips) {
+    foreach ($requiredFip in @($fip.Requires)) {
+        if (-not $fipById.ContainsKey($requiredFip)) {
+            Fail-FipMetadata ("{0} requires unknown FIP: {1}" -f $fip.Id, $requiredFip)
+        }
+    }
 }
 
 foreach ($row in $indexRows) {
