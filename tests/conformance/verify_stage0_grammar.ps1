@@ -182,6 +182,8 @@ Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_block_shado
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_if_statement_then.fn" -ExpectedExit 169
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_if_statement_else.fn" -ExpectedExit 170
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_helper_if_statement_return.fn" -ExpectedExit 171
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_case_sensitive_locals.fn" -ExpectedExit 42
+Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_exit_case_sensitive_functions.fn" -ExpectedExit 42
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_drop_unused.fn" -ExpectedExit 15
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_move_binding.fn" -ExpectedExit 16
 Assert-ParseExit -RelativePath "tests/conformance/fixtures/main_move_reinit_var.fn" -ExpectedExit 17

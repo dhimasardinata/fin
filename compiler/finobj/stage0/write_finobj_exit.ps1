@@ -55,7 +55,7 @@ function Get-NormalizedSymbolList {
             if ([string]::IsNullOrWhiteSpace($symbol)) {
                 continue
             }
-            if ($symbol -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
+            if ($symbol -cnotmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
                 throw ("Invalid {0} symbol: {1}" -f $Label, $symbol)
             }
             if (-not $seen.Add($symbol)) {
@@ -66,7 +66,7 @@ function Get-NormalizedSymbolList {
     }
 
     $ordered = @($symbols | Sort-Object `
-            @{Expression = { if ($_ -eq "main") { 0 } else { 1 } } }, `
+            @{Expression = { if ($_ -ceq "main") { 0 } else { 1 } } }, `
             @{Expression = { $_ } })
     return @($ordered)
 }
@@ -89,7 +89,7 @@ function Get-NormalizedRelocationList {
                 continue
             }
 
-            if ($token -notmatch '^([A-Za-z_][A-Za-z0-9_]*)@([0-9]+)(?::([A-Za-z0-9_]+))?$') {
+            if ($token -cnotmatch '^([A-Za-z_][A-Za-z0-9_]*)@([0-9]+)(?::([A-Za-z0-9_]+))?$') {
                 throw ("Invalid relocation entry: {0}. Expected <symbol>@<offset>[:<kind>]." -f $token)
             }
 
@@ -144,7 +144,7 @@ function Get-NormalizedSymbolValueMap {
             if ([string]::IsNullOrWhiteSpace($token)) {
                 continue
             }
-            if ($token -notmatch '^([A-Za-z_][A-Za-z0-9_]*)=([0-9]+)$') {
+            if ($token -cnotmatch '^([A-Za-z_][A-Za-z0-9_]*)=([0-9]+)$') {
                 throw ("Invalid symbol value entry: {0}. Expected <symbol>=<u32>." -f $token)
             }
 

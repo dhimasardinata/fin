@@ -138,11 +138,15 @@ function Parse-TypeAnnotation {
 function Copy-Hashtable {
     param([hashtable]$Table)
 
-    $copy = @{}
+    $copy = New-Stage0Map
     foreach ($key in $Table.Keys) {
         $copy[$key] = $Table[$key]
     }
     return $copy
+}
+
+function New-Stage0Map {
+    return [hashtable]::new([System.StringComparer]::Ordinal)
 }
 
 function Copy-Stage0ScopeFrames {
@@ -160,11 +164,11 @@ function Copy-Stage0ScopeFrames {
     return (, $copy)
 }
 
-$script:FunctionDefinitions = @{}
+$script:FunctionDefinitions = New-Stage0Map
 $script:FunctionCallStack = [System.Collections.Generic.List[string]]::new()
 $script:Stage0BindingCounter = 0
 $script:Stage0ScopeFrames = [System.Collections.Generic.List[hashtable]]::new()
-$script:Stage0BindingDisplayNames = @{}
+$script:Stage0BindingDisplayNames = New-Stage0Map
 
 function New-Stage0BindingKey {
     param([string]$Name)
@@ -174,7 +178,7 @@ function New-Stage0BindingKey {
 }
 
 function Push-Stage0ScopeFrame {
-    $frame = @{}
+    $frame = New-Stage0Map
     $script:Stage0ScopeFrames.Add($frame) | Out-Null
     return $frame
 }
@@ -522,7 +526,7 @@ function Get-ExpectedFunctionReturnType {
         [string]$DeclaredReturnType
     )
 
-    if ($FunctionName -eq "main") {
+    if ($FunctionName -ceq "main") {
         if (-not [string]::IsNullOrWhiteSpace($DeclaredReturnType) -and ([string]$DeclaredReturnType -ne "u8")) {
             Fail-Parse ("entrypoint return type must be u8 in stage0 bootstrap, found {0}" -f $DeclaredReturnType)
         }
@@ -595,12 +599,12 @@ function Parse-Stage0FunctionParameters {
         return @()
     }
 
-    if ($FunctionName -eq "main") {
+    if ($FunctionName -ceq "main") {
         Fail-Parse "entrypoint function 'main' does not support parameters in stage0"
     }
 
     $parameters = [System.Collections.Generic.List[object]]::new()
-    $seenNames = @{}
+    $seenNames = New-Stage0Map
     foreach ($part in @(Split-TopLevelTypeList -Text $ParameterText)) {
         $parameterDecl = [string]$part
         if ([string]::IsNullOrWhiteSpace($parameterDecl)) {
@@ -639,7 +643,7 @@ function Parse-Stage0FunctionParameters {
 function Get-Stage0FunctionDefinitions {
     param([string]$ProgramText)
 
-    $definitions = @{}
+    $definitions = New-Stage0Map
     $sanitizedProgram = Strip-Stage0LineComments -Text $ProgramText
     $position = 0
 
@@ -811,7 +815,7 @@ function Remove-BlockScopedBindings {
         [hashtable]$ReferenceTargets
     )
 
-    $localNameSet = @{}
+    $localNameSet = New-Stage0Map
     foreach ($bindingKey in $BindingKeys) {
         $localNameSet[$bindingKey] = $true
     }
@@ -1511,7 +1515,7 @@ function Parse-Expr {
     if ($trimmedExpr -match '^([A-Za-z_][A-Za-z0-9_]*)\s*\((.*)\)$') {
         $functionName = $Matches[1]
         $argText = $Matches[2].Trim()
-        if ($functionName -eq "main") {
+        if ($functionName -ceq "main") {
             Fail-Parse "entrypoint function 'main' cannot be called as expression in stage0"
         }
         if (-not $script:FunctionDefinitions.ContainsKey($functionName)) {
@@ -2015,7 +2019,7 @@ function Invoke-Stage0Statements {
             }
 
             if ($stmt -match '^exit\s*\(\s*(.+)\s*\)$') {
-                if ($FunctionName -ne 'main') {
+                if ($FunctionName -cne 'main') {
                     Fail-Parse ("exit(...) is only allowed in entrypoint function 'main', found in function '{0}'" -f $FunctionName)
                 }
 
@@ -2095,15 +2099,15 @@ function Invoke-Stage0Function {
 
     try {
         $script:Stage0ScopeFrames = [System.Collections.Generic.List[hashtable]]::new()
-        $script:Stage0BindingDisplayNames = @{}
+        $script:Stage0BindingDisplayNames = New-Stage0Map
         Push-Stage0ScopeFrame | Out-Null
 
-        $values = @{}
-        $mutable = @{}
-        $types = @{}
-        $resultStates = @{}
-        $lifecycleStates = @{}
-        $referenceTargets = @{}
+        $values = New-Stage0Map
+        $mutable = New-Stage0Map
+        $types = New-Stage0Map
+        $resultStates = New-Stage0Map
+        $lifecycleStates = New-Stage0Map
+        $referenceTargets = New-Stage0Map
 
         for ($i = 0; $i -lt $definition.Parameters.Count; $i++) {
             $parameter = $definition.Parameters[$i]
@@ -2123,7 +2127,7 @@ function Invoke-Stage0Function {
 
         $executionResult = Invoke-Stage0Statements -FunctionName $FunctionName -ExpectedReturnType $definition.ExpectedReturnType -Statements $definition.Statements -Values $values -Mutable $mutable -Types $types -ResultStates $resultStates -LifecycleStates $lifecycleStates -ReferenceTargets $referenceTargets
         if (-not $executionResult.HaveTerminal) {
-            if ($FunctionName -eq 'main') {
+            if ($FunctionName -ceq 'main') {
                 Fail-Parse 'missing terminal statement (exit(<expr>) or return <expr>)'
             }
             Fail-Parse ("function '{0}' is missing terminal return" -f $FunctionName)

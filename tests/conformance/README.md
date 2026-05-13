@@ -1,7 +1,7 @@
 Stage0 conformance checks:
 
 - `verify_stage0_grammar.ps1`: validates minimal grammar subset parsing.
-- `verify_finobj_roundtrip.ps1`: validates stage0 finobj deterministic writer/reader roundtrip and malformed-object rejection cases; uses PID-scoped temp workspace hygiene under `artifacts/tmp`.
+- `verify_finobj_roundtrip.ps1`: validates stage0 finobj deterministic writer/reader roundtrip, case-sensitive key handling, and malformed-object rejection cases; uses PID-scoped temp workspace hygiene under `artifacts/tmp`.
 - `fixtures/main_exit0.fn`: valid source, expects exit code 0.
 - `fixtures/main_exit7.fn`: valid source, expects exit code 7.
 - `fixtures/main_exit_let7.fn`: valid source with `let` binding and identifier exit.
@@ -11,6 +11,8 @@ Stage0 conformance checks:
 - `fixtures/main_exit_signature_u8.fn`: valid source with explicit `fn main() -> u8` boundary annotation.
 - `fixtures/main_exit_add_literals.fn`: valid source with stage0 `u8` arithmetic addition on literals.
 - `fixtures/main_exit_add_identifier_literal.fn`: valid source with stage0 `u8` arithmetic addition across identifier and literal operands.
+- `fixtures/main_exit_case_sensitive_locals.fn`: valid source proving case-distinct local identifiers remain separate bindings.
+- `fixtures/main_exit_case_sensitive_functions.fn`: valid source proving case-distinct function and parameter identifiers remain separate bindings.
 - `fixtures/main_exit_sub_literals.fn`: valid source with stage0 `u8` arithmetic subtraction on literals.
 - `fixtures/main_exit_mul_literals.fn`: valid source with stage0 `u8` arithmetic multiplication on literals.
 - `fixtures/main_exit_div_literals.fn`: valid source with stage0 `u8` arithmetic division on literals.

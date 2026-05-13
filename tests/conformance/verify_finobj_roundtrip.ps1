@@ -185,6 +185,18 @@ exit_code=9
 "@
 Assert-ReaderFails -Path $dupKeyObj -Label "duplicate key"
 
+$wrongCaseKeyObj = Join-Path $tmpDir "invalid-wrong-case-key.finobj"
+Set-Content -Path $wrongCaseKeyObj -Value @"
+finobj_format=finobj-stage0
+finobj_version=1
+target=x86_64-linux-elf
+Entry_Symbol=main
+exit_code=7
+source_path=tests/conformance/fixtures/main_exit7.fn
+source_sha256=1111111111111111111111111111111111111111111111111111111111111111
+"@
+Assert-ReaderFails -Path $wrongCaseKeyObj -Label "wrong-case required key"
+
 $badTargetObj = Join-Path $tmpDir "invalid-target.finobj"
 Set-Content -Path $badTargetObj -Value @"
 finobj_format=finobj-stage0
