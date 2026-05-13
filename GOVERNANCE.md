@@ -3,6 +3,7 @@
 ## Scope
 
 This document governs language, compiler, runtime, package, and release decisions for Fin.
+The project charter is `FIP-0001` and `docs/charter.md`; governance changes must stay aligned with it.
 
 ## Proposal System
 
