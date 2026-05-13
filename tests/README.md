@@ -29,8 +29,8 @@ Entry points:
 - `tests/integration/verify_fmt.ps1`: `fin fmt` integration gate with PID-scoped temp workspace hygiene.
 - `tests/integration/verify_doc.ps1`: `fin doc` integration gate with PID-scoped temp workspace hygiene.
 - `tests/integration/verify_cli_contract.ps1`: static CLI contract gate for root/cmd shim catch-all argument binding, `fin test` option forwarding, and docs/FIP option coverage.
-- `tests/integration/verify_pkg.ps1`: `fin pkg add` integration gate with manifest-policy rejection before mutation and PID-scoped temp workspace hygiene.
-- `tests/integration/verify_pkg_publish.ps1`: `fin pkg publish` integration gate with manifest-policy rejection and PID-scoped temp workspace hygiene.
+- `tests/integration/verify_pkg.ps1`: `fin pkg add` integration gate with case-sensitive dependency identity, manifest-policy rejection before mutation, and PID-scoped temp workspace hygiene.
+- `tests/integration/verify_pkg_publish.ps1`: `fin pkg publish` integration gate with case-sensitive payload path identity, manifest-policy rejection, and PID-scoped temp workspace hygiene.
 - `tests/integration/verify_examples.ps1`: runnable examples integration gate for checked `examples/` sources and both Stage0 pipelines.
 - `tests/reproducibility/verify_manifest_policy_gate.ps1`: manifest policy gate self-check coverage for workspace identity, version, canonical seed-hash syntax, case-sensitive section/key and target schema, dependency entry syntax, canonical booleans, and policy switches, with PID-scoped temp workspace hygiene.
 - `tests/reproducibility/verify_seed_hash_policy_gate.ps1`: seed hash policy self-check coverage for manifest/SHA256SUMS consistency, exact artifact path matching, release-required hash enforcement, safe artifact paths, lowercase hash syntax, supported artifact format, seed identity/version and policy booleans, real artifact hash verification, and UNSET/artifact conflict rejection.

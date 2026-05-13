@@ -4,8 +4,8 @@ Integration checks:
 - `verify_init.ps1`: validates `fin init` scaffolding, overwrite protection, and force mode, with PID-scoped temp workspace hygiene.
 - `verify_fmt.ps1`: validates `fin fmt` canonical output and check mode behavior, with PID-scoped temp workspace hygiene.
 - `verify_doc.ps1`: validates `fin doc` file output and stdout behavior, with PID-scoped temp workspace hygiene.
-- `verify_pkg.ps1`: validates `fin pkg add` manifest + lockfile updates, validation errors, and manifest-policy rejection before mutation, with PID-scoped temp workspace hygiene.
-- `verify_pkg_publish.ps1`: validates `fin pkg publish` artifact generation, determinism, dry-run behavior, and manifest-policy rejection, with PID-scoped temp workspace hygiene.
+- `verify_pkg.ps1`: validates `fin pkg add` manifest + lockfile updates, case-sensitive dependency identity, validation errors, and manifest-policy rejection before mutation, with PID-scoped temp workspace hygiene.
+- `verify_pkg_publish.ps1`: validates `fin pkg publish` artifact generation, case-sensitive payload path identity, determinism, dry-run behavior, and manifest-policy rejection, with PID-scoped temp workspace hygiene.
 - `verify_examples.ps1`: validates checked `examples/` sources compile and run through direct and finobj Stage0 pipelines, with PID-scoped temp workspace hygiene.
 - `verify_linux_write_exit.ps1`: validates Linux `sys_write + sys_exit` emitted ELF behavior and stdout.
 - `verify_windows_pe_exit.ps1`: validates Windows PE emit/verify flow and runtime exit code on Windows hosts.

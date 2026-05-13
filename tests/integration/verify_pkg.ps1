@@ -92,6 +92,45 @@ if ($hashBefore -ne $hashAfter) {
     exit 1
 }
 
+# Case-distinct dependency names should not be folded together.
+& $fin pkg add Serde --version 4.0.0 --manifest $manifest
+$content = Get-Content -Path $manifest -Raw
+if ($content -cnotmatch '(?m)^Serde\s*=\s*"4\.0\.0"\s*$') {
+    Write-Error "Expected case-distinct Serde dependency with version 4.0.0."
+    exit 1
+}
+if ($content -cnotmatch '(?m)^serde\s*=\s*"3\.0\.0"\s*$') {
+    Write-Error "Expected lowercase serde dependency to remain after adding Serde."
+    exit 1
+}
+$manifestSerdeUpperIndex = $content.IndexOf('Serde = "4.0.0"')
+$manifestHttpIndex = $content.IndexOf('http = "2.0.0"')
+$manifestSerdeLowerIndex = $content.IndexOf('serde = "3.0.0"')
+if (-not ($manifestSerdeUpperIndex -lt $manifestHttpIndex -and $manifestHttpIndex -lt $manifestSerdeLowerIndex)) {
+    Write-Error "Expected ordinal dependency order in manifest (Serde before http before serde)."
+    exit 1
+}
+$lockContent = Get-Content -Path $lock -Raw
+if ($lockContent -cnotmatch '(?m)^\s*\{\s*name\s*=\s*"Serde",\s*version\s*=\s*"4\.0\.0"\s*\}\s*,?\s*$') {
+    Write-Error "Expected case-distinct Serde dependency in fin.lock."
+    exit 1
+}
+if ($lockContent -cnotmatch '(?m)^\s*\{\s*name\s*=\s*"serde",\s*version\s*=\s*"3\.0\.0"\s*\}\s*,?\s*$') {
+    Write-Error "Expected lowercase serde dependency to remain in fin.lock."
+    exit 1
+}
+$serdeUpperIndex = $lockContent.IndexOf('{ name = "Serde", version = "4.0.0" }')
+$httpIndex = $lockContent.IndexOf('{ name = "http", version = "2.0.0" }')
+$serdeLowerIndex = $lockContent.IndexOf('{ name = "serde", version = "3.0.0" }')
+if ($serdeUpperIndex -lt 0 -or $httpIndex -lt 0 -or $serdeLowerIndex -lt 0) {
+    Write-Error "Expected Serde, http, and serde entries in fin.lock."
+    exit 1
+}
+if (-not ($serdeUpperIndex -lt $httpIndex -and $httpIndex -lt $serdeLowerIndex)) {
+    Write-Error "Expected ordinal dependency order in fin.lock (Serde before http before serde)."
+    exit 1
+}
+
 # Invalid package name should fail.
 Assert-Fails -Action { & $fin pkg add "bad.name" --manifest $manifest | Out-Null } -Label "invalid package name"
 

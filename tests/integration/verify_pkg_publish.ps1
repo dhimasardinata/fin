@@ -33,6 +33,11 @@ function Assert-Fails {
 }
 
 & $fin init --dir $tmpDir --name pkgpub_smoke
+Set-Content -Path (Join-Path $sourceDir "Main.fn") -Value @"
+fn main() {
+  exit(5)
+}
+"@
 
 & $fin pkg publish --manifest $manifest --src $sourceDir --out-dir $outDir
 if (-not (Test-Path $artifact)) {
@@ -63,6 +68,20 @@ if ($content -notmatch '(?m)^file=fin\.lock$') {
 }
 if ($content -notmatch '(?m)^file=src/main\.fn$') {
     Write-Error "Expected src/main.fn payload entry."
+    exit 1
+}
+if ($content -cnotmatch '(?m)^file=src/Main\.fn$') {
+    Write-Error "Expected case-distinct src/Main.fn payload entry."
+    exit 1
+}
+if ($content -cnotmatch '(?m)^file=src/main\.fn$') {
+    Write-Error "Expected lowercase src/main.fn payload entry."
+    exit 1
+}
+$mainUpperIndex = $content.IndexOf("file=src/Main.fn")
+$mainLowerIndex = $content.IndexOf("file=src/main.fn")
+if (-not ($mainUpperIndex -lt $mainLowerIndex)) {
+    Write-Error "Expected ordinal payload path order (src/Main.fn before src/main.fn)."
     exit 1
 }
 

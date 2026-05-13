@@ -37,7 +37,7 @@ function Split-PackageInput {
 
 function Validate-DependencyName {
     param([string]$DependencyName)
-    if ($DependencyName -notmatch '^[A-Za-z][A-Za-z0-9_-]*$') {
+    if ($DependencyName -cnotmatch '^[A-Za-z][A-Za-z0-9_-]*$') {
         throw "Invalid package name '$DependencyName'. Use pattern: ^[A-Za-z][A-Za-z0-9_-]*$"
     }
 }
@@ -47,20 +47,32 @@ function Validate-Version {
     if ([string]::IsNullOrWhiteSpace($DependencyVersion)) {
         throw "Package version must be non-empty."
     }
-    if ($DependencyVersion -match '"') {
+    if ($DependencyVersion -cmatch '"') {
         throw "Package version may not contain quote characters."
     }
+}
+
+function New-OrdinalMap {
+    return [hashtable]::new([System.StringComparer]::Ordinal)
+}
+
+function Get-OrdinalSortedKeys {
+    param([hashtable]$Map)
+
+    [string[]]$keys = @($Map.Keys | ForEach-Object { [string]$_ })
+    [System.Array]::Sort($keys, [System.StringComparer]::Ordinal)
+    return $keys
 }
 
 function Parse-Dependencies {
     param([string[]]$Lines, [int]$Start, [int]$End)
 
-    $map = @{}
+    $map = New-OrdinalMap
     for ($i = $Start; $i -le $End; $i++) {
         $line = $Lines[$i].Trim()
         if ([string]::IsNullOrWhiteSpace($line)) { continue }
         if ($line.StartsWith("#")) { continue }
-        if ($line -match '^([A-Za-z][A-Za-z0-9_-]*)\s*=\s*"([^"]*)"\s*$') {
+        if ($line -cmatch '^([A-Za-z][A-Za-z0-9_-]*)\s*=\s*"([^"]*)"\s*$') {
             $map[$Matches[1]] = $Matches[2]
         }
     }
@@ -74,7 +86,7 @@ function Write-Lockfile {
         [string]$Newline
     )
 
-    $keys = @($Dependencies.Keys | Sort-Object)
+    $keys = @(Get-OrdinalSortedKeys -Map $Dependencies)
     $out = [System.Collections.Generic.List[string]]::new()
     $out.Add("# Lockfile is machine-managed by fin stage0.")
     $out.Add("version = 1")
@@ -124,14 +136,14 @@ if ($lines.Count -gt 0 -and $lines[$lines.Count - 1] -eq "") {
 
 $depHeader = -1
 for ($i = 0; $i -lt $lines.Count; $i++) {
-    if ($lines[$i].Trim() -eq "[dependencies]") {
+    if ($lines[$i].Trim() -ceq "[dependencies]") {
         $depHeader = $i
         break
     }
 }
 
 if ($depHeader -eq -1) {
-    $deps = @{}
+    $deps = New-OrdinalMap
     $deps[$depName] = $depVersion
     $before = @($lines.ToArray())
     $after = @()
@@ -139,7 +151,7 @@ if ($depHeader -eq -1) {
 else {
     $sectionEnd = $lines.Count - 1
     for ($i = $depHeader + 1; $i -lt $lines.Count; $i++) {
-        if ($lines[$i].Trim() -match '^\[[^\]]+\]$') {
+        if ($lines[$i].Trim() -cmatch '^\[[^\]]+\]$') {
             $sectionEnd = $i - 1
             break
         }
@@ -157,7 +169,7 @@ else {
 }
 
 $deps[$depName] = $depVersion
-$depKeys = $deps.Keys | Sort-Object
+$depKeys = Get-OrdinalSortedKeys -Map $deps
 
 $new = [System.Collections.Generic.List[string]]::new()
 foreach ($line in $before) { $new.Add($line) }
