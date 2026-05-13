@@ -13,8 +13,13 @@
   - compiler/finc/stage0/format_main_exit.ps1
   - compiler/finc/stage0/doc_main_exit.ps1
   - compiler/finc/stage0/README.md
+  - docs/source-module-model.md
+  - examples/README.md
+  - examples/stage0/source_module_layout/README.md
+  - examples/stage0/source_module_layout/main.fn
   - tests/conformance/verify_stage0_grammar.ps1
   - tests/run_stage0_suite.ps1
+  - tests/integration/verify_examples.ps1
   - tests/integration/verify_fmt.ps1
   - tests/conformance/fixtures/main_exit_helper_default_u8.fn
   - tests/conformance/fixtures/main_exit_helper_chain.fn
@@ -58,6 +63,7 @@ Current stage0 implementation delta:
 9. Reference parameters are intentionally deferred until later ownership/model slices so stage0 helper calls stay value-only.
 10. Recursive helper calls, including mutual recursion, are rejected deterministically in stage0 bootstrap to keep execution and diagnostics explicit.
 11. Formatter safety is non-lossy for multi-function stage0 sources until structured helper formatting lands.
+12. Source/module layout documentation and a checked runnable example are published under `docs/source-module-model.md` and `examples/stage0/source_module_layout/`.
 
 ## Alternatives
 
@@ -75,6 +81,7 @@ Current stage0 compatibility notes:
 2. Multi-function sources are an additive extension to the file model.
 3. Helper signatures can now declare typed value parameters while `main` remains zero-argument in stage0.
 4. `fin fmt` retains canonical collapse for single-function stage0 inputs but preserves multi-function sources to avoid helper erasure until a structured formatter exists.
+5. The full multi-file module system, imports, visibility, and package source graph remain future-compatible because Stage0 treats one `.fn` source file as the compilation unit.
 
 ## Test Plan
 
@@ -83,3 +90,4 @@ Current checks:
 1. `tests/conformance/verify_stage0_grammar.ps1` validates multi-function success cases, helper call resolution, typed helper parameters, helper result-return + `?` usage, and deterministic rejection for undefined helper calls, bad argument counts, helper argument type mismatches, invalid parameter declarations, duplicate functions, recursive calls, helper-only `exit(...)`, and implicit-`u8` helper return mismatches.
 2. `tests/run_stage0_suite.ps1` compiles helper-call/parameter stage0 fixtures in the aggregated build flow.
 3. `tests/integration/verify_fmt.ps1` confirms `fin fmt` does not erase multi-function stage0 sources.
+4. `tests/integration/verify_examples.ps1` validates the published source/module layout example through direct and finobj Stage0 build/run paths.

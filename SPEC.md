@@ -41,6 +41,8 @@ Stage0 is intentionally smaller than the full v0 target surface:
 
 `match`, `for`, `while`, full generic `Result<T,E>` propagation, and the full module model remain proposal-tracked targets outside the current stage0 subset.
 
+The current source/module layout is documented in `docs/source-module-model.md`.
+
 ## Type and Safety Model
 
 - Local type inference by default.

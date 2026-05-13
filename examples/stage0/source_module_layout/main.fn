@@ -1,0 +1,12 @@
+fn main() {
+  let base ?= ready();
+  exit(add(base, 2));
+}
+
+fn ready() -> Result<u8,u8> {
+  return ok(41);
+}
+
+fn add(lhs: u8, rhs: u8) -> u8 {
+  return lhs + rhs;
+}

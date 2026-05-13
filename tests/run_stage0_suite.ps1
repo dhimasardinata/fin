@@ -22,6 +22,7 @@ $verifyFmt = Join-Path $repoRoot "tests/integration/verify_fmt.ps1"
 $verifyDoc = Join-Path $repoRoot "tests/integration/verify_doc.ps1"
 $verifyPkg = Join-Path $repoRoot "tests/integration/verify_pkg.ps1"
 $verifyPkgPublish = Join-Path $repoRoot "tests/integration/verify_pkg_publish.ps1"
+$verifyExamples = Join-Path $repoRoot "tests/integration/verify_examples.ps1"
 $verifyLinuxWriteExit = Join-Path $repoRoot "tests/integration/verify_linux_write_exit.ps1"
 $verifyWindowsPeExit = Join-Path $repoRoot "tests/integration/verify_windows_pe_exit.ps1"
 $verifyBuildTargetWindows = Join-Path $repoRoot "tests/integration/verify_build_target_windows.ps1"
@@ -56,6 +57,7 @@ if (-not $SkipDoctor) {
 & $verifyDoc
 & $verifyPkg
 & $verifyPkgPublish
+& $verifyExamples
 & $verifyLinuxWriteExit
 & $verifyWindowsPeExit
 & $verifyBuildTargetWindows

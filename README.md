@@ -54,6 +54,7 @@ This repository implements the foundation phase:
 
 - `fips/`: language and tooling proposals.
 - `docs/`: architecture, bootstrap, quality, and policy docs.
+- `examples/`: runnable Stage0 source examples used as documentation and integration inputs.
 - `compiler/`: `finc`, `finld`, `finobj`, `finas` tracks.
 - `runtime/`: OS ABI and syscall-facing runtime tracks.
 - `seed/`: audited genesis seed metadata.

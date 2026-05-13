@@ -6,6 +6,7 @@ Integration checks:
 - `verify_doc.ps1`: validates `fin doc` file output and stdout behavior, with PID-scoped temp workspace hygiene.
 - `verify_pkg.ps1`: validates `fin pkg add` manifest + lockfile updates and validation errors, with PID-scoped temp workspace hygiene.
 - `verify_pkg_publish.ps1`: validates `fin pkg publish` artifact generation, determinism, and dry-run behavior, with PID-scoped temp workspace hygiene.
+- `verify_examples.ps1`: validates checked `examples/` sources compile and run through direct and finobj Stage0 pipelines, with PID-scoped temp workspace hygiene.
 - `verify_linux_write_exit.ps1`: validates Linux `sys_write + sys_exit` emitted ELF behavior and stdout.
 - `verify_windows_pe_exit.ps1`: validates Windows PE emit/verify flow and runtime exit code on Windows hosts.
 - `verify_build_target_windows.ps1`: validates `fin build/run --target x86_64-windows-pe` flow for both `direct` and `finobj` pipelines, with PID-scoped temp workspace hygiene and stage0 finobj temp artifact cleanup checks.
@@ -18,7 +19,7 @@ Shared helper: `tests/common/finobj_output_helpers.ps1` for capturing/parsing `f
 On Windows hosts this script uses WSL to execute Linux artifacts.
 It is used by `./fin.ps1 run` and `./fin.ps1 test`.
 
-`verify_finobj_link.ps1`, `verify_build_pipeline_finobj.ps1`, `verify_build_target_windows.ps1`, `verify_manifest_target_resolution.ps1`, `verify_init.ps1`, `verify_fmt.ps1`, `verify_doc.ps1`, `verify_pkg.ps1`, and `verify_pkg_publish.ps1` use PID-scoped temp directories under `artifacts/tmp` and prune stale `finobj-link-*` / `build-pipeline-smoke-*` / `build-target-windows-smoke-*` / `manifest-target-smoke-*` / `init-smoke-*` / `fmt-smoke-*` / `doc-smoke-*` / `pkg-smoke-*` / `pkg-publish-smoke-*` temp dirs by default.
+`verify_finobj_link.ps1`, `verify_build_pipeline_finobj.ps1`, `verify_build_target_windows.ps1`, `verify_manifest_target_resolution.ps1`, `verify_init.ps1`, `verify_fmt.ps1`, `verify_doc.ps1`, `verify_pkg.ps1`, `verify_pkg_publish.ps1`, and `verify_examples.ps1` use PID-scoped temp directories under `artifacts/tmp` and prune stale `finobj-link-*` / `build-pipeline-smoke-*` / `build-target-windows-smoke-*` / `manifest-target-smoke-*` / `init-smoke-*` / `fmt-smoke-*` / `doc-smoke-*` / `pkg-smoke-*` / `pkg-publish-smoke-*` / `examples-smoke-*` temp dirs by default.
 Set `FIN_KEEP_TEST_TMP=1` to retain those temp artifacts for local debugging.
 The default stale-prune window is 6 hours and is configurable with `FIN_TEST_TMP_STALE_HOURS`.
 Stale prune skips PID-owned temp dirs when the owning process is still active.
