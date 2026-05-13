@@ -5,12 +5,22 @@ Fin architecture is intentionally staged to support full independence while keep
 ## Components
 
 - `fin-seed`: audited genesis compiler artifact.
-- `finc`: language frontend and executable emitter.
-- `finobj`: internal object representation (post direct-emitter stage).
-- `finld`: linker for multi-unit and archive workflows.
+- `finc`: language frontend, stage0 evaluator, and executable emitter.
+- `finobj`: internal object representation used by the stage0 object pipeline.
+- `finld`: linker for stage0 finobj inputs and later multi-unit/archive workflows.
 - `finas`: optional assembler if text assembly becomes a maintained interface.
 
-## Pipeline (planned)
+## Current Stage0 Pipeline
+
+The current bootstrap pipeline is intentionally narrow and deterministic:
+
+1. Parse one `.fn` source file as the Stage0 compilation unit.
+2. Resolve the entrypoint and helper functions into a concrete `u8` exit code.
+3. Emit a native image directly for Linux ELF or Windows PE.
+4. Optionally route through `finobj` + `finld` before native image emission.
+5. Verify emitted structures and runtime exit behavior through the Stage0 test suite.
+
+## Future Compiler Pipeline
 
 1. Lexing and parsing into AST.
 2. Type analysis and inference.

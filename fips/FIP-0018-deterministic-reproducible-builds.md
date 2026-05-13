@@ -9,6 +9,7 @@
 - target_release: M0
 - discussion: TBD
 - implementation:
+  - docs/quality-gates.md
   - tests/reproducibility/verify_stage0_reproducibility.ps1
   - tests/run_stage0_suite.ps1
   - .github/workflows/ci.yml
