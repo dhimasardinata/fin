@@ -16,6 +16,7 @@ $verifyPe = Join-Path $repoRoot "tests/bootstrap/verify_pe_exit0.ps1"
 $verifyClosure = Join-Path $repoRoot "tests/bootstrap/verify_stage0_closure.ps1"
 $verifyGrammar = Join-Path $repoRoot "tests/conformance/verify_stage0_grammar.ps1"
 $verifyFinobjRoundtrip = Join-Path $repoRoot "tests/conformance/verify_finobj_roundtrip.ps1"
+$verifyStdlibContract = Join-Path $repoRoot "tests/conformance/verify_stdlib_contract.ps1"
 $verifyInit = Join-Path $repoRoot "tests/integration/verify_init.ps1"
 $verifyFmt = Join-Path $repoRoot "tests/integration/verify_fmt.ps1"
 $verifyDoc = Join-Path $repoRoot "tests/integration/verify_doc.ps1"
@@ -47,6 +48,7 @@ if (-not $SkipDoctor) {
 
 & $verifyGrammar
 & $verifyFinobjRoundtrip
+& $verifyStdlibContract
 & $verifyInit
 & $verifyFmt
 & $verifyDoc
